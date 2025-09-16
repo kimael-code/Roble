@@ -5,6 +5,7 @@ use App\Http\Controllers\{
     BatchDeactivationController,
     BatchDeletionController,
     DashboardController,
+    InstallerController,
     Monitoring\ActivityLogController,
     Monitoring\LogFileController,
     Monitoring\MaintenanceController,
@@ -20,6 +21,13 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', fn() => Inertia::render('Welcome'))->name('home');
+
+Route::controller(InstallerController::class)->prefix('installer')->group(function ()
+{
+    Route::get('/', 'index')->name('installer.index');
+    Route::get('/wizard', 'wizard')->name('installer.wizard');
+    Route::post('/register', 'store')->middleware([HandlePrecognitiveRequests::class])->name('installer.register');
+});
 
 Route::middleware(['auth', 'verified', 'password.set',])->group(function ()
 {

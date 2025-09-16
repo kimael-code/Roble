@@ -2,7 +2,7 @@
   "Superuser": "Superusuario",
   "has access to any system route and can perform any action that does not violate system stability": "tiene acceso a cualquier ruta del sistema y puede ejecutar cualquier acción que no viole la estabilidad del sistema",
   "Systems Administrator": "Administrador de Sistemas",
-  "manages data related to system security and monitoring": "gestiona los datos relacionados con la seguridad y monitoreo del sistema",
+  "manages basic, security, and system monitoring data": "gestiona los datos básicos, de seguridad y de monitoreo del sistema",
 
   "create new organizations": "crear nuevos entes",
   "read any organization": "ver listado de entes",
@@ -119,7 +119,7 @@
   "Security/Roles": "Seguridad/Roles",
   "Organization/Organizations": "Ente/Entes",
   "Organization/Administrative Units": "Ente/Unidades Administrativas",
-  "Authentication": "Autenticación",
+  "Authentication": "Autentificación",
   "Settings/Password": "Configuración/Contraseña",
   "Settings/Profile": "Configuración/Perfil",
 
@@ -138,6 +138,7 @@
   "associated_user": "usuario_asociado",
   "with_administrative_unit": "con_unidad_administrativa",
 
+  "registered themselves": "se registró a sí mismo",
   "logged out from their current device": "cerró sesión desde su dispositivo actual",
   "failed login": "falló en iniciar sesión",
   "locked out": "bloqueado",

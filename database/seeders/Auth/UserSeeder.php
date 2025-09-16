@@ -18,25 +18,9 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $users = App::environment('local')
-            ? $this->getDevUsers()
-            : $this->getProductionUsers();
+        $users = App::environment('local') ? $this->getDevUsers() : [];
 
         $this->createUsers($users);
-    }
-
-    protected function getProductionUsers(): array
-    {
-        return [
-            [
-                'name' => 'root',
-                'email' => 'root@company.com',
-                'password' => Hash::make('root'),
-                'remember_token' => Str::random(60),
-                'is_password_set' => false,
-                'role' => __('Superuser'),
-            ],
-        ];
     }
 
     protected function getDevUsers(): array

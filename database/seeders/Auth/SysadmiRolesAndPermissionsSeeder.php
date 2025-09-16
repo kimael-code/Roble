@@ -6,7 +6,7 @@ use App\Models\Security\Permission;
 use App\Models\Security\Role;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\DB;
 
 class SysadmiRolesAndPermissionsSeeder extends Seeder
 {
@@ -25,6 +25,28 @@ class SysadmiRolesAndPermissionsSeeder extends Seeder
             'name' => __('Superuser'),
             'description' => __('has access to any system route and can perform any action that does not violate system stability'),
         ]);
+        $sysadminRole = Role::create([
+            'name' => __('Systems Administrator'),
+            'description' => __('manages basic, security, and system monitoring data'),
+        ]);
+
+        // el rol Superusuario es inmutable
+        DB::unprepared(
+            "CREATE OR REPLACE FUNCTION protect_first_row()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                IF OLD.id = 1 THEN
+                    RAISE EXCEPTION 'El registro con ID=1 está protegido y no puede ser modificado o eliminado.';
+                END IF;
+
+                RETURN OLD;
+            END;
+            $$ LANGUAGE plpgsql;
+
+            CREATE TRIGGER protect_first_row
+            BEFORE UPDATE OR DELETE ON roles
+            FOR EACH ROW EXECUTE FUNCTION protect_first_row();"
+        );
 
         // Permisos para gestionar los entes (organizaciones o compañías)
         Permission::create(['name' => 'create new organizations', 'description' => __('create new organizations')]);
@@ -79,17 +101,10 @@ class SysadmiRolesAndPermissionsSeeder extends Seeder
         // permiso para gestionar el modo mantenimiento del sistema
         Permission::create(['name' => 'manage maintenance mode', 'description' => __('manage maintenance mode'), 'set_menu' => true]);
 
-        if (App::environment('local'))
-        {
-            $sysadminRole = Role::create([
-                'name' => __('Systems Administrator'),
-                'description' => __('manages data related to system security and monitoring'),
-            ]);
 
-            Permission::all()->each(function (Permission $permission) use ($sysadminRole)
-            {
-                $permission->assignRole($sysadminRole);
-            });
-        }
+        Permission::all()->each(function (Permission $permission) use ($sysadminRole)
+        {
+            $permission->assignRole($sysadminRole);
+        });
     }
 }

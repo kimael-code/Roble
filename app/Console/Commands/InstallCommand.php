@@ -4,9 +4,7 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
-use App\Models\User;
 
 class InstallCommand extends Command
 {
@@ -33,13 +31,11 @@ class InstallCommand extends Command
 
         $this->updateEnvironmentFile();
 
-        Artisan::call('config:clear');
-        Artisan::call('cache:clear');
+        Artisan::call('optimize:clear');
+        Artisan::call('optimize');
 
         $this->info('Ejecutando migraciones de bases de datos...');
         Artisan::call('migrate:fresh', ['--seed' => true]);
-
-        $this->createSuperUser();
 
         Artisan::call('key:generate');
 
@@ -55,6 +51,8 @@ class InstallCommand extends Command
 
         $vars = [
             'APP_NAME' => $this->ask('Nombre de la aplicación', 'Roble'),
+            'APP_ENV' => 'production',
+            'APP_DEBUG' => false,
             'APP_URL' => $this->ask('URL de la aplicación', 'http://localhost'),
             'DB_HOST' => $this->ask('Host de base de datos', 'localhost'),
             'DB_PORT' => $this->ask('Puerto de base de datos', '5432'),
@@ -72,8 +70,6 @@ class InstallCommand extends Command
             'REVERB_HOST' => $this->ask('Host Reverb', 'localhost'),
             'REVERB_PORT' => $this->ask('Port Reverb', '8080'),
             'REVERB_SCHEME' => $this->ask('Esquema Reverb (http o https)', 'http'),
-            'APP_ENV' => 'production',
-            'APP_DEBUG' => false,
         ];
 
         if ($this->confirm('¿Quiere configurar los ajustes del servidor de correo electrónico?'))
@@ -91,27 +87,5 @@ class InstallCommand extends Command
         }
 
         file_put_contents($envPath, $envContent);
-    }
-
-    private function createSuperUser()
-    {
-        $this->info('Crear Superusuario...');
-
-        $password = $this->secret('Introduzca la contraseña para el superusuario');
-
-        $name = 'root';
-        $email = 'root@email.com';
-
-        if ($this->confirm('Do you want to customize the superuser data?', false))
-        {
-            $name = $this->ask('Enter the superuser name');
-            $email = $this->ask('Enter the superuser email');
-        }
-
-        User::create([
-            'name' => $name,
-            'email' => $email,
-            'password' => Hash::make($password),
-        ])->assignRole('superuser');
     }
 }
