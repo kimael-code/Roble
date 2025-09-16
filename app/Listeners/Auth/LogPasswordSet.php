@@ -24,7 +24,7 @@ class LogPasswordSet
     public function handle(PasswordSet $event): void
     {
         activity(__('Authentication'))
-            ->event('authenticated')
+            ->event('reset_password')
             ->performedOn($event->user)
             ->causedBy($event->user)
             ->withProperty('request', [

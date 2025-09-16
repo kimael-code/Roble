@@ -25,7 +25,7 @@ class LogLockout
         $causer = $event->request->user();
 
         activity(__('Authentication'))
-            ->event('authenticated')
+            ->event('locked_out')
             ->causedBy($causer)
             ->withProperty('request', [
                 'ip_address' => $event->request->ip(),

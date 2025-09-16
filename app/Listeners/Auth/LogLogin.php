@@ -23,7 +23,7 @@ class LogLogin
     public function handle(Login $event): void
     {
         activity(__('Authentication'))
-            ->event('authenticated')
+            ->event('logged_in')
             ->causedBy($event->user)
             ->withProperty('request', [
                 'ip_address' => request()->ip(),

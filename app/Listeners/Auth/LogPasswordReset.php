@@ -23,7 +23,7 @@ class LogPasswordReset
     public function handle(PasswordReset $event): void
     {
         activity(__('Authentication'))
-            ->event('authenticated')
+            ->event('reset_password')
             ->causedBy($event->user)
             ->performedOn($event->user)
             ->withProperty('request', [

@@ -23,7 +23,7 @@ class LogCurrentDeviceLogout
     public function handle(CurrentDeviceLogout $event): void
     {
         activity(__('Authentication'))
-            ->event('authenticated')
+            ->event('logged_out')
             ->causedBy($event->user)
             ->withProperty('request', [
                 'ip_address' => request()->ip(),

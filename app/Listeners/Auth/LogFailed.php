@@ -23,7 +23,7 @@ class LogFailed
     public function handle(Failed $event): void
     {
         activity(__('Authentication'))
-            ->event('authenticated')
+            ->event('failed_login')
             ->causedBy($event->user)
             ->withProperty('request', [
                 'ip_address' => request()->ip(),

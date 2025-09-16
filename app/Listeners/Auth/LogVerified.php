@@ -23,7 +23,7 @@ class LogVerified
     public function handle(Verified $event): void
     {
         activity(__('Authentication'))
-            ->event('authenticated')
+            ->event('verified')
             ->causedBy($event->user)
             ->withProperty('request', [
                 'ip_address' => request()->ip(),
