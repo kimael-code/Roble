@@ -3,86 +3,79 @@
 namespace App\Repositories;
 
 use App\Contracts\EmployeeRepository as EmployeeContract;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 
 class EmployeeRepository implements EmployeeContract
 {
+    /**
+     * @return Collection<int, object>
+     */
+    private static function getData(): Collection
+    {
+        return collect([
+            (object) [
+                'company_code' => '001',
+                'nationality' => 'V',
+                'id_card' => '12345678',
+                'rif' => 'V123456789',
+                'names' => 'John',
+                'surnames' => 'Doe',
+                'staff_type_code' => '0000001',
+                'org_unit_code' => 'OU001',
+                'position' => 'Developer',
+                'email' => 'john.doe@example.com',
+                'phone_ext' => '123',
+                'staff_type_name' => 'Empleado',
+                'org_unit_name' => 'IT Department',
+            ],
+            (object) [
+                'company_code' => '001',
+                'nationality' => 'E',
+                'id_card' => '87654321',
+                'rif' => 'E876543219',
+                'names' => 'Jane',
+                'surnames' => 'Smith',
+                'staff_type_code' => '0000002',
+                'org_unit_code' => 'OU002',
+                'position' => 'Designer',
+                'email' => 'jane.smith@example.com',
+                'phone_ext' => '456',
+                'staff_type_name' => 'Empleado Contratado',
+                'org_unit_name' => 'Design Department',
+            ],
+            (object) [
+                'company_code' => '001',
+                'nationality' => 'V',
+                'id_card' => '11223344',
+                'rif' => 'V112233445',
+                'names' => 'Peter',
+                'surnames' => 'Jones',
+                'staff_type_code' => '0000004',
+                'org_unit_code' => 'OU003',
+                'position' => 'Project Manager',
+                'email' => 'peter.jones@example.com',
+                'phone_ext' => '789',
+                'staff_type_name' => 'Obrero',
+                'org_unit_name' => 'Management',
+            ],
+        ]);
+    }
+
     public function all(): array
     {
-        return DB::connection('organization')->select(
-            'SELECT
-                sno_personal.codemp AS "company_code",
-                sno_personal.nacper AS "nationality",
-                sno_personal.cedper AS "id_card",
-                sno_personal.rifper AS "rif",
-                sno_personal.nomper AS "names",
-                sno_personal.apeper AS "surnames",
-                sno_personal.codtippersss AS "staff_type_code",
-                sno_personal.codorg AS "org_unit_code",
-                sno_personal.carantper AS "position",
-                sno_tipopersonalsss.dentippersss AS "staff_type_name",
-                srh_organigrama.desorg AS "org_unit_name"
-            FROM
-                sno_personal
-            INNER JOIN sno_tipopersonalsss ON
-                sno_personal.codtippersss = sno_tipopersonalsss.codtippersss
-                AND sno_personal.codtippersss IN (
-                    :empleado, :empleadoContratado, :empleadoSuplente,
-                    :obrero, :obreroContratado, :obreroSuplente,
-                    :comisServicio, :altoNivel
-                )
-            INNER JOIN srh_organigrama ON
-                srh_organigrama.codorg = sno_personal.codorg',
-        [
-            'empleado'           => '0000001',
-            'empleadoContratado' => '0000002',
-            'empleadoSuplente'   => '0000003',
-            'obrero'             => '0000004',
-            'obreroContratado'   => '0000005',
-            'obreroSuplente'     => '0000006',
-            'comisServicio'      => '0000011',
-            'altoNivel'          => '0000016',
-        ]);
+        return self::getData()->all();
     }
 
     public function find($idCard): array
     {
-        return DB::connection('organization')->select(
-            'SELECT
-                sno_personal.codemp AS "company_code",
-                sno_personal.nacper AS "nationality",
-                sno_personal.cedper AS "id_card",
-                sno_personal.rifper AS "rif",
-                sno_personal.nomper AS "names",
-                sno_personal.apeper AS "surnames",
-                sno_personal.codtippersss AS "staff_type_code",
-                sno_personal.codorg AS "org_unit_code",
-                sno_personal.carantper AS "position",
-                sno_tipopersonalsss.dentippersss AS "staff_type_name",
-                srh_organigrama.desorg AS "org_unit_name"
-            FROM
-                sno_personal
-            INNER JOIN sno_tipopersonalsss ON
-                sno_personal.codtippersss = sno_tipopersonalsss.codtippersss
-                AND sno_personal.codtippersss IN (
-                    :empleado, :empleadoContratado, :empleadoSuplente,
-                    :obrero, :obreroContratado, :obreroSuplente,
-                    :comisServicio, :altoNivel
-                )
-            INNER JOIN srh_organigrama ON
-                srh_organigrama.codorg = sno_personal.codorg
-            WHERE
-                cedper ilike :idCard',
-        [
-            'empleado'           => '0000001',
-            'empleadoContratado' => '0000002',
-            'empleadoSuplente'   => '0000003',
-            'obrero'             => '0000004',
-            'obreroContratado'   => '0000005',
-            'obreroSuplente'     => '0000006',
-            'comisServicio'      => '0000011',
-            'altoNivel'          => '0000016',
-            'idCard'             => "%$idCard%",
-        ]);
+        if (empty($idCard))
+        {
+            return [];
+        }
+
+        return self::getData()->filter(function ($employee) use ($idCard)
+        {
+            return str_contains(mb_strtolower($employee->id_card), mb_strtolower($idCard));
+        })->values()->all();
     }
 }

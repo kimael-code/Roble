@@ -1,9 +1,9 @@
 <?php
 
 use App\Http\Controllers\{
-    BatchActivationController,
-    BatchDeactivationController,
     BatchDeletionController,
+    BatchDisableController,
+    BatchEnableController,
     DashboardController,
     InstallerController,
     Monitoring\ActivityLogController,
@@ -16,24 +16,33 @@ use App\Http\Controllers\{
     Security\RoleController,
     Security\UserController,
 };
+use App\Http\Middleware\ValidateSuperusers;
+use App\Models\User;
 use Illuminate\Foundation\Http\Middleware\HandlePrecognitiveRequests;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-Route::get('/', fn() => Inertia::render('Welcome'))->name('home');
+Route::get(
+    '/',
+    fn() => Inertia::render('Welcome', [
+        'suExiste' => User::with('roles')->get()->filter(
+            fn($user) => $user->roles->where('id', 1)->toArray()
+        )->count() > 0,
+    ])
+)->name('home');
 
-Route::controller(InstallerController::class)->prefix('installer')->group(function ()
+Route::controller(InstallerController::class)->prefix('su-installer')->group(function ()
 {
-    Route::get('/', 'index')->name('installer.index');
-    Route::get('/wizard', 'wizard')->name('installer.wizard');
-    Route::post('/register', 'store')->middleware([HandlePrecognitiveRequests::class])->name('installer.register');
+    Route::get('/', 'index')->middleware(ValidateSuperusers::class)->name('su-installer.index');
+    Route::get('/wizard', 'wizard')->middleware(ValidateSuperusers::class)->name('su-installer.wizard');
+    Route::post('/register', 'store')->middleware([HandlePrecognitiveRequests::class])->name('su-installer.register');
 });
 
 Route::middleware(['auth', 'verified', 'password.set',])->group(function ()
 {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
-    Route::post('batch-activation/{resource}', BatchActivationController::class)->name('batch-activation');
-    Route::post('batch-deactivation/{resource}', BatchDeactivationController::class)->name('batch-deactivation');
+    Route::post('batch-activation/{resource}', BatchEnableController::class)->name('batch-activation');
+    Route::post('batch-deactivation/{resource}', BatchDisableController::class)->name('batch-deactivation');
     Route::post('batch-deletion/{resource}', BatchDeletionController::class)->name('batch-deletion');
 
     Route::controller(NotificationController::class)->group(function ()
