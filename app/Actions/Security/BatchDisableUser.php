@@ -4,13 +4,13 @@ namespace App\Actions\Security;
 
 use App\Models\User;
 
-class BatchDeactivateUser
+class BatchDisableUser
 {
     public static function execute(array $ids): array
     {
         $msg = [
             'message' => 'registros activados.',
-            'title' => __('PROCESSED!'),
+            'title' => '¡PROCESADO!',
             'type' => 'success',
         ];
         $deactivateCount = 0;
@@ -36,7 +36,7 @@ class BatchDeactivateUser
             {
                 $nonDeactivateCount += 1;
                 $nonDeactivateReasons .= $nonDeactivateCount > 1 ? ', ' : '';
-                $nonDeactivateReasons .= "usuario/a {$user->name} ya está desactivado/a";
+                $nonDeactivateReasons .= "{$user->name} ya está desactivado";
             }
             else
             {

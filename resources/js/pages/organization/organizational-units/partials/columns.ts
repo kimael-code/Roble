@@ -15,8 +15,8 @@ export const permissions = ref<Can>({
   read: false,
   update: false,
   delete: false,
-  activate: false,
-  deactivate: false,
+  enable: false,
+  disable: false,
   export: false,
 });
 

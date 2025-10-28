@@ -2,6 +2,7 @@
 
 namespace App\Observers\Security;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Models\User;
 use App\Notifications\ActionHandledOnModel;
 
@@ -28,10 +29,10 @@ class UserObserver
      */
     public function deleted(User $user): void
     {
-        activity(__('Security/Users'))
+        activity(ActivityLog::LOG_NAMES['users'])
             ->causedBy(auth()->user())
             ->performedOn($user)
-            ->event('deleted')
+            ->event(ActivityLog::EVENT_NAMES['deleted'])
             ->withProperties([
                 'old' => $user->toArray(),
                 'request' => [
@@ -50,7 +51,7 @@ class UserObserver
             ]));
 
         session()->flash('message', [
-            'message' => "({$user->name})",
+            'message' => "{$user->name}",
             'title' => __('DELETED!'),
             'type'  => 'danger',
         ]);
@@ -65,7 +66,7 @@ class UserObserver
                 auth()->user(),
                 [
                     'type' => __('user'),
-                    'name' => "({$user->name})",
+                    'name' => "{$user->name}",
                     'timestamp' => now(),
                 ],
                 'deleted',
@@ -79,10 +80,10 @@ class UserObserver
      */
     public function restored(User $user): void
     {
-        activity(__('Security/Users'))
+        activity(ActivityLog::LOG_NAMES['users'])
             ->causedBy(auth()->user())
             ->performedOn($user)
-            ->event('restored')
+            ->event(ActivityLog::EVENT_NAMES['restored'])
             ->withProperties([
                 'attributes' => $user->toArray(),
                 'request' => [
@@ -101,7 +102,7 @@ class UserObserver
             ]));
 
         session()->flash('message', [
-            'message' => "({$user->name})",
+            'message' => "{$user->name}",
             'title' => __('RESTORED!'),
             'type'  => 'success',
         ]);
@@ -117,7 +118,7 @@ class UserObserver
                 [
                     'id' => $user->id,
                     'type' => __('user'),
-                    'name' => "({$user->name})",
+                    'name' => "{$user->name}",
                     'timestamp' => $user->updated_at,
                 ],
                 'restored',
@@ -131,10 +132,10 @@ class UserObserver
      */
     public function forceDeleted(User $user): void
     {
-        activity(__('Security/Users'))
+        activity(ActivityLog::LOG_NAMES['users'])
             ->causedBy(auth()->user())
             ->performedOn($user)
-            ->event('deleted')
+            ->event(ActivityLog::EVENT_NAMES['deleted'])
             ->withProperties([
                 'old' => $user->toArray(),
                 'request' => [
@@ -153,7 +154,7 @@ class UserObserver
             ]));
 
         session()->flash('message', [
-            'message' => "({$user->name})",
+            'message' => $user->name,
             'title' => __('HARD DELETED!'),
             'type'  => 'danger',
         ]);
@@ -168,7 +169,7 @@ class UserObserver
                 auth()->user(),
                 [
                     'type' => __('user'),
-                    'name' => "({$user->name})",
+                    'name' => $user->name,
                     'timestamp' => now(),
                 ],
                 'f_deleted',

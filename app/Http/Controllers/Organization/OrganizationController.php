@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Organization;
 
+use App\Actions\Organization\BatchDeleteOrganization;
 use App\Actions\Organization\CreateOrganization;
 use App\Actions\Organization\DeleteOrganization;
 use App\Actions\Organization\UpdateOrganization;
@@ -10,6 +11,7 @@ use App\Http\Props\Organization\OrganizationProps;
 use App\Http\Requests\Organization\StoreOrganizationRequest;
 use App\Http\Requests\Organization\UpdateOrganizationRequest;
 use App\Models\Organization\Organization;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
@@ -85,5 +87,12 @@ class OrganizationController extends Controller
         DeleteOrganization::handle($organization);
 
         return redirect(route('organizations.index'));
+    }
+
+    public function batchDestroy(): RedirectResponse
+    {
+        $result = BatchDeleteOrganization::execute(request()->all());
+
+        return redirect(route('organizations.index'))->with('message', $result);
     }
 }

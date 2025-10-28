@@ -53,7 +53,7 @@ const tableOptions = reactive<TableOptions<User>>({
     };
   },
   getCoreRowModel: getCoreRowModel(),
-  getRowId: (row) => row.id,
+  getRowId: (row) => String(row.id),
   onSortingChange: handleSortingChange,
   state: {
     get sorting() {

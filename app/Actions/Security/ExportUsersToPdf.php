@@ -123,7 +123,7 @@ class ExportUsersToPdf extends BasePdf
                 ->values()
                 ->all();
             $userPermissionsUpdate = $user->getAllPermissions()
-                ->filter(fn(Permission $permission) => Str::startsWith($permission->name, ['activate', 'deactivate', 'restore', 'update']))
+                ->filter(fn(Permission $permission) => Str::startsWith($permission->name, ['enable', 'disable', 'restore', 'update']))
                 ->sortBy('description')
                 ->values()
                 ->all();

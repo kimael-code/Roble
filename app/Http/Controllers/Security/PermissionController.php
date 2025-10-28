@@ -8,7 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Props\Security\PermissionProps;
 use App\Http\Requests\Security\StorePermissionRequest;
 use App\Http\Requests\Security\UpdatePermissionRequest;
+use App\Actions\Security\BatchDeletePermission;
 use App\Models\Security\Permission;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
@@ -84,5 +86,12 @@ class PermissionController extends Controller
         $permission->delete();
 
         return redirect()->route('permissions.index');
+    }
+
+    public function batchDestroy(): RedirectResponse
+    {
+        $result = BatchDeletePermission::execute(request()->all());
+
+        return redirect(route('permissions.index'))->with('message', $result);
     }
 }

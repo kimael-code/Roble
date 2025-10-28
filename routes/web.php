@@ -1,9 +1,6 @@
 <?php
 
 use App\Http\Controllers\{
-    BatchDeletionController,
-    BatchDisableController,
-    BatchEnableController,
     DashboardController,
     InstallerController,
     Monitoring\ActivityLogController,
@@ -41,9 +38,15 @@ Route::controller(InstallerController::class)->prefix('su-installer')->group(fun
 Route::middleware(['auth', 'verified', 'password.set',])->group(function ()
 {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
-    Route::post('batch-activation/{resource}', BatchEnableController::class)->name('batch-activation');
-    Route::post('batch-deactivation/{resource}', BatchDisableController::class)->name('batch-deactivation');
-    Route::post('batch-deletion/{resource}', BatchDeletionController::class)->name('batch-deletion');
+
+    Route::post('users/batch-enable', [UserController::class, 'batchEnable'])->name('users.batchEnable');
+    Route::post('users/batch-disable', [UserController::class, 'batchDisable'])->name('users.batchDisable');
+
+    Route::delete('users/batch-destroy', [UserController::class, 'batchDestroy'])->name('users.batchDestroy');
+    Route::delete('permissions/batch-destroy', [PermissionController::class, 'batchDestroy'])->name('permissions.batchDestroy');
+    Route::delete('roles/batch-destroy', [RoleController::class, 'batchDestroy'])->name('roles.batchDestroy');
+    Route::delete('organizations/batch-destroy', [OrganizationController::class, 'batchDestroy'])->name('organizations.batchDestroy');
+    Route::delete('organizational-units/batch-destroy', [OrganizationalUnitController::class, 'batchDestroy'])->name('organizational-units.batchDestroy');
 
     Route::controller(NotificationController::class)->group(function ()
     {

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Security;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Models\Organization\OrganizationalUnit;
 use App\Models\Person;
 use App\Models\Security\Permission;
@@ -26,11 +27,10 @@ class CreateUser
             $user->is_external = $inputs['is_external'];
             $user->save();
 
-            $event = 'created';
-            activity(__('Security/Users'))
+            activity(ActivityLog::LOG_NAMES['users'])
                 ->causedBy(auth()->user())
                 ->performedOn($user)
-                ->event($event)
+                ->event(ActivityLog::EVENT_NAMES['created'])
                 ->withProperties([
                     'attributes' => $user->toArray(),
                     'request' => [
@@ -68,10 +68,10 @@ class CreateUser
             $role = Role::findByName($roleName);
             $authUser = auth()->user();
 
-            activity(__('Security/Users'))
+            activity(ActivityLog::LOG_NAMES['users'])
                 ->causedBy($authUser)
                 ->performedOn($user)
-                ->event('created')
+                ->event(ActivityLog::EVENT_NAMES['authorized'])
                 ->withProperties([
                     __('assigned_role') => $role,
                     __('to_user') => $user,
@@ -100,10 +100,10 @@ class CreateUser
             $user->givePermissionTo($permission);
             $authUser = auth()->user();
 
-            activity(__('Security/Users'))
+            activity(ActivityLog::LOG_NAMES['users'])
                 ->causedBy($authUser)
                 ->performedOn($user)
-                ->event('created')
+                ->event(ActivityLog::EVENT_NAMES['authorized'])
                 ->withProperties([
                     __('granted_permission') => $permission,
                     __('to_user') => $user,
@@ -152,10 +152,10 @@ class CreateUser
 
                 $authUser = auth()->user();
 
-                activity(__('Security/Users'))
+                activity(ActivityLog::LOG_NAMES['users'])
                     ->causedBy($authUser)
                     ->performedOn($user)
-                    ->event('created')
+                    ->event(ActivityLog::EVENT_NAMES['authorized'])
                     ->withProperties([
                         __('associated_user') => $user,
                         __('with_administrative_unit') => $ou,

@@ -43,8 +43,8 @@ defineEmits<{
   destroy: [row: object];
   forceDestroy: [row: object];
   export: [row: object];
-  activate: [row: object];
-  deactivate: [row: object];
+  enable: [row: object];
+  disable: [row: object];
   restore: [row: object];
 }>();
 
@@ -84,19 +84,19 @@ const menuIsOpen = ref(false);
         </DropdownMenuItem>
       </DropdownMenuGroup>
 
-      <DropdownMenuSeparator v-if="can.activate || can.deactivate || can.restore || can.delete || can.f_delete" />
+      <DropdownMenuSeparator v-if="can.enable || can.disable || can.restore || can.delete || can.f_delete" />
       <DropdownMenuGroup>
-        <DropdownMenuSub v-if="can.activate || can.deactivate">
+        <DropdownMenuSub v-if="can.enable || can.disable">
           <DropdownMenuSubTrigger>
             <span>Activación</span>
           </DropdownMenuSubTrigger>
           <DropdownMenuPortal>
             <DropdownMenuSubContent>
-              <DropdownMenuItem v-if="can.activate" :disabled="row?.disabled_at === null" @click="$emit('activate', row)">
+              <DropdownMenuItem v-if="can.enable" :disabled="row?.disabled_at === null" @click="$emit('enable', row)">
                 <ToggleRightIcon />
                 <span>Activar</span>
               </DropdownMenuItem>
-              <DropdownMenuItem v-if="can.deactivate" :disabled="row?.disabled_at !== null" @click="$emit('deactivate', row)">
+              <DropdownMenuItem v-if="can.disable" :disabled="row?.disabled_at !== null" @click="$emit('disable', row)">
                 <ToggleLeftIcon />
                 <span>Desactivar</span>
               </DropdownMenuItem>

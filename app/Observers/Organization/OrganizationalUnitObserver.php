@@ -45,7 +45,7 @@ class OrganizationalUnitObserver
     public function updated(OrganizationalUnit $organizationalUnit): void
     {
         session()->flash('message', [
-            'message' => "{$organizationalUnit->name}",
+            'message' => $organizationalUnit->name,
             'title' => __('SAVED!'),
             'type'  => 'success',
         ]);

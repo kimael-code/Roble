@@ -21,8 +21,8 @@ export const permissions = ref<Can>({
   read: false,
   update: false,
   delete: false,
-  activate: false,
-  deactivate: false,
+  enable: false,
+  disable: false,
   export: false,
 });
 
@@ -124,7 +124,7 @@ export const columns = [
       return h(DropdownMenu, () => [
         h(DropdownMenuTrigger, { asChild: true }, () => [
           h(Button, { variant: isSorted ? 'default' : 'ghost' }, () => [
-            'Actividad',
+            'Evento',
             isSorted === 'desc'
               ? h(ChevronDown, { class: 'ml-2 h-4 w-4' })
               : isSorted === 'asc'

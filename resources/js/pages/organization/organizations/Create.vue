@@ -13,6 +13,7 @@ import { Head, router } from '@inertiajs/vue3';
 import { useForm } from 'laravel-precognition-vue-inertia';
 import { Building, LoaderCircleIcon } from 'lucide-vue-next';
 import { ref } from 'vue';
+import routes from "@/actions/App/Http/Controllers/Organization/OrganizationController";
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -36,7 +37,7 @@ type OrganizationForm = {
   address: string;
 }
 
-const form = useForm('post', route('organizations.store'), <OrganizationForm>{
+const form = useForm('post', routes.store().url, <OrganizationForm>{
   rif: '',
   name: '',
   logo_path: null,
@@ -64,7 +65,7 @@ function submit() {
 }
 
 function index() {
-  router.visit(route('organizations.index'), {
+  router.visit(routes.index(), {
     onStart: () => (buttonCancel.value = true),
     onFinish: () => (buttonCancel.value = false),
   });

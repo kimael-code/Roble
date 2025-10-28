@@ -2,51 +2,65 @@
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { toUrl, urlIsActive } from '@/lib/utils';
+import { edit as editAppearance } from '@/routes/appearance';
+import { edit as editPassword } from '@/routes/password';
+import { edit as editProfile } from '@/routes/profile';
+import { show } from '@/routes/two-factor';
 import { type NavItem } from '@/types';
-import { Link, usePage } from '@inertiajs/vue3';
+import { Link } from '@inertiajs/vue3';
 
 const sidebarNavItems: NavItem[] = [
     {
         title: 'Perfil',
-        href: '/settings/profile',
+        href: editProfile(),
     },
     {
         title: 'Contraseña',
-        href: '/settings/password',
+        href: editPassword(),
+    },
+    {
+        title: 'Autentificador',
+        href: show(),
     },
     {
         title: 'Apariencia',
-        href: '/settings/appearance',
+        href: editAppearance(),
     },
 ];
 
-const page = usePage();
-
-const currentPath = page.props.ziggy?.location ? new URL(page.props.ziggy.location).pathname : '';
+const currentPath = typeof window !== undefined ? window.location.pathname : '';
 </script>
 
 <template>
     <div class="px-4 py-6">
-        <Heading title="Configuración" description="Gestione su perfil y la configuración de su cuenta" />
+        <Heading
+            title="Configuración"
+            description="Gestione su perfil y la configuración de su cuenta"
+        />
 
         <div class="flex flex-col space-y-8 md:space-y-0 lg:flex-row lg:space-y-0 lg:space-x-12">
             <aside class="w-full max-w-xl lg:w-48">
                 <nav class="flex flex-col space-y-1 space-x-0">
                     <Button
                         v-for="item in sidebarNavItems"
-                        :key="item.href"
+                        :key="toUrl(item.href)"
                         variant="ghost"
-                        :class="['w-full justify-start', { 'bg-muted': currentPath === item.href }]"
+                        :class="[
+                            'w-full justify-start',
+                            { 'bg-muted': urlIsActive(item.href, currentPath) },
+                        ]"
                         as-child
                     >
                         <Link :href="item.href">
+                            <component :is="item.icon" class="h-4 w-4" />
                             {{ item.title }}
                         </Link>
                     </Button>
                 </nav>
             </aside>
 
-            <Separator class="my-6 md:hidden" />
+            <Separator class="my-6 lg:hidden" />
 
             <div class="flex-1 md:max-w-2xl">
                 <section class="max-w-xl space-y-12">

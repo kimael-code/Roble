@@ -7,10 +7,11 @@ import { router } from '@inertiajs/vue3';
 import { watchDebounced } from '@vueuse/core';
 import { Search } from 'lucide-vue-next';
 import { ref } from 'vue';
+import UserController from "@/actions/App/Http/Controllers/Security/UserController";
 
 interface Props {
   filters: SearchFilter;
-  userId: string | number;
+  userId: number;
   permissions: PaginatedCollection<Permission>;
   permissionsCount: number;
 }
@@ -23,7 +24,7 @@ watchDebounced(
   (s) => {
     if (s === '') search.value = undefined;
 
-    router.visit(route('users.show', props.userId), {
+    router.visit(UserController.show(props.userId), {
       data: { search: s },
       only: ['permissions'],
       preserveScroll: true,

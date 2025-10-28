@@ -22,6 +22,8 @@ import { UserIcon } from 'lucide-vue-next';
 import { computed, reactive, ref, watch, watchEffect } from 'vue';
 import { columns, permissions as permissionsDT, processingRowId } from './partials/columns';
 import SheetAdvancedFilters from './partials/SheetAdvancedFilters.vue';
+import UserController from "@/actions/App/Http/Controllers/Security/UserController";
+import UserExporterController from "@/actions/App/Http/Controllers/Exporters/UserExporterController";
 
 const props = defineProps<{
   can: Can;
@@ -38,7 +40,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const { action, resourceID, requestState, requestAction } = useRequestActions('users');
+const { action, resourceID, requestState, requestAction } = useRequestActions(UserController);
 const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription, alertData } = useConfirmAction();
 const showPdf = ref(false);
 const showAdvancedFilters = ref(false);
@@ -72,7 +74,7 @@ function handleSortingChange(item: any) {
       }
     });
 
-    router.visit(route('users.index'), {
+    router.visit(UserController.index(), {
       data,
       only: ['users'],
       preserveScroll: true,
@@ -109,7 +111,7 @@ const tableOptions = reactive<TableOptions<User>>({
     };
   },
   getCoreRowModel: getCoreRowModel(),
-  getRowId: (row) => row.id,
+  getRowId: (row) => String(row.id),
   onSortingChange: handleSortingChange,
   onRowSelectionChange: (updaterOrValue) => valueUpdater(updaterOrValue, rowSelection),
   state: {
@@ -171,14 +173,14 @@ watch(action, () => {
       alertDescription.value = `Esta acción podrá revertirse. Los datos no se eliminarán, sin embargo, los usuarios no podrán ingresar al sistema.`;
       alertOpen.value = true;
       break;
-    case 'batch_activate':
+    case 'batch_enable':
       alertAction.value = 'Activar seleccionados';
       alertActionCss.value = '';
       alertTitle.value = `¿Activar los usuarios que Usted ha seleccionado?`;
       alertDescription.value = `Los usuarios recuperarán el acceso al sistema. Sus datos serán restaurados.`;
       alertOpen.value = true;
       break;
-    case 'batch_deactivate':
+    case 'batch_disable':
       alertAction.value = 'Desactivar seleccionados';
       alertActionCss.value = 'bg-amber-500 text-foreground hover:bg-amber-500/90';
       alertTitle.value = `¿Desactivar los usuarios que Usted ha seleccionado?`;
@@ -214,13 +216,13 @@ function handleAdvancedSearch() {
         :data="users"
         :filters="filters"
         :search-only="['users']"
-        :search-route="route('users.index')"
+        :search-route="UserController.index()"
         :table="table"
         :is-advanced-search="advancedSearchApplied"
         :is-loading-new="requestState.create"
         :is-loading-dropdown="requestState.batchDestroy"
-        @batch-activate="handleBatchAction('batch_activate')"
-        @batch-deactivate="handleBatchAction('batch_deactivate')"
+        @batch-enable="handleBatchAction('batch_enable')"
+        @batch-disable="handleBatchAction('batch_disable')"
         @batch-destroy="handleBatchAction('batch_destroy')"
         @search="(s) => (globalFilter = s)"
         @new="requestAction({ operation: 'create' })"
@@ -229,8 +231,8 @@ function handleAdvancedSearch() {
         @destroy="(row) => handleAction('destroy', row)"
         @force-destroy="(row) => handleAction('force_destroy', row)"
         @restore="(row) => handleAction('restore', row)"
-        @activate="(row) => handleAction('enable', row)"
-        @deactivate="(row) => handleAction('disable', row)"
+        @enable="(row) => handleAction('enable', row)"
+        @disable="(row) => handleAction('disable', row)"
         @export="showPdf = true"
         @advanced-search="handleAdvancedSearch"
       />
@@ -257,7 +259,7 @@ function handleAdvancedSearch() {
             <SheetDescription>Reporte: Permisos</SheetDescription>
           </SheetHeader>
           <div class="h-[70dvh]">
-            <iframe :src="`${route('export-users-pdf.index')}${urlQueryString}`" frameborder="0" width="100%" height="100%"></iframe>
+            <iframe :src="`${UserExporterController.indexToPdf().url}/${urlQueryString}`" frameborder="0" width="100%" height="100%"></iframe>
           </div>
         </SheetContent>
       </Sheet>

@@ -36,9 +36,9 @@ class UserPolicy
      */
     public function update(User $user, User $model): Response|bool|null
     {
-        if ($model->id === 1)
+        if ($model->hasRole(1) && !$user->hasRole(1))
         {
-            return Response::deny(__('The root user cannot be updated.'));
+            return Response::deny('Un Superusuario puede ser modificado sólo por otro Superusuario.');
         }
 
         return $user->can('update users') ? true : null;
@@ -49,18 +49,18 @@ class UserPolicy
      */
     public function delete(User $user, User $model): Response|bool|null
     {
-        if ($model->id === 1)
+        if ($model->hasRole(1) && !$user->hasRole(1))
         {
-            return Response::deny(__('The root user cannot be deleted.'));
+            return Response::deny('Un Superusuario puede ser eliminado sólo por otro Superusuario.');
         }
 
-        $superusersCount = User::withTrashed()->with('roles')->get()->filter(
-            fn($user) => $user->roles->where('id', 1)->toArray()
+        $creatorUsersCount = User::with('permissions')->get()->filter(
+            fn($user) => $user->permissions->where('name', 'create new users')->toArray()
         )->count();
 
-        if ($superusersCount === 1 && $model->hasRole(1))
+        if ($creatorUsersCount === 1 && $model->can('create new users'))
         {
-            return Response::deny(__('This is the only user with Superuser permissions.'));
+            return Response::deny("{$model->name} es el único usuario con el permiso para crear nuevos usuarios. Asigne este permiso a otro usuario antes de eliminarlo.");
         }
 
         if ($user->is($model))
@@ -84,16 +84,16 @@ class UserPolicy
      */
     public function forceDelete(User $user, User $model): Response|bool|null
     {
-        if ($model->id === 1)
+        if ($model->hasRole(1) && !$user->hasRole(1))
         {
-            return Response::deny(__('The root user cannot be deleted.'));
+            return Response::deny('Un Superusuario puede ser eliminado sólo por otro Superusuario.');
         }
 
-        $superusersCount = User::withTrashed()->with('roles')->get()->filter(
-            fn($user) => $user->roles->where('id', 1)->toArray()
+        $creatorUsersCount = User::with('permissions')->get()->filter(
+            fn($user) => $user->permissions->where('name', 'create new users')->toArray()
         )->count();
 
-        if ($superusersCount === 1 && $model->hasRole(1))
+        if ($creatorUsersCount === 1 && $model->can('create new users'))
         {
             return Response::deny(__('This is the only user with Superuser permissions.'));
         }
@@ -111,7 +111,7 @@ class UserPolicy
      */
     public function enable(User $user, User $model): bool|null
     {
-        return $user->can('activate users') ? true : null;
+        return $user->can('enable users') ? true : null;
     }
 
     /**
@@ -119,18 +119,13 @@ class UserPolicy
      */
     public function disable(User $user, User $model): Response|bool|null
     {
-        if ($model->id === 1)
-        {
-            return Response::deny(__('The root user cannot be deactivated.'));
-        }
-
-        $superusersCount = User::withTrashed()->with('roles')->get()->filter(
-            fn($user) => $user->roles->where('id', 1)->toArray()
+        $creatorUsersCount = User::with('permissions')->get()->filter(
+            fn($user) => $user->permissions->where('name', 'create new users')->toArray()
         )->count();
 
-        if ($superusersCount === 1 && $model->hasRole(1))
+        if ($creatorUsersCount === 1 && $model->can('create new users'))
         {
-            return Response::deny(__('This is the only user with Superuser permissions.'));
+            return Response::deny("{$model->name} es el único usuario con el permiso para crear nuevos usuarios. Asigne este permiso a otro usuario antes de desactivarlo.");
         }
 
         if ($user->is($model))
@@ -138,6 +133,6 @@ class UserPolicy
             return Response::deny(__('You cannot deactivate yourself.'));
         }
 
-        return $user->can('deactivate users') ? true : null;
+        return $user->can('disable users') ? true : null;
     }
 }

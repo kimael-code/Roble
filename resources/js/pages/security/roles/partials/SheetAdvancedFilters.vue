@@ -6,6 +6,7 @@ import { Permission } from '@/types';
 import { router } from '@inertiajs/vue3';
 import { Ref, ref } from 'vue';
 import ComboboxPermissions from './ComboboxPermissions.vue';
+import RoleController from "@/actions/App/Http/Controllers/Security/RoleController";
 
 defineProps<{
   show: boolean;
@@ -17,7 +18,7 @@ const emit = defineEmits(['close', 'advancedSearch']);
 const form: Ref<{ [key: string]: any }> = ref({});
 
 function submitSearch() {
-  router.visit(route('roles.index'), {
+  router.visit(RoleController.index(), {
     data: form.value,
     only: ['roles'],
     preserveScroll: true,

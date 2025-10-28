@@ -32,6 +32,7 @@ import { ArrowLeftIcon, EllipsisIcon, LoaderCircleIcon, PencilIcon, PlusIcon, Tr
 import { watch } from 'vue';
 import Permisos from './partials/Permisos.vue';
 import Usuarios from './partials/Usuarios.vue';
+import RoleController from "@/actions/App/Http/Controllers/Security/RoleController";
 
 const props = defineProps<{
   can: Can;
@@ -53,7 +54,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const { action, requestState, requestAction, resourceID } = useRequestActions('roles');
+const { action, requestState, requestAction, resourceID } = useRequestActions(RoleController);
 const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription } = useConfirmAction();
 
 watch(action, () => {
@@ -175,7 +176,7 @@ watch(action, () => {
               <Usuarios :filters :role-id="role.id" :users></Usuarios>
             </TabsContent>
             <TabsContent value="logs">
-              <ActivityLogs :filters :logs page-route-name="roles.show" :resource-id="role.id" />
+              <ActivityLogs :filters :logs :route="RoleController.show(role.id)" />
             </TabsContent>
           </Tabs>
         </div>

@@ -17,6 +17,7 @@ import { watchDebounced } from '@vueuse/core';
 import { useForm } from 'laravel-precognition-vue-inertia';
 import { LoaderCircleIcon, Search, Users } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
+import RoleController from "@/actions/App/Http/Controllers/Security/RoleController";
 
 const props = defineProps<{
   filters: { [index: string]: string | undefined };
@@ -46,7 +47,7 @@ type formRole = {
   permissions: string[];
 };
 
-const form = useForm('post', route('roles.store'), <formRole>{
+const form = useForm('post', RoleController.store().url, <formRole>{
   name: '',
   description: '',
   guard_name: 'web',
@@ -68,7 +69,7 @@ function submit() {
 }
 
 function index() {
-  router.visit(route('roles.index'), {
+  router.visit(RoleController.index(), {
     onStart: () => (buttonCancel.value = true),
     onFinish: () => (buttonCancel.value = false),
   });
@@ -79,7 +80,7 @@ watchDebounced(
   (s) => {
     if (s === '') search.value = undefined;
 
-    router.visit(route('roles.create'), {
+    router.visit(RoleController.create(), {
       data: { search: s },
       preserveScroll: true,
       preserveState: true,
@@ -91,7 +92,7 @@ watchDebounced(
 watch(openSheet, (isOpen) => {
   if (!isOpen) {
     search.value = undefined;
-    router.visit(route('roles.create'), { preserveScroll: true, preserveState: true });
+    router.visit(RoleController.create(), { preserveScroll: true, preserveState: true });
   }
 });
 

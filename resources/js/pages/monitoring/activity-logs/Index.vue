@@ -12,6 +12,7 @@ import { LogsIcon } from 'lucide-vue-next';
 import { computed, reactive, ref, watchEffect } from 'vue';
 import { columns, permissions, processingRowId } from './partials/columns';
 import SheetAdvancedFilters from './partials/SheetAdvancedFilters.vue';
+import ActivityLogController from "@/actions/App/Http/Controllers/Monitoring/ActivityLogController";
 
 const props = defineProps<{
   can: Can;
@@ -29,7 +30,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const { requestAction, requestState } = useRequestActions('activity-logs');
+const { requestAction, requestState } = useRequestActions(ActivityLogController);
 const showPdf = ref(false);
 const showAdvancedFilters = ref(false);
 const advancedSearchApplied = ref(false);
@@ -62,7 +63,7 @@ function handleSortingChange(item: any) {
       }
     });
 
-    router.visit('activity-logs', {
+    router.visit(ActivityLogController.index(), {
       data,
       only: ['logs'],
       preserveScroll: true,
@@ -88,7 +89,7 @@ const tableOptions = reactive<TableOptions<ActivityLog>>({
     };
   },
   getCoreRowModel: getCoreRowModel(),
-  getRowId: (row) => row.id,
+  getRowId: (row) => String(row.id),
   onSortingChange: handleSortingChange,
   onRowSelectionChange: (updaterOrValue) => valueUpdater(updaterOrValue, rowSelection),
   state: {
@@ -130,7 +131,7 @@ function handleAdvancedSearch() {
         :data="logs"
         :filters="filters"
         :search-only="['logs']"
-        :search-route="route('activity-logs.index')"
+        :search-route="ActivityLogController.index()"
         :table="table"
         :is-advanced-search="advancedSearchApplied"
         @search="(s) => (globalFilter = s)"
@@ -146,7 +147,7 @@ function handleAdvancedSearch() {
             <SheetDescription>Reporte: Trazas de Actividades de Usuarios</SheetDescription>
           </SheetHeader>
           <div class="h-[70dvh]">
-            <iframe :src="`${route('export-activity-logs-pdf.index')}${urlQueryString}`" frameborder="0" width="100%" height="100%"></iframe>
+            <iframe :src="`${ActivityLogController.index().url}/${urlQueryString}`" frameborder="0" width="100%" height="100%"></iframe>
           </div>
         </SheetContent>
       </Sheet>

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Security;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Models\User;
 use App\Notifications\ActionHandledOnModel;
 
@@ -12,10 +13,10 @@ class DisableUser
         $user->disabled_at = now();
         $user->save();
 
-        activity(__('Security/Users'))
+        activity(ActivityLog::LOG_NAMES['users'])
             ->causedBy(auth()->user())
             ->performedOn($user)
-            ->event('disabled')
+            ->event(ActivityLog::EVENT_NAMES['disabled'])
             ->withProperties([
                 'attributes' => $user->getChanges(),
                 'old' => $user->getPrevious(),
@@ -35,12 +36,12 @@ class DisableUser
             ]));
 
         session()->flash('message', [
-            'message' => "({$user->name})",
+            'message' => "{$user->name}",
             'title' => __('DISABLED!'),
             'type'  => 'warning',
         ]);
 
-        $users = User::permission('activate users')->get()->filter(
+        $users = User::permission('disable users')->get()->filter(
             fn (User $user) => $user->id != auth()->user()->id
         )->all();
 
@@ -53,7 +54,7 @@ class DisableUser
                     'name' => "({$user->name})",
                     'timestamp' => now(),
                 ],
-                'enabled',
+                'disabled',
                 ['routeName' => 'users', 'routeParam' => 'user']
             ));
         }

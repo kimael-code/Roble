@@ -23,8 +23,8 @@ export const permissions = ref<Can>({
   read: false,
   update: false,
   delete: false,
-  activate: false,
-  deactivate: false,
+  enable: false,
+  disable: false,
   export: false,
 });
 
@@ -143,11 +143,6 @@ export const columns = [
       ]);
     },
     cell: (info) => h('div', { class: 'px-2' }, info.getValue()),
-  }),
-  columnHelper.accessor('db_operation', {
-    header: 'Operación BD',
-    cell: (info) => h('div', info.getValue()),
-    enableSorting: false,
   }),
   columnHelper.accessor('created_at_human', {
     header: ({ column }) => {

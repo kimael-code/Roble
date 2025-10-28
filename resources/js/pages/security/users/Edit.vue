@@ -17,6 +17,7 @@ import { watchDebounced } from '@vueuse/core';
 import { useForm } from 'laravel-precognition-vue-inertia';
 import { LoaderCircleIcon, Search, UserIcon } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
+import UserController from "@/actions/App/Http/Controllers/Security/UserController";
 
 const props = defineProps<{
   filters: SearchFilter;
@@ -67,7 +68,7 @@ type formUser = {
   permissions: string[];
 };
 
-const form = useForm('put', route('users.update', props.user.id), <formUser>{
+const form = useForm('put', UserController.update(props.user.id).url, <formUser>{
   name: props.user.name,
   email: props.user.email,
   is_external: props.user.is_external,
@@ -118,7 +119,7 @@ function submit() {
 }
 
 function index() {
-  router.visit(route('users.index'), {
+  router.visit(UserController.index(), {
     onStart: () => (buttonCancel.value = true),
     onFinish: () => (buttonCancel.value = false),
   });
@@ -129,7 +130,7 @@ watchDebounced(
   (s) => {
     if (s === '') search.value = undefined;
 
-    router.visit(route('users.edit', props.user.id), {
+    router.visit(UserController.edit(props.user.id), {
       data: { search: s },
       preserveScroll: true,
       preserveState: true,
@@ -141,7 +142,7 @@ watchDebounced(
 watch([openSheetPermissions, openSheetRoles, openSheetOUs], ([isOpenSheetPermissions, isOpenSheetRoles, isOpenSheetOUs]) => {
   if (!isOpenSheetRoles || !isOpenSheetPermissions || !isOpenSheetOUs) {
     search.value = undefined;
-    router.visit(route('users.edit', props.user.id), { preserveScroll: true, preserveState: true });
+    router.visit(UserController.edit(props.user.id), { preserveScroll: true, preserveState: true });
   }
 });
 

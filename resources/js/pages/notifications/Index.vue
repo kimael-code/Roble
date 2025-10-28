@@ -10,6 +10,7 @@ import { BreadcrumbItem, Notification, Pagination } from '@/types';
 import { Head, router, WhenVisible } from '@inertiajs/vue3';
 import { Bell, CalendarClockIcon, CheckIcon } from 'lucide-vue-next';
 import { DateTime } from 'luxon';
+import NotificationController from "@/actions/App/Http/Controllers/NotificationController";
 
 router.reload();
 
@@ -26,13 +27,13 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 function markAsRead(notificationID: string) {
-  router.visit(route('notifications.mark-as-read', notificationID), {
+  router.visit(NotificationController.markAsRead(notificationID), {
     method: 'put',
   });
 }
 
 function markAllAsRead() {
-  router.visit(route('notifications.mark-all-as-read'), {
+  router.visit(NotificationController.markAllAsRead(), {
     method: 'post',
   });
 }

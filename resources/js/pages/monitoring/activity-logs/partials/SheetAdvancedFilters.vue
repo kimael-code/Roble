@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TagsInput, TagsInputInput, TagsInputItem, TagsInputItemDelete, TagsInputItemText } from '@/components/ui/tags-input';
 import { User } from '@/types';
 import { router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, Ref } from 'vue';
 import ComboboxEvents from './ComboboxEvents.vue';
 import ComboboxLogNames from './ComboboxLogNames.vue';
 import ComboboxUsers from './ComboboxUsers.vue';
@@ -20,17 +20,7 @@ defineProps<{
 
 const emit = defineEmits(['close', 'advancedSearch']);
 
-const form = ref({
-  date: '',
-  date_range: {},
-  ip_dirs: [],
-  selected_users: [],
-  selected_events: [],
-  selected_modules: [],
-  time: '',
-  time_from: '',
-  time_until: '',
-});
+const form: Ref<{ [key: string]: any }> = ref({});
 
 function submitSearch() {
   router.reload({
@@ -58,13 +48,13 @@ function submitSearch() {
             <TabsTrigger value="ipAddrs">Direcciones IP</TabsTrigger>
           </TabsList>
           <TabsContent value="users">
-            <ComboboxUsers :users @selected="(u) => (form.selected_users = u)" />
+            <ComboboxUsers :users @selected="(u) => (form.users = u)" />
           </TabsContent>
           <TabsContent value="events">
-            <ComboboxEvents :events @selected="(e) => (form.selected_events = e)" />
+            <ComboboxEvents :events @selected="(e) => (form.events = e)" />
           </TabsContent>
           <TabsContent value="logNames">
-            <ComboboxLogNames :log-names="logNames" @selected="(l) => (form.selected_modules = l)" />
+            <ComboboxLogNames :log-names="logNames" @selected="(l) => (form.modules = l)" />
           </TabsContent>
           <TabsContent value="dateTime">
             <DateTimePickers
@@ -76,8 +66,8 @@ function submitSearch() {
             />
           </TabsContent>
           <TabsContent value="ipAddrs">
-            <TagsInput v-model="form.ip_dirs">
-              <TagsInputItem v-for="item in form.ip_dirs" :key="item" :value="item">
+            <TagsInput v-model="form.ips">
+              <TagsInputItem v-for="item in form.ips" :key="item" :value="item">
                 <TagsInputItemText />
                 <TagsInputItemDelete />
               </TagsInputItem>

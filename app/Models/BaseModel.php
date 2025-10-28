@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Support\Traits\MergesAppends;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
@@ -102,9 +103,28 @@ class BaseModel extends Model
             ]));
     }
 
-    public function tapActivity(Activity $activity): void
+    public function tapActivity(Activity $activity, string $eventName): void
     {
+        switch ($eventName)
+        {
+            case 'created':
+                $activity->event = ActivityLog::EVENT_NAMES['created'];
+                break;
+            case 'updated':
+                $activity->event = ActivityLog::EVENT_NAMES['updated'];
+                break;
+            case 'deleted':
+                $activity->event = ActivityLog::EVENT_NAMES['deleted'];
+                break;
+            case 'restored':
+                $activity->event = ActivityLog::EVENT_NAMES['restored'];
+                break;
+            default:
+                break;
+        }
+
         $activity->properties = $activity->properties
+            ->put('causer', User::with('person')->find(auth()->user()->id)->toArray())
             ->put('request', [
                 'ip_address' => request()->ip(),
                 'user_agent' => request()->header('user-agent'),
@@ -112,7 +132,6 @@ class BaseModel extends Model
                 'referer' => request()->header('referer'),
                 'http_method' => request()->method(),
                 'request_url' => request()->fullUrl(),
-            ])
-            ->put('causer', User::with('person')->find(auth()->user()->id)->toArray());
+            ]);
     }
 }

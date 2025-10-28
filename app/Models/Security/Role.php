@@ -2,6 +2,7 @@
 
 namespace App\Models\Security;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Observers\Security\RoleObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -91,7 +92,8 @@ class Role extends SpatieRole
     {
         return LogOptions::defaults()
             ->logAll()
-            ->useLogName(__($this->traceLogName))
+            ->logOnlyDirty()
+            ->useLogName('Seguridad/Roles')
             ->setDescriptionForEvent(fn(string $eventName) => __(':event :model [:modelName] [:modelDescription]', [
                 'event' => __($eventName),
                 'model' => __($this->traceModelType),
@@ -100,9 +102,28 @@ class Role extends SpatieRole
             ]));
     }
 
-    public function tapActivity(Activity $activity): void
+    public function tapActivity(Activity $activity, string $eventName): void
     {
+        switch ($eventName)
+        {
+            case 'created':
+                $activity->event = ActivityLog::EVENT_NAMES['created'];
+                break;
+            case 'updated':
+                $activity->event = ActivityLog::EVENT_NAMES['updated'];
+                break;
+            case 'deleted':
+                $activity->event = ActivityLog::EVENT_NAMES['deleted'];
+                break;
+            case 'restored':
+                $activity->event = ActivityLog::EVENT_NAMES['restored'];
+                break;
+            default:
+                break;
+        }
+
         $activity->properties = $activity->properties
+            ->put('causer', \App\Models\User::with('person')->find(auth()->user()->id)->toArray())
             ->put('request', [
                 'ip_address' => request()->ip(),
                 'user_agent' => request()->header('user-agent'),
@@ -110,8 +131,7 @@ class Role extends SpatieRole
                 'referer' => request()->header('referer'),
                 'http_method' => request()->method(),
                 'request_url' => request()->fullUrl(),
-            ])
-            ->put('causer', \App\Models\User::with('person')->find(auth()->user()->id)->toArray());
+            ]);
     }
 
     #[Scope]

@@ -44,10 +44,6 @@ class ExportPermissionsToPdf extends BasePdf
         $this->MultiCell(w: 40, h: 0, align: 'L', border: 'T', ln: 0, txt: 'Rol(es)');
         $this->setFont(family: 'iosevkafixedss12', size: 10);
         $this->MultiCell(w: 0, h: 0, align: 'L', border: 'T', ln: 1, txt: $filters['roles'] ?: 'Todos');
-        $this->setFont(family: 'helvetica', style: 'B', size: 10);
-        $this->MultiCell(w: 40, h: 0, align: 'L', border: 'T', ln: 0, txt: 'Operación');
-        $this->setFont(family: 'iosevkafixedss12', size: 10);
-        $this->MultiCell(w: 0, h: 0, align: 'L', border: 'T', ln: 1, txt: $filters['operations'] ?: 'Todas');
 
         $this->setLineStyle([
             'width' => 0.75 / $this->k,
@@ -65,9 +61,8 @@ class ExportPermissionsToPdf extends BasePdf
         $this->setFont(family: 'dejavusans', style: 'B', size: 9);
         $this->MultiCell(w: 10, h: 5, align: 'L', ln: 0, txt: '#');
         $this->MultiCell(w: 46, h: 5, align: 'L', ln: 0, txt: $this->getString('Nombre', 'name'));
-        $this->MultiCell(w: 46, h: 5, align: 'L', ln: 0, txt: $this->getString('Descripción', 'description'));
+        $this->MultiCell(w: 71.7, h: 5, align: 'L', ln: 0, txt: $this->getString('Descripción', 'description'));
         $this->MultiCell(w: 30, h: 5, align: 'L', ln: 0, txt: $this->getString('Fecha Creado', 'created_at_human'));
-        $this->MultiCell(w: 25.7, h: 5, align: 'L', ln: 0, txt: 'Operación BD');
         $this->MultiCell(w: 45.5, h: 5, align: 'L', ln: 0, txt: 'Rol/es');
         $this->MultiCell(w: 45.5, h: 5, align: 'L', ln: 1, txt: 'Usuario/s');
 
@@ -130,7 +125,6 @@ class ExportPermissionsToPdf extends BasePdf
         $filters = [
             'roles' => '',
             'users' => '',
-            'operations' => '',
             'set_menu' => '',
             'search' => '',
         ];
@@ -143,11 +137,6 @@ class ExportPermissionsToPdf extends BasePdf
         if (isset($this->filters['users']))
         {
             $filters['users'] .= Arr::join($this->filters['users'], ', ');
-        }
-
-        if (isset($this->filters['operations']))
-        {
-            $filters['operations'] .= Arr::join($this->filters['operations'], ', ');
         }
 
         if (isset($this->filters['search']))
@@ -174,9 +163,13 @@ class ExportPermissionsToPdf extends BasePdf
     {
         if ($col === 'created_at_human')
         {
-            if (!isset($this->filters['sort_by']))
+            if (!isset($this->filters['sort_by']) && empty($this->filters))
             {
                 return "↓ {$txt}";
+            }
+            elseif (!isset($this->filters['sort_by']) && !empty($this->filters))
+            {
+                return "↑ {$txt}";
             }
             elseif (isset($this->filters['sort_by']['created_at']))
             {

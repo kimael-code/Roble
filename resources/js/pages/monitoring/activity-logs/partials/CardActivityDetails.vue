@@ -30,31 +30,35 @@ const cardHeader = computed(() => {
     title: '',
   };
 
+  data.title = props.log.event.toUpperCase();
   switch (props.log.event) {
-    case 'authenticated':
+    case 'inicio de sesión':
+    case 'cierre de sesión':
+    case 'inicio de sesión fallido':
+    case 'bloqueo':
+    case 'verificación':
+    case 'cambio de contraseña':
       data.css = 'text-primary';
       data.description = 'Datos técnicos de la petición';
-      data.title = 'AUTHENTICATED';
       break;
-    case 'authorized':
+    case 'autorización':
       data.css = 'text-primary';
       data.description = 'Datos técnicos de los objetos procesados en la autorización';
-      data.title = 'AUTHORIZED';
       break;
-    case 'created':
+    case 'creación':
+    case 'restauración':
+    case 'activación':
       data.css = 'text-green-500';
-      data.description = props.log.subject_type;
-      data.title = 'CREATED';
+      data.description = `${props.log.causer.name} ${props.log.description}`;
       break;
-    case 'updated':
-      data.css = 'text-green-500';
-      data.description = props.log.subject_type;
-      data.title = 'UPDATED';
+    case 'modificación':
+    case 'desactivación':
+      data.css = 'text-amber-500';
+      data.description = `${props.log.causer.name} ${props.log.description}`;
       break;
-    case 'deleted':
+    case 'eliminación':
       data.css = 'text-red-500';
-      data.description = props.log.subject_type;
-      data.title = 'DELETED';
+      data.description = `${props.log.causer.name} ${props.log.description}`;
       break;
 
     default:
@@ -132,7 +136,7 @@ function compareObjects(obj1: GenericModel, obj2: GenericModel) {
       <CardTitle :class="cardHeader.css">{{ cardHeader.title }}</CardTitle>
       <CardDescription>{{ cardHeader.description }}</CardDescription>
     </CardHeader>
-    <CardContent v-if="log.event === 'created'">
+    <CardContent v-if="log.event === 'creación' || log.event === 'restauración'">
       <Table>
         <TableCaption>Datos del registro creado.</TableCaption>
         <TableHeader>
@@ -149,7 +153,7 @@ function compareObjects(obj1: GenericModel, obj2: GenericModel) {
         </TableBody>
       </Table>
     </CardContent>
-    <CardContent v-else-if="log.event === 'deleted'">
+    <CardContent v-else-if="log.event === 'eliminación'">
       <Table>
         <TableCaption>Datos del registro eliminado.</TableCaption>
         <TableHeader>
@@ -166,7 +170,7 @@ function compareObjects(obj1: GenericModel, obj2: GenericModel) {
         </TableBody>
       </Table>
     </CardContent>
-    <CardContent v-else-if="log.event === 'updated'">
+    <CardContent v-else-if="log.event === 'modificación' || log.event === 'activación' || log.event === 'desactivación'">
       <Table>
         <TableCaption>Datos del registro modificado.</TableCaption>
         <TableHeader>
@@ -192,7 +196,7 @@ function compareObjects(obj1: GenericModel, obj2: GenericModel) {
         </TableBody>
       </Table>
     </CardContent>
-    <CardContent v-else-if="log.event === 'authorized'">
+    <CardContent v-else-if="log.event === 'autorización'">
       <div class="grid w-full items-center gap-4">
         <div class="space-y-1">
           <p class="text-sm leading-none font-medium">Propiedades de los Registros:</p>
@@ -203,7 +207,7 @@ function compareObjects(obj1: GenericModel, obj2: GenericModel) {
     <CardContent v-else>
       <div class="grid w-full items-center gap-4">
         <div class="space-y-1">
-          <pre class="text-xs text-pretty text-muted-foreground">{{ log.properties.request }}</pre>
+          <pre class="text-xs text-pretty text-muted-foreground">{{ log.properties }}</pre>
         </div>
       </div>
     </CardContent>

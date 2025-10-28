@@ -168,5 +168,11 @@
   "Not allowed. Contact Technical Support if you need to update your information.": "No permitido. Contacte con Soporte Técnico si necesita actualizar sus datos.",
   "deleted user [:modelName] [:modelEmail]": "eliminó usuario [:modelName] [:modelEmail]",
   "restored user [:modelName] [:modelEmail]": "restauró usuario [:modelName] [:modelEmail]",
-  "permanently deleted user [:modelName] [:modelEmail]": "eliminó permanentemente usuario [:modelName] [:modelEmail]"
+  "permanently deleted user [:modelName] [:modelEmail]": "eliminó permanentemente usuario [:modelName] [:modelEmail]",
+  "The record with ID=1 is protected and cannot be modified or deleted.": "El registro con ID=1 está protegido y no puede ser modificado ni eliminado.",
+  "auth.superuser_already_exists": "Ya existe un Superusuario activo en el sistema. Para crear o asignar el rol de Superusuario a otros usuarios, debe acceder al módulo Seguridad/Usuarios del sistema desde una cuenta de Superusuario activa.",
+
+  "ID Number": "N° de CI",
+  "User Name": "Nombre de Usuario",
+  "Password": "Contraseña"
 }

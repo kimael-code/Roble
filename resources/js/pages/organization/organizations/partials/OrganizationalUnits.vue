@@ -5,10 +5,12 @@ import { router } from '@inertiajs/vue3';
 import { getCoreRowModel, SortingState, TableOptions, useVueTable } from '@tanstack/vue-table';
 import { reactive, ref } from 'vue';
 import { columns } from './columnsOrganizationalUnit';
+import { show } from "@/actions/App/Http/Controllers/Organization/OrganizationController";
+
 
 interface Props {
   filters: object;
-  resourceId: string | number;
+  resourceId: number;
   ous: PaginatedCollection<OrganizationalUnit>;
 }
 const props = defineProps<Props>();
@@ -27,7 +29,7 @@ function handleSortingChange(item: any) {
       data[sortBy] = sortDirection;
     });
 
-    router.visit(route('organizations.show', props.resourceId), {
+    router.visit(show(props.resourceId), {
       data,
       only: ['ous'],
       preserveScroll: true,
@@ -53,7 +55,7 @@ const tableOptions = reactive<TableOptions<OrganizationalUnit>>({
     };
   },
   getCoreRowModel: getCoreRowModel(),
-  getRowId: (row) => row.id,
+  getRowId: (row) => String(row.id),
   onSortingChange: handleSortingChange,
   state: {
     get sorting() {
@@ -74,7 +76,7 @@ const table = useVueTable(tableOptions);
     :data="ous"
     :filters
     :search-only="['ous']"
-    :search-route="route('organizations.show', resourceId)"
+    :search-route="show(resourceId)"
     :table
     @search="(s) => (globalFilter = s)"
   />

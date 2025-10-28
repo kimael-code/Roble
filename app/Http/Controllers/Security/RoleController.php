@@ -8,7 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Props\Security\RoleProps;
 use App\Http\Requests\Security\StoreRoleRequest;
 use App\Http\Requests\Security\UpdateRoleRequest;
+use App\Actions\Security\BatchDeleteRole;
 use App\Models\Security\Role;
+use Illuminate\Http\RedirectResponse;
 use Gate;
 use Inertia\Inertia;
 
@@ -84,5 +86,12 @@ class RoleController extends Controller
         $role->delete();
 
         return redirect(route('roles.index'));
+    }
+
+    public function batchDestroy(): RedirectResponse
+    {
+        $result = BatchDeleteRole::execute(request()->all());
+
+        return redirect(route('roles.index'))->with('message', $result);
     }
 }

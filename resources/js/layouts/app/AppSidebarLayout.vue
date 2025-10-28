@@ -13,11 +13,11 @@ import { toast } from 'vue-sonner';
 import 'vue-sonner/style.css';
 
 interface Props {
-  breadcrumbs?: BreadcrumbItemType[];
+    breadcrumbs?: BreadcrumbItemType[];
 }
 
 withDefaults(defineProps<Props>(), {
-  breadcrumbs: () => [],
+    breadcrumbs: () => [],
 });
 
 const page = usePage();
@@ -78,11 +78,11 @@ watchImmediate(
 </script>
 
 <template>
-  <AppShell variant="sidebar">
-    <AppSidebar />
-    <AppContent variant="sidebar">
-      <AppSidebarHeader :breadcrumbs="breadcrumbs" />
-      <slot />
-    </AppContent>
-  </AppShell>
+    <AppShell variant="sidebar">
+        <AppSidebar />
+        <AppContent variant="sidebar" class="overflow-x-hidden">
+            <AppSidebarHeader :breadcrumbs="breadcrumbs" />
+            <slot />
+        </AppContent>
+    </AppShell>
 </template>

@@ -32,6 +32,7 @@ import { ArrowLeftIcon, EllipsisIcon, KeySquare, LoaderCircleIcon, PencilIcon, P
 import { watch } from 'vue';
 import Roles from './partials/Roles.vue';
 import Usuarios from './partials/Usuarios.vue';
+import PermissionController from "@/actions/App/Http/Controllers/Security/PermissionController";
 
 const props = defineProps<{
   can: Can;
@@ -53,7 +54,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const { action, requestState, requestAction, resourceID } = useRequestActions('permissions');
+const { action, requestState, requestAction, resourceID } = useRequestActions(PermissionController);
 const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription } = useConfirmAction();
 
 watch(action, () => {
@@ -178,7 +179,7 @@ watch(action, () => {
               <Usuarios :filters :permission-id="permission.id" :users></Usuarios>
             </TabsContent>
             <TabsContent value="logs">
-              <ActivityLogs :filters :logs page-route-name="permissions.show" :resource-id="permission.id" />
+              <ActivityLogs :filters :logs :route="PermissionController.show(permission.id)" />
             </TabsContent>
           </Tabs>
         </div>

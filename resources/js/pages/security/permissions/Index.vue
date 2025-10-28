@@ -22,13 +22,14 @@ import { KeySquare } from 'lucide-vue-next';
 import { computed, reactive, ref, watch, watchEffect } from 'vue';
 import { columns, permissions as DTpermissions, processingRowId } from './partials/columns';
 import SheetAdvancedFilters from './partials/SheetAdvancedFilters.vue';
+import PermissionController from "@/actions/App/Http/Controllers/Security/PermissionController";
+import PermissionExporterController from "@/actions/App/Http/Controllers/Exporters/PermissionExporterController";
 
 const props = defineProps<{
   can: Can;
   filters: SearchFilter;
   users?: Array<User>;
   roles?: Array<Role>;
-  operations?: Array<string>;
   permissions: PaginatedCollection<Permission>;
 }>();
 
@@ -39,7 +40,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const { action, resourceID, requestState, requestAction } = useRequestActions('permissions');
+const { action, resourceID, requestState, requestAction } = useRequestActions(PermissionController);
 const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription, alertData } = useConfirmAction();
 const showPdf = ref(false);
 const showAdvancedFilters = ref(false);
@@ -73,7 +74,7 @@ function handleSortingChange(item: any) {
       }
     });
 
-    router.visit(route('permissions.index'), {
+    router.visit(PermissionController.index(), {
       data,
       only: ['permissions'],
       preserveScroll: true,
@@ -110,7 +111,7 @@ const tableOptions = reactive<TableOptions<Permission>>({
     };
   },
   getCoreRowModel: getCoreRowModel(),
-  getRowId: (row) => row.id,
+  getRowId: (row) => String(row.id),
   onSortingChange: handleSortingChange,
   onRowSelectionChange: (updaterOrValue) => valueUpdater(updaterOrValue, rowSelection),
   state: {
@@ -174,7 +175,7 @@ function handleAdvancedSearch() {
         :data="permissions"
         :filters="filters"
         :search-only="['permissions']"
-        :search-route="route('permissions.index')"
+        :search-route="PermissionController.index()"
         :table="table"
         :is-advanced-search="advancedSearchApplied"
         :is-loading-new="requestState.create"
@@ -211,13 +212,12 @@ function handleAdvancedSearch() {
             <SheetDescription>Reporte: Permisos</SheetDescription>
           </SheetHeader>
           <div class="h-[70dvh]">
-            <iframe :src="`${route('export-permissions-pdf.index')}${urlQueryString}`" frameborder="0" width="100%" height="100%"></iframe>
+            <iframe :src="`${PermissionExporterController.indexToPdf().url}/${urlQueryString}`" frameborder="0" width="100%" height="100%"></iframe>
           </div>
         </SheetContent>
       </Sheet>
 
       <SheetAdvancedFilters
-        :operations
         :roles
         :users
         :show="showAdvancedFilters"

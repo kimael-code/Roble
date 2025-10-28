@@ -20,6 +20,7 @@ import { getCoreRowModel, RowSelectionState, SortingState, TableOptions, useVueT
 import { Building } from 'lucide-vue-next';
 import { reactive, ref, watch, watchEffect } from 'vue';
 import { columns, permissions, processingRowId } from './partials/columns';
+import routes from "@/actions/App/Http/Controllers/Organization/OrganizationController";
 
 const props = defineProps<{
   can: Can;
@@ -34,7 +35,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const { action, resourceID, requestState, requestAction } = useRequestActions('organizations');
+const { action, resourceID, requestState, requestAction } = useRequestActions(routes);
 const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription, alertData } = useConfirmAction();
 
 permissions.value = props.can;
@@ -56,7 +57,7 @@ function handleSortingChange(item: any) {
       }
     });
 
-    router.visit(route('organizations.index'), {
+    router.visit(routes.index(), {
       data,
       only: ['organizations'],
       preserveScroll: true,
@@ -93,7 +94,7 @@ const tableOptions = reactive<TableOptions<Organization>>({
     };
   },
   getCoreRowModel: getCoreRowModel(),
-  getRowId: (row) => row.id,
+  getRowId: (row) => String(row.id),
   onSortingChange: handleSortingChange,
   onRowSelectionChange: (updaterOrValue) => valueUpdater(updaterOrValue, rowSelection),
   state: {
@@ -150,7 +151,7 @@ watchEffect(() => (resourceID.value === null ? (processingRowId.value = null) : 
         :data="organizations"
         :filters="filters"
         :search-only="['organizations']"
-        :search-route="route('organizations.index')"
+        :search-route="routes.index()"
         :table="table"
         :is-loading-new="requestState.create"
         :is-loading-dropdown="requestState.batchDestroy"

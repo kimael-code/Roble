@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { Method } from '@inertiajs/core';
+import { LinkComponentBaseProps, Method } from '@inertiajs/core';
 import { Link } from '@inertiajs/vue3';
 
 interface Props {
-    href: string;
+    href: LinkComponentBaseProps['href'];
     tabindex?: number;
     method?: Method;
     as?: string;

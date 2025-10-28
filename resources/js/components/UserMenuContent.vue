@@ -1,9 +1,17 @@
 <script setup lang="ts">
 import UserInfo from '@/components/UserInfo.vue';
-import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import {
+    DropdownMenuGroup,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { logout } from '@/routes';
+import { edit } from '@/routes/profile';
 import type { User } from '@/types';
 import { Link, router } from '@inertiajs/vue3';
 import { Bell, LogOut, Settings } from 'lucide-vue-next';
+import { index } from "@/routes/notifications/index";
 
 interface Props {
     user: User;
@@ -25,13 +33,13 @@ defineProps<Props>();
     <DropdownMenuSeparator />
     <DropdownMenuGroup>
         <DropdownMenuItem :as-child="true">
-            <Link class="block w-full" :href="route('profile.edit')" prefetch as="button">
+            <Link class="block w-full" :href="edit()" prefetch as="button">
                 <Settings class="mr-2 h-4 w-4" />
                 Configuración
             </Link>
         </DropdownMenuItem>
         <DropdownMenuItem :as-child="true">
-            <Link class="block w-full" :href="route('notifications.index')" as="button">
+            <Link class="block w-full" :href="index()" as="button">
                 <Bell class="mr-2 h-4 w-4" />
                 Notificaciones
             </Link>
@@ -39,7 +47,13 @@ defineProps<Props>();
     </DropdownMenuGroup>
     <DropdownMenuSeparator />
     <DropdownMenuItem :as-child="true">
-        <Link class="block w-full" method="post" :href="route('logout')" @click="handleLogout" as="button">
+        <Link
+            class="block w-full"
+            :href="logout()"
+            @click="handleLogout"
+            as="button"
+            data-test="logout-button"
+        >
             <LogOut class="mr-2 h-4 w-4" />
             Salir
         </Link>

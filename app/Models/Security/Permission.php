@@ -2,6 +2,7 @@
 
 namespace App\Models\Security;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Models\User;
 use App\Observers\Security\PermissionObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
@@ -10,7 +11,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -47,7 +47,7 @@ class Permission extends SpatiePermission
      *
      * @var array
      */
-    protected $appends = ['created_at_human', 'updated_at_human', 'db_operation'];
+    protected $appends = ['created_at_human', 'updated_at_human',];
 
     protected function createdAtHuman(): Attribute
     {
@@ -89,24 +89,6 @@ class Permission extends SpatiePermission
         );
     }
 
-    protected function dbOperation(): Attribute
-    {
-        return Attribute::make(
-            get: fn(mixed $value, array $attributes) => match (true)
-            {
-                Str::contains($attributes['name'], 'create') => 'CREATE',
-                Str::contains($attributes['name'], 'read') => 'SELECT',
-                Str::contains($attributes['name'], 'update') => 'UPDATE',
-                Str::contains($attributes['name'], 'delete') => 'DELETE',
-                Str::contains($attributes['name'], 'export') => 'SELECT',
-                Str::contains($attributes['name'], 'activate') => 'UPDATE',
-                Str::contains($attributes['name'], 'deactivate') => 'UPDATE',
-                Str::contains($attributes['name'], 'restore') => 'UPDATE',
-                default => __('NOT APPLICABLE'),
-            }
-        );
-    }
-
     public function getActivityLogOptions(): LogOptions
     {
         return LogOptions::defaults()
@@ -120,9 +102,28 @@ class Permission extends SpatiePermission
             ]));
     }
 
-    public function tapActivity(Activity $activity): void
+    public function tapActivity(Activity $activity, string $eventName): void
     {
+        switch ($eventName)
+        {
+            case 'created':
+                $activity->event = ActivityLog::EVENT_NAMES['created'];
+                break;
+            case 'updated':
+                $activity->event = ActivityLog::EVENT_NAMES['updated'];
+                break;
+            case 'deleted':
+                $activity->event = ActivityLog::EVENT_NAMES['deleted'];
+                break;
+            case 'restored':
+                $activity->event = ActivityLog::EVENT_NAMES['restored'];
+                break;
+            default:
+                break;
+        }
+
         $activity->properties = $activity->properties
+            ->put('causer', User::with('person')->find(auth()->user()->id)->toArray())
             ->put('request', [
                 'ip_address' => request()->ip(),
                 'user_agent' => request()->header('user-agent'),
@@ -130,8 +131,7 @@ class Permission extends SpatiePermission
                 'referer' => request()->header('referer'),
                 'http_method' => request()->method(),
                 'request_url' => request()->fullUrl(),
-            ])
-            ->put('causer', User::with('person')->find(auth()->user()->id)->toArray());
+            ]);
     }
 
     #[Scope]
@@ -179,7 +179,7 @@ class Permission extends SpatiePermission
                 foreach ($userEmails as $userEmail)
                 {
                     $query
-                        ->whereHas('users', function (Builder $query) use ($userEmail)
+                        ->orWhereHas('users', function (Builder $query) use ($userEmail)
                         {
                             $query->where('email', $userEmail);
                         })
@@ -192,42 +192,6 @@ class Permission extends SpatiePermission
                                 $query->where('id', $role->id);
                             }
                         });
-                }
-            })
-            ->when($filters['operations'] ?? null, function (Builder $query, array $operations)
-            {
-                foreach ($operations as $operation)
-                {
-                    switch ($operation)
-                    {
-                        case 'Creación':
-                            $query->orWhere('name', 'ilike', '%create%');
-                            break;
-                        case 'Lectura':
-                            $query->orWhere('name', 'ilike', '%read%');
-                            break;
-                        case 'Actualización':
-                            $query->orWhere('name', 'ilike', '%update%');
-                            break;
-                        case 'Eliminación':
-                            $query->orWhere('name', 'ilike', '%delete%');
-                            break;
-                        case 'Exportación':
-                            $query->orWhere('name', 'ilike', '%export%');
-                            break;
-                        case 'Activación':
-                            $query->orWhere('name', 'ilike', '%activate%');
-                            break;
-                        case 'Desactivación':
-                            $query->orWhere('name', 'ilike', '%deactivate%');
-                            break;
-                        case 'Restauración':
-                            $query->orWhere('name', 'ilike', '%restore%');
-                            break;
-                        default:
-                            # code...
-                            break;
-                    }
                 }
             });
     }

@@ -4,13 +4,13 @@ namespace App\Actions\Security;
 
 use App\Models\User;
 
-class BatchActivateUser
+class BatchEnableUser
 {
     public static function execute(array $ids): array
     {
         $msg = [
             'message' => 'registros activados.',
-            'title' => __('PROCESSED!'),
+            'title' => '¡PROCESADO!',
             'type' => 'success',
         ];
         $activateCount = 0;
@@ -24,7 +24,7 @@ class BatchActivateUser
                 continue;
             }
 
-            $user = User::find($id);
+            $user = User::withTrashed()->find($id);
 
             if ($user->is(auth()->user()))
             {
@@ -36,7 +36,7 @@ class BatchActivateUser
             {
                 $nonActivateCount += 1;
                 $nonActivateReasons .= $nonActivateCount > 1 ? ', ' : '';
-                $nonActivateReasons .= "usuario/a {$user->name} ya está activado/a";
+                $nonActivateReasons .= "{$user->name} ya está activado";
             }
             else
             {

@@ -2,7 +2,16 @@
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import {
+    Sidebar,
+    SidebarContent,
+    SidebarFooter,
+    SidebarHeader,
+    SidebarMenu,
+    SidebarMenuButton,
+    SidebarMenuItem,
+} from '@/components/ui/sidebar';
+import { dashboard } from '@/routes';
 import { useRememberScroll } from '@/composables/useRememberScroll';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
@@ -20,7 +29,7 @@ const hasSuperuserRole = computed(() => page.props.auth?.user?.roles?.some((r) =
 const mainNavItems: NavItem[] = [
   {
     title: 'Tablero',
-    href: '/dashboard',
+    href: dashboard(),
     icon: LayoutGrid,
   },
 ];
@@ -94,7 +103,7 @@ const footerNavItems: NavItem[] = [
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton size="lg" as-child>
-            <Link :href="route('dashboard')">
+            <Link :href="dashboard()">
               <AppLogo />
             </Link>
           </SidebarMenuButton>

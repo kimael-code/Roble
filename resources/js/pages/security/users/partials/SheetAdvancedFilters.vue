@@ -8,6 +8,7 @@ import { Ref, ref } from 'vue';
 import ComboboxPermissions from './ComboboxPermissions.vue';
 import ComboboxRoles from './ComboboxRoles.vue';
 import ComboboxStatus from './ComboboxStatus.vue';
+import UserController from "@/actions/App/Http/Controllers/Security/UserController";
 
 defineProps<{
   show: boolean;
@@ -21,7 +22,7 @@ const emit = defineEmits(['close', 'advancedSearch']);
 const form: Ref<{ [key: string]: any }> = ref({});
 
 function submitSearch() {
-  router.visit(route('users.index'), {
+  router.visit(UserController.index(), {
     data: form.value,
     only: ['users'],
     preserveScroll: true,

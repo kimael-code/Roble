@@ -2,6 +2,7 @@
 
 namespace App\Actions\Security;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Models\Organization\OrganizationalUnit;
 use App\Models\Person;
 use App\Models\Security\Permission;
@@ -28,10 +29,10 @@ class UpdateUser
             {
                 self::$notify = true;
 
-                activity(__('Security/Users'))
+                activity(ActivityLog::LOG_NAMES['users'])
                 ->causedBy(auth()->user())
                 ->performedOn($user)
-                ->event('updated')
+                ->event(ActivityLog::EVENT_NAMES['updated'])
                 ->withProperties([
                     'attributes' => $user->getChanges(),
                     'old' => $user->getPrevious(),
@@ -99,10 +100,10 @@ class UpdateUser
             {
                 $user->removeRole($role->id);
 
-                activity(__('Security/Users'))
+                activity(ActivityLog::LOG_NAMES['users'])
                     ->causedBy($authUser)
                     ->performedOn($user)
-                    ->event('deleted')
+                    ->event(ActivityLog::EVENT_NAMES['authorized'])
                     ->withProperties([
                         __('unassigned_role') => $role,
                         __('to_user') => $user,
@@ -138,10 +139,10 @@ class UpdateUser
             {
                 $user->assignRole($role);
 
-                activity(__('Security/Users'))
+                activity(ActivityLog::LOG_NAMES['users'])
                     ->causedBy($authUser)
                     ->performedOn($user)
-                    ->event('created')
+                    ->event(ActivityLog::EVENT_NAMES['authorized'])
                     ->withProperties([
                         __('assigned_role') => $role,
                         __('to_user') => $user,
@@ -175,10 +176,10 @@ class UpdateUser
             {
                 $user->revokePermissionTo($permission);
 
-                activity(__('Security/Users'))
+                activity(ActivityLog::LOG_NAMES['users'])
                     ->causedBy($authUser)
                     ->performedOn($user)
-                    ->event('deleted')
+                    ->event(ActivityLog::EVENT_NAMES['authorized'])
                     ->withProperties([
                         __('revoked_permission') => $permission,
                         __('to_user') => $user,
@@ -214,10 +215,10 @@ class UpdateUser
             {
                 $user->givePermissionTo($permission);
 
-                activity(__('Security/Users'))
+                activity(ActivityLog::LOG_NAMES['users'])
                     ->causedBy($authUser)
                     ->performedOn($user)
-                    ->event('created')
+                    ->event(ActivityLog::EVENT_NAMES['authorized'])
                     ->withProperties([
                         __('granted_permission') => $permission,
                         __('to_user') => $user,
@@ -253,10 +254,10 @@ class UpdateUser
             foreach ($user->organizationalUnits as $ou)
             {
                 $user->organizationalUnits()->detach($ou->id);
-                activity(__('Security/Users'))
+                activity(ActivityLog::LOG_NAMES['users'])
                     ->causedBy($authUser)
                     ->performedOn($user)
-                    ->event('deleted')
+                    ->event(ActivityLog::EVENT_NAMES['deleted'])
                     ->withProperties([
                         __('disassociated_user') => $user,
                         __('from_administrative_unit') => $ou,
@@ -291,10 +292,10 @@ class UpdateUser
                         'disabled_at' => now(),
                     ]);
 
-                    activity(__('Security/Users'))
+                    activity(ActivityLog::LOG_NAMES['users'])
                         ->causedBy($authUser)
                         ->performedOn($user)
-                        ->event('updated')
+                        ->event(ActivityLog::EVENT_NAMES['disabled'])
                         ->withProperties([
                             __('disabled_user') => $user,
                             __('in_administrative_unit') => $ou,
@@ -325,10 +326,10 @@ class UpdateUser
                 if (!in_array($ouName, $user->organizationalUnits->pluck('name')->all(), true))
                 {
                     $user->organizationalUnits()->attach($ou->id);
-                    activity(__('Security/Users'))
+                    activity(ActivityLog::LOG_NAMES['users'])
                         ->causedBy($authUser)
                         ->performedOn($user)
-                        ->event('created')
+                        ->event(ActivityLog::EVENT_NAMES['created'])
                         ->withProperties([
                             __('associated_user') => $user,
                             __('with_administrative_unit') => $ou,
@@ -352,10 +353,10 @@ class UpdateUser
                 else
                 {
                     $user->organizationalUnits()->updateExistingPivot($ou->id, ['disabled_at' => null]);
-                    activity(__('Security/Users'))
+                    activity(ActivityLog::LOG_NAMES['users'])
                         ->causedBy($authUser)
                         ->performedOn($user)
-                        ->event('updated')
+                        ->event(ActivityLog::EVENT_NAMES['enabled'])
                         ->withProperties([
                             __('enabled_user') => $user,
                             __('in_administrative_unit') => $ou,

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Security;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Models\Security\Permission;
 use App\Models\Security\Role;
 use App\Models\User;
@@ -47,10 +48,10 @@ class UpdateRole
             {
                 $role->revokePermissionTo($permission);
 
-                activity(__('Security/Roles'))
+                activity(ActivityLog::LOG_NAMES['roles'])
                     ->causedBy($authUser)
                     ->performedOn($role)
-                    ->event('authorized')
+                    ->event(ActivityLog::EVENT_NAMES['authorized'])
                     ->withProperties([
                         __('revoked_permission') => $permission,
                         __('to_role') => $role,
@@ -83,10 +84,10 @@ class UpdateRole
             {
                 $role->givePermissionTo($assignedPermission);
 
-                activity(__('Security/Roles'))
+                activity(ActivityLog::LOG_NAMES['roles'])
                     ->causedBy($authUser)
                     ->performedOn($role)
-                    ->event('authorized')
+                    ->event(ActivityLog::EVENT_NAMES['authorized'])
                     ->withProperties([
                         __('granted_permission') => $assignedPermission,
                         __('to_role') => $role,

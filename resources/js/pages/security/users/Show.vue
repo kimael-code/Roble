@@ -48,6 +48,7 @@ import {
 import { computed, watch } from 'vue';
 import Permisos from './partials/Permisos.vue';
 import Roles from './partials/Roles.vue';
+import UserController from "@/actions/App/Http/Controllers/Security/UserController";
 
 const props = defineProps<{
   can: Can;
@@ -70,7 +71,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const { action, requestState, requestAction, resourceID } = useRequestActions('users');
+const { action, requestState, requestAction, resourceID } = useRequestActions(UserController);
 const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription } = useConfirmAction();
 
 const userOUs = computed(() => {
@@ -209,17 +210,17 @@ watch(action, () => {
                           <PencilIcon />
                           <span>Editar</span>
                         </DropdownMenuItem>
-                        <DropdownMenuSub v-if="can.activate || can.deactivate">
+                        <DropdownMenuSub v-if="can.enable || can.disable">
                           <DropdownMenuSubTrigger>
                             <span>Activación</span>
                           </DropdownMenuSubTrigger>
                           <DropdownMenuPortal>
                             <DropdownMenuSubContent>
-                              <DropdownMenuItem v-if="can.activate" :disabled="user.disabled_at === null" @click="action = 'enable'">
+                              <DropdownMenuItem v-if="can.enable" :disabled="user.disabled_at === null" @click="action = 'enable'">
                                 <ToggleRightIcon />
                                 <span>Activar</span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem v-if="can.deactivate" :disabled="user.disabled_at !== null" @click="action = 'disable'">
+                              <DropdownMenuItem v-if="can.disable" :disabled="user.disabled_at !== null" @click="action = 'disable'">
                                 <ToggleLeftIcon />
                                 <span>Desactivar</span>
                               </DropdownMenuItem>
@@ -280,7 +281,7 @@ watch(action, () => {
               <Permisos :filters :user-id="user.id" :permissions :permissions-count></Permisos>
             </TabsContent>
             <TabsContent value="logs">
-              <ActivityLogs :filters :logs page-route-name="users.show" :resource-id="user.id" />
+              <ActivityLogs :filters :logs :route="UserController.show(user.id)" />
             </TabsContent>
           </Tabs>
         </div>

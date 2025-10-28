@@ -22,6 +22,8 @@ import { Users } from 'lucide-vue-next';
 import { computed, reactive, ref, watch, watchEffect } from 'vue';
 import { columns, permissions as permissionsDT, processingRowId } from './partials/columns';
 import SheetAdvancedFilters from './partials/SheetAdvancedFilters.vue';
+import RoleController from "@/actions/App/Http/Controllers/Security/RoleController";
+import RoleExporterController from "@/actions/App/Http/Controllers/Exporters/RoleExporterController";
 
 const props = defineProps<{
   can: Can;
@@ -37,7 +39,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const { action, resourceID, requestState, requestAction } = useRequestActions('roles');
+const { action, resourceID, requestState, requestAction } = useRequestActions(RoleController);
 const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription, alertData } = useConfirmAction();
 const showPdf = ref(false);
 const showAdvancedFilters = ref(false);
@@ -70,7 +72,7 @@ function handleSortingChange(item: any) {
       }
     });
 
-    router.visit(route('roles.index'), {
+    router.visit(RoleController.index(), {
       data,
       only: ['roles'],
       preserveScroll: true,
@@ -114,7 +116,7 @@ const tableOptions = reactive<TableOptions<Role>>({
     };
   },
   getCoreRowModel: getCoreRowModel(),
-  getRowId: (row) => row.id,
+  getRowId: (row) => String(row.id),
   onSortingChange: handleSortingChange,
   onRowSelectionChange: (updaterOrValue) => valueUpdater(updaterOrValue, rowSelection),
   state: {
@@ -171,7 +173,7 @@ watchEffect(() => (resourceID.value === null ? (processingRowId.value = null) : 
         :data="roles"
         :filters="filters"
         :search-only="['roles']"
-        :search-route="route('roles.index')"
+        :search-route="RoleController.index()"
         :table="table"
         :is-advanced-search="advancedSearchApplied"
         :is-loading-new="requestState.create"
@@ -208,7 +210,7 @@ watchEffect(() => (resourceID.value === null ? (processingRowId.value = null) : 
             <SheetDescription>Reporte: Permisos</SheetDescription>
           </SheetHeader>
           <div class="h-[70dvh]">
-            <iframe :src="`${route('export-roles-pdf.index')}${urlQueryString}`" frameborder="0" width="100%" height="100%"></iframe>
+            <iframe :src="`${RoleExporterController.indexToPdf().url}/${urlQueryString}`" frameborder="0" width="100%" height="100%"></iframe>
           </div>
         </SheetContent>
       </Sheet>

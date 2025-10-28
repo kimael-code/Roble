@@ -32,11 +32,11 @@ class BatchDeleteUser
                 $nonDeleteReasons .= $nonDeleteCount > 1 ? ', ' : '';
                 $nonDeleteReasons .= 'usted no puede eliminar su propia cuenta';
             }
-            elseif ($user->id === 1)
+            elseif (!$user->disabled_at && $user->hasRole('Superusuario'))
             {
                 $nonDeleteCount += 1;
                 $nonDeleteReasons .= $nonDeleteCount > 1 ? ', ' : '';
-                $nonDeleteReasons .= 'root no es eliminable';
+                $nonDeleteReasons .= "{$user->name} es un Superusuario activo";
             }
             else
             {

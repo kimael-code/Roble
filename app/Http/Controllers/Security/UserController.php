@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Security;
 
+use App\Actions\Security\BatchEnableUser;
+use App\Actions\Security\BatchDisableUser;
 use App\Actions\Security\CreateUser;
 use App\Actions\Security\DisableUser;
 use App\Actions\Security\EnableUser;
@@ -10,8 +12,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Props\Security\UserProps;
 use App\Http\Requests\Security\StoreUserRequest;
 use App\Http\Requests\Security\UpdateUserRequest;
+use App\Actions\Security\BatchDeleteUser;
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
@@ -42,7 +45,7 @@ class UserController extends Controller
      */
     public function store(StoreUserRequest $request)
     {
-        event(new Registered(CreateUser::handle($request->validated())));
+        CreateUser::handle($request->validated());
 
         return redirect(route('users.index'));
     }
@@ -123,5 +126,26 @@ class UserController extends Controller
         DisableUser::handle($user);
 
         return redirect()->back();
+    }
+
+    public function batchDestroy(): RedirectResponse
+    {
+        $result = BatchDeleteUser::execute(request()->all());
+
+        return redirect(route('users.index'))->with('message', $result);
+    }
+
+    public function batchEnable(): RedirectResponse
+    {
+        $result = BatchEnableUser::execute(request()->all());
+
+        return redirect(route('users.index'))->with('message', $result);
+    }
+
+    public function batchDisable(): RedirectResponse
+    {
+        $result = BatchDisableUser::execute(request()->all());
+
+        return redirect(route('users.index'))->with('message', $result);
     }
 }

@@ -1,19 +1,15 @@
 <script setup lang="ts">
+import EmailVerificationNotificationController from '@/actions/App/Http/Controllers/Auth/EmailVerificationNotificationController';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import AuthLayout from '@/layouts/AuthLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { logout } from '@/routes';
+import { Form, Head } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
 
 defineProps<{
     status?: string;
 }>();
-
-const form = useForm({});
-
-const submit = () => {
-    form.post(route('verification.send'));
-};
 </script>
 
 <template>
@@ -24,13 +20,23 @@ const submit = () => {
             Se ha enviado un nuevo enlace de verificación a la dirección de correo electrónico que usted proporcionó durante el registro.
         </div>
 
-        <form @submit.prevent="submit" class="space-y-6 text-center">
-            <Button :disabled="form.processing" variant="secondary">
-                <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
+        <Form
+            v-bind="EmailVerificationNotificationController.store.form()"
+            class="space-y-6 text-center"
+            v-slot="{ processing }"
+        >
+            <Button :disabled="processing" variant="secondary">
+                <LoaderCircle v-if="processing" class="h-4 w-4 animate-spin" />
                 Reenviar correo electrónico de verificación
             </Button>
 
-            <TextLink :href="route('logout')" method="post" as="button" class="mx-auto block text-sm"> Salir </TextLink>
-        </form>
+            <TextLink
+                :href="logout()"
+                as="button"
+                class="mx-auto block text-sm"
+            >
+                Salir
+            </TextLink>
+        </Form>
     </AuthLayout>
 </template>

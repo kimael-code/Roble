@@ -37,6 +37,7 @@ import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, Pagi
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { RouteDefinition } from '@/wayfinder';
 
 interface Props {
   can?: Can;
@@ -44,7 +45,7 @@ interface Props {
   data: PaginatedCollection<any>;
   filters: { [key: string]: any };
   searchOnly: Array<string>;
-  searchRoute: string;
+  searchRoute: RouteDefinition<"get">;
   searchRouteData?: { [key: string]: any };
   table: TanstackTable<any>;
   hasNewButton?: boolean;
@@ -62,8 +63,8 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits([
-  'batchActivate',
-  'batchDeactivate',
+  'batchEnable',
+  'batchDisable',
   'batchDestroy',
   'export',
   'exportRow',
@@ -74,8 +75,8 @@ const emit = defineEmits([
   'destroy',
   'forceDestroy',
   'restore',
-  'activate',
-  'deactivate',
+  'enable',
+  'disable',
   'advancedSearch',
 ]);
 
@@ -91,7 +92,8 @@ form.defaults({
 
 watchDebounced(
   () => form.search,
-  (s) => {
+  (s: string | undefined) => {
+    // @ts-expect-error La creación de una instancia de tipo es excesivamente profunda y posiblemente infinita.
     if (s === '') form.reset('search');
 
     router.reload({
@@ -193,22 +195,22 @@ function handlePerPage(perPageValue: number) {
               </DropdownMenuPortal>
             </DropdownMenuSub>
           </DropdownMenuGroup>
-          <DropdownMenuSeparator v-if="can.delete || can.activate || can.deactivate" />
+          <DropdownMenuSeparator v-if="can.delete || can.enable || can.disable" />
           <DropdownMenuGroup>
             <DropdownMenuItem
-              v-if="can.activate"
-              class="text-amber-600 transition-colors focus:bg-accent focus:text-accent-foreground"
+              v-if="can.enable"
+              class="text-green-600 transition-colors focus:bg-accent focus:text-accent-foreground"
               :disabled="table.getFilteredSelectedRowModel().rows.length < 1"
-              @click="$emit('batchActivate')"
+              @click="$emit('batchEnable')"
             >
-              <ToggleRightIcon class="text-amber-600" />
-              <span>Activar selección</span>
+              <ToggleRightIcon class="text-green-600" />
+              <span>Activar/Restaurar selección</span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              v-if="can.deactivate"
+              v-if="can.disable"
               class="text-amber-600 transition-colors focus:bg-accent focus:text-accent-foreground"
               :disabled="table.getFilteredSelectedRowModel().rows.length < 1"
-              @click="$emit('batchDeactivate')"
+              @click="$emit('batchDisable')"
             >
               <ToggleLeftIcon class="text-amber-600" />
               <span>Desactivar selección</span>
@@ -265,8 +267,8 @@ function handlePerPage(perPageValue: number) {
                     @force-destroy="(row: any) => $emit('forceDestroy', row)"
                     @restore="(row: any) => $emit('restore', row)"
                     @export="(row: any) => $emit('exportRow', row)"
-                    @activate="(row: any) => $emit('activate', row)"
-                    @deactivate="(row: any) => $emit('deactivate', row)"
+                    @enable="(row: any) => $emit('enable', row)"
+                    @disable="(row: any) => $emit('disable', row)"
                   />
                 </TableCell>
               </TableRow>

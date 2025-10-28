@@ -2,8 +2,9 @@
 
 namespace App\Listeners\Auth;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Models\User;
-use App\Notifications\ActionHandledOnModel;
+use App\Notifications\UserSelfRegistration;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -23,18 +24,22 @@ class LogRegistered
      */
     public function handle(Registered $event): void
     {
-        activity(__('Authentication'))
-            ->event('created')
+        activity(ActivityLog::LOG_NAMES['auth'])
+            ->event(ActivityLog::EVENT_NAMES['created'])
             ->causedBy($event->user)
-            ->withProperty('request', [
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->header('user-agent'),
-                'user_agent_lang' => request()->header('accept-language'),
-                'referer' => request()->header('referer'),
-                'http_method' => request()->method(),
-                'request_url' => request()->fullUrl(),
+            ->performedOn($event->user)
+            ->withProperties([
+                'attributes' => $event->user->toArray(),
+                'causer' => User::with('person')->find($event->user->id)->toArray(),
+                'request' => [
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->header('user-agent'),
+                    'user_agent_lang' => request()->header('accept-language'),
+                    'referer' => request()->header('referer'),
+                    'http_method' => request()->method(),
+                    'request_url' => request()->fullUrl(),
+                ],
             ])
-            ->withProperty('causer', User::with('person')->find($event->user->id)->toArray())
             ->log(__('registered themselves'));
 
         session()->flash('message', [
@@ -49,16 +54,14 @@ class LogRegistered
 
         foreach ($users as $user)
         {
-            $user->notify(new ActionHandledOnModel(
+            $user->notify(new UserSelfRegistration(
                 $event->user,
                 [
                     'id' => $event->user->id,
-                    'type' => __('user'),
+                    'type' => 'usuario',
                     'name' => "{$event->user->name}",
                     'timestamp' => $event->user->created_at,
                 ],
-                'created',
-                ['routeName' => 'users', 'routeParam' => 'user']
             ));
         }
     }

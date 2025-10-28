@@ -20,6 +20,7 @@ import { useForm } from 'laravel-precognition-vue-inertia';
 import { LoaderCircleIcon, Search, UserIcon } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import CardPerson from './partials/CardPerson.vue';
+import UserController from "@/actions/App/Http/Controllers/Security/UserController";
 
 const props = defineProps<{
   filters: SearchFilter;
@@ -49,7 +50,7 @@ const openSheetRoles = ref(false);
 const openSheetOUs = ref(false);
 const openDialog = ref(false);
 const search = ref(props.filters.search);
-const employeeOU = ref('');
+const searching = ref(false);
 
 type formUser = {
   name: string;
@@ -67,7 +68,7 @@ type formUser = {
   permissions: string[];
 };
 
-const form = useForm('post', route('users.store'), <formUser>{
+const form = useForm('post', UserController.store().url, <formUser>{
   name: '',
   email: '',
   is_external: false,
@@ -114,7 +115,7 @@ function submit() {
 }
 
 function index() {
-  router.visit(route('users.index'), {
+  router.visit(UserController.index(), {
     onStart: () => (buttonCancel.value = true),
     onFinish: () => (buttonCancel.value = false),
   });
@@ -125,10 +126,11 @@ watchDebounced(
   (s) => {
     if (s === '') search.value = undefined;
 
-    router.visit(route('users.create'), {
+    router.reload({
       data: { search: s },
-      preserveScroll: true,
-      preserveState: true,
+      preserveUrl: true,
+      onStart: () => (searching.value = true),
+      onFinish: () => (searching.value = false),
     });
   },
   { debounce: 500, maxWait: 1000 },
@@ -137,7 +139,7 @@ watchDebounced(
 watch([openSheetPermissions, openSheetRoles, openSheetOUs], ([isOpenSheetPermissions, isOpenSheetRoles, isOpenSheetOUs]) => {
   if (!isOpenSheetRoles || !isOpenSheetPermissions || !isOpenSheetOUs) {
     search.value = undefined;
-    router.visit(route('users.create'), { preserveScroll: true, preserveState: true });
+    router.visit(UserController.create(), { preserveScroll: true, preserveState: true });
   }
 });
 
@@ -171,7 +173,7 @@ function handleEmployeeSelection(employe: { [index: string]: any }) {
   form.surnames = employe.surnames;
   form.position = employe.position;
   form.staff_type = employe.staff_type_name;
-  employeeOU.value = employe.org_unit_name;
+  form.ou_names.push(employe.org_unit_name);
   openDialog.value = false;
   search.value = undefined;
 }
@@ -253,7 +255,8 @@ function handleExternalPerson() {
                     <div v-if="!form.is_external" class="relative w-full max-w-sm items-center p-4">
                       <Input id="search" type="text" placeholder="Buscar..." class="pl-10" v-model="search" />
                       <span class="absolute inset-y-0 start-0 flex items-center justify-center px-5">
-                        <Search class="text-muted-foreground size-6" />
+                        <LoaderCircleIcon v-if="searching" class="size-6 animate-spin text-muted-foreground" />
+                        <Search v-else class="size-6 text-muted-foreground" />
                       </span>
                     </div>
                     <ScrollArea v-if="!form.is_external" class="m-3 h-20 rounded-md border">
@@ -303,8 +306,8 @@ function handleExternalPerson() {
                   :emails="form.emails"
                   :position="form.position"
                   :staffType="form.staff_type"
-                  :employee-ou="employeeOU"
-                  @quit-person="form.reset()"
+                  :employee-ous="form.ou_names"
+                  @quit-person="form.reset('is_external', 'id_card', 'names', 'surnames', 'phones', 'emails', 'position', 'staff_type', 'ou_names')"
                 />
                 <br />
                 <div class="5 flex flex-col space-y-1">
@@ -367,7 +370,7 @@ function handleExternalPerson() {
             <div class="relative w-full max-w-sm items-center p-4">
               <Input id="search" type="text" placeholder="Buscar..." class="pl-10" v-model="search" />
               <span class="absolute inset-y-0 start-0 flex items-center justify-center px-5">
-                <Search class="text-muted-foreground size-6" />
+                <Search class="size-6 text-muted-foreground" />
               </span>
             </div>
             <ScrollArea class="m-3 h-75 rounded-md border">
@@ -410,7 +413,7 @@ function handleExternalPerson() {
             <div class="relative w-full max-w-sm items-center p-4">
               <Input id="search" type="text" placeholder="Buscar..." class="pl-10" v-model="search" />
               <span class="absolute inset-y-0 start-0 flex items-center justify-center px-5">
-                <Search class="text-muted-foreground size-6" />
+                <Search class="size-6 text-muted-foreground" />
               </span>
             </div>
             <ScrollArea class="m-3 h-75 rounded-md border">
@@ -457,7 +460,7 @@ function handleExternalPerson() {
             <div class="relative w-full max-w-sm items-center p-4">
               <Input id="search" type="text" placeholder="Buscar..." class="pl-10" v-model="search" />
               <span class="absolute inset-y-0 start-0 flex items-center justify-center px-5">
-                <Search class="text-muted-foreground size-6" />
+                <Search class="size-6 text-muted-foreground" />
               </span>
             </div>
             <ScrollArea class="m-3 h-75 rounded-md border">

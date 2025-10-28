@@ -12,6 +12,7 @@ import { Head, router } from '@inertiajs/vue3';
 import { useForm } from 'laravel-precognition-vue-inertia';
 import { KeySquare, LoaderCircleIcon } from 'lucide-vue-next';
 import { ref } from 'vue';
+import PermissionController from "@/actions/App/Http/Controllers/Security/PermissionController";
 
 const props = defineProps<{
   permission: Permission;
@@ -30,7 +31,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const buttonCancel = ref(false);
 
-const form = useForm('put', route('permissions.update', props.permission.id), {
+const form = useForm('put', PermissionController.update(props.permission.id).url, {
   name: props.permission.name,
   description: props.permission.description,
   guard_name: props.permission.guard_name,
@@ -45,7 +46,7 @@ function submit() {
 }
 
 function index() {
-  router.visit(route('permissions.index'), {
+  router.visit(PermissionController.index(), {
     onStart: () => (buttonCancel.value = true),
     onFinish: () => (buttonCancel.value = false),
   });

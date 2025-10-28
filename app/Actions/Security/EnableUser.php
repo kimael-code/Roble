@@ -2,6 +2,7 @@
 
 namespace App\Actions\Security;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Models\User;
 use App\Notifications\ActionHandledOnModel;
 use Illuminate\Support\Arr;
@@ -18,10 +19,10 @@ class EnableUser
 
         $user->save();
 
-        activity(__('Security/Users'))
+        activity(ActivityLog::LOG_NAMES['users'])
             ->causedBy(auth()->user())
             ->performedOn($user)
-            ->event('enabled')
+            ->event(ActivityLog::EVENT_NAMES['enabled'])
             ->withProperties([
                 'attributes' => Arr::except($user->getChanges(), ['password']),
                 'old' => Arr::except($user->getPrevious(), ['password']),
@@ -41,13 +42,13 @@ class EnableUser
             ]));
 
         session()->flash('message', [
-            'message' => "({$user->name})",
+            'message' => "{$user->name}",
             'title' => __('ENABLED!'),
             'type'  => 'success',
         ]);
 
-        $users = User::permission('activate users')->get()->filter(
-            fn (User $user) => $user->id != auth()->user()->id
+        $users = User::permission('enable users')->get()->filter(
+            fn(User $user) => $user->id != auth()->user()->id
         )->all();
 
         foreach ($users as $user)
@@ -56,7 +57,7 @@ class EnableUser
                 auth()->user(),
                 [
                     'type' => __('user'),
-                    'name' => "({$user->name})",
+                    'name' => "{$user->name}",
                     'timestamp' => now(),
                 ],
                 'enabled',

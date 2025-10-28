@@ -121,8 +121,8 @@ class ExportRolesToPdf extends BasePdf
             $rolePermissionsUpdate = $role->permissions
                 ->filter(
                     fn(Permission $permission) => isset($this->filters['permissions'])
-                    ? Str::contains($permission->description, $this->filters['permissions']) && Str::startsWith($permission->name, ['activate', 'deactivate', 'restore', 'update'])
-                    : Str::startsWith($permission->name, ['activate', 'deactivate', 'restore', 'update'])
+                    ? Str::contains($permission->description, $this->filters['permissions']) && Str::startsWith($permission->name, ['enable', 'disable', 'restore', 'update'])
+                    : Str::startsWith($permission->name, ['enable', 'disable', 'restore', 'update'])
                 )
                 ->sortBy('description')
                 ->values()

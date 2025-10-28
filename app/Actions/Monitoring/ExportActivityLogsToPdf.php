@@ -71,14 +71,14 @@ class ExportActivityLogsToPdf extends BasePdf
         $this->Cell(w: 0, txt: '2. DETALLE DE LAS TRAZAS DE ACTIVIDADES', border: 0, ln: 1, fill: true);
         $this->setTextColor(0, 0, 0);
 
-        $this->setFont(family: 'dejavusans', style: 'B', size: 9);
+        $this->setFont(family: 'dejavusans', style: 'B', size: 8);
         $this->MultiCell(w: 30, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Fecha/Hora', 'created_at'));
-        $this->MultiCell(w: 35, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Usuario', 'causer_name'));
-        $this->MultiCell(w: 25, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Actividad', 'event'));
+        $this->MultiCell(w: 30, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Usuario', 'causer_name'));
+        $this->MultiCell(w: 19.74, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Actividad', 'event'));
         $this->MultiCell(w: 30, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Módulo/Func.', 'log_name'));
-        $this->MultiCell(w: 85, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Descripción', 'description'));
-        $this->MultiCell(w: 18, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('ID', 'subject_id'));
-        $this->MultiCell(w:  0, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 1, txt: $this->getString('IP Origen', 'ip_address'));
+        $this->MultiCell(w: 107, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Descripción', 'description'));
+        $this->MultiCell(w: 10, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('ID', 'subject_id'));
+        $this->MultiCell(w:  0, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 1, txt: $this->getString('IP', 'ip_address'));
 
         // establece el margen superior a la altura ocupada por el header
         $this->tMargin = $this->GetY();
@@ -134,14 +134,14 @@ class ExportActivityLogsToPdf extends BasePdf
         return $this->Output('REPORTE: TRAZAS DE ACTIVIDADES DE USUARIOS');
     }
 
-    public function getFilters(): array
+    public function getAppliedFilters(): array
     {
-        $filters = [
+        $parsedFilters = [
             'date_time' => '',
             'users' => '',
             'events' => '',
             'modules' => '',
-            'ip_dirs' => '',
+            'ips' => '',
             'search' => '',
         ];
 
@@ -152,7 +152,7 @@ class ExportActivityLogsToPdf extends BasePdf
                 $this->filters['date']['month'],
                 $this->filters['date']['day'],
             );
-            $filters['date_time'] .= $date->isoFormat('L');
+            $parsedFilters['date_time'] .= $date->isoFormat('L');
         }
 
         if (isset($this->filters['date_range']))
@@ -169,99 +169,103 @@ class ExportActivityLogsToPdf extends BasePdf
             );
             $dateRange = "{$dateStart->isoFormat('L')} - {$dateEnd->isoFormat('L')}";
 
-            if ($filters['date_time'])
+            if ($parsedFilters['date_time'])
             {
-                $filters['date_time'] .= ", {$dateRange}";
+                $parsedFilters['date_time'] .= ", {$dateRange}";
             }
             else
             {
-                $filters['date_time'] = $dateRange;
+                $parsedFilters['date_time'] = $dateRange;
             }
         }
 
         if (isset($this->filters['time']))
         {
-            if ($filters['date_time'])
+            if ($parsedFilters['date_time'])
             {
-                $filters['date_time'] .= ", {$this->filters['time']}";
+                $parsedFilters['date_time'] .= ", {$this->filters['time']}";
             }
             else
             {
-                $filters['date_time'] = $this->filters['time'];
+                $parsedFilters['date_time'] = $this->filters['time'];
             }
         }
 
         if (isset($this->filters['time_from']) && isset($this->filters['time_until']))
         {
-            if ($filters['date_time'])
+            if ($parsedFilters['date_time'])
             {
-                $filters['date_time'] .= ", {$this->filters['time_from']} - {$this->filters['time_until']}";
+                $parsedFilters['date_time'] .= ", {$this->filters['time_from']} - {$this->filters['time_until']}";
             }
             else
             {
-                $filters['date_time'] = "{$this->filters['time_from']} - {$this->filters['time_until']}";
+                $parsedFilters['date_time'] = "{$this->filters['time_from']} - {$this->filters['time_until']}";
             }
         }
 
         if (isset($this->filters['time_from']) && !isset($this->filters['time_until']))
         {
-            if ($filters['date_time'])
+            if ($parsedFilters['date_time'])
             {
-                $filters['date_time'] .= ", desde {$this->filters['time_from']}";
+                $parsedFilters['date_time'] .= ", desde {$this->filters['time_from']}";
             }
             else
             {
-                $filters['date_time'] = "desde {$this->filters['time_from']}";
+                $parsedFilters['date_time'] = "desde {$this->filters['time_from']}";
             }
         }
 
         if (!isset($this->filters['time_from']) && isset($this->filters['time_until']))
         {
-            if ($filters['date_time'])
+            if ($parsedFilters['date_time'])
             {
-                $filters['date_time'] .= ", hasta {$this->filters['time_until']}";
+                $parsedFilters['date_time'] .= ", hasta {$this->filters['time_until']}";
             }
             else
             {
-                $filters['date_time'] = "hasta {$this->filters['time_until']}";
+                $parsedFilters['date_time'] = "hasta {$this->filters['time_until']}";
             }
         }
 
-        if (isset($this->filters['selected_events']))
+        if (isset($this->filters['events']))
         {
-            $filters['events'] .= Arr::join($this->filters['selected_events'], ', ');
+            $parsedFilters['events'] .= Arr::join($this->filters['events'], ', ');
         }
 
-        if (isset($this->filters['selected_modules']))
+        if (isset($this->filters['modules']))
         {
-            $filters['modules'] .= Arr::join($this->filters['selected_modules'], ', ');
+            $parsedFilters['modules'] .= Arr::join($this->filters['modules'], ', ');
         }
 
-        if (isset($this->filters['selected_users']))
+        if (isset($this->filters['users']))
         {
-            $filters['users'] .= Arr::join($this->filters['selected_users'], ', ');
+            $parsedFilters['users'] .= Arr::join($this->filters['users'], ', ');
         }
 
-        if (isset($this->filters['ip_addrs']))
+        if (isset($this->filters['ips']))
         {
-            $filters['ip_dirs'] .= Arr::join($this->filters['ip_addrs'], ', ');
+            $parsedFilters['ips'] .= Arr::join($this->filters['ips'], ', ');
         }
 
         if (isset($this->filters['search']))
         {
-            $filters['search'] .= $this->filters['search'];
+            $parsedFilters['search'] .= $this->filters['search'];
         }
 
-        return $filters;
+        return $parsedFilters;
     }
 
     private function getString(string $txt, string $col): string
     {
         if ($col === 'created_at')
         {
-            if (!isset($this->filters['sort_by']))
+            if (!isset($this->filters['sort_by']) && empty($this->filters))
             {
                 return "↓ {$txt}";
+            }
+            if (!isset($this->filters['sort_by']) && !empty($this->filters))
+            {
+                return "↑ {$txt}";
             }
             elseif (isset($this->filters['sort_by']['created_at']))
             {

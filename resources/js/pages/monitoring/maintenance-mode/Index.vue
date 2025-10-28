@@ -8,9 +8,10 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import ContentLayout from '@/layouts/ContentLayout.vue';
 import { BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
+import { Head, usePage } from '@inertiajs/vue3';
 import { useForm } from 'laravel-precognition-vue-inertia';
 import { ConstructionIcon, Info, LoaderCircleIcon } from 'lucide-vue-next';
+import MaintenanceController from "@/actions/App/Http/Controllers/Monitoring/MaintenanceController";
 
 defineProps<{
   status: boolean;
@@ -23,7 +24,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const form = useForm('post', route('maintenance.toggle'), {
+const form = useForm('post', MaintenanceController.toggle().url, {
   secret: '',
 });
 
@@ -48,10 +49,10 @@ const toggleMaintenance = () => {
           <CardTitle>Configuración de Mantenimiento</CardTitle>
         </CardHeader>
         <CardContent>
-          <Alert v-if="$page.props.flash.success" class="mb-4">
+          <Alert v-if="$page.props.flash?.message" class="mb-4">
             <Info class="h-4 w-4" />
             <AlertDescription>
-              {{ $page.props.flash.success }}
+              {{ $page.props.flash.message.message }}
             </AlertDescription>
           </Alert>
 

@@ -23,6 +23,7 @@ import { Head, useForm } from '@inertiajs/vue3';
 import { FlexRender } from '@tanstack/vue-table';
 import { BugIcon, FileDownIcon, ShredderIcon } from 'lucide-vue-next';
 import { ref } from 'vue';
+import LogFileController from "@/actions/App/Http/Controllers/Monitoring/LogFileController";
 
 interface LogContent {
   context: string;
@@ -67,12 +68,12 @@ function handleStackTrace(stack: string) {
 }
 
 function download(fileName: string) {
-  const url = route('log-files.export', { file: fileName });
+  const url = LogFileController.export({ file: fileName }).url;
   window.location.href = url;
 }
 
 function deleteLog() {
-  deleteForm.delete(route('log-files.destroy', selectedFile.value), {
+  deleteForm.delete(LogFileController.delete(selectedFile.value).url, {
     preserveScroll: true,
     preserveState: true,
     onFinish: () => (selectedFile.value = ''),

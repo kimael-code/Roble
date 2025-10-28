@@ -32,6 +32,7 @@ import { Head } from '@inertiajs/vue3';
 import { ArrowLeftIcon, Building, EllipsisIcon, LoaderCircleIcon, PencilIcon, PlusIcon, Trash2Icon } from 'lucide-vue-next';
 import { watch } from 'vue';
 import OrganizationalUnits from './partials/OrganizationalUnits.vue';
+import routes from "@/actions/App/Http/Controllers/Organization/OrganizationController";
 
 const props = defineProps<{
   can: Can;
@@ -52,7 +53,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const { action, requestState, requestAction, resourceID } = useRequestActions('organizations');
+const { action, requestState, requestAction, resourceID } = useRequestActions(routes);
 const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription } = useConfirmAction();
 
 watch(action, () => {
@@ -187,7 +188,7 @@ watch(action, () => {
               <OrganizationalUnits :filters :resource-id="organization.id" :ous />
             </TabsContent>
             <TabsContent value="logs">
-              <ActivityLogs :filters :logs page-route-name="organizations.show" :resource-id="organization.id" />
+              <ActivityLogs :filters :logs :route="routes.show(organization.id)" />
             </TabsContent>
           </Tabs>
         </div>

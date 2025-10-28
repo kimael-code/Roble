@@ -12,6 +12,7 @@ import { Head, router } from '@inertiajs/vue3';
 import { useForm } from 'laravel-precognition-vue-inertia';
 import { LoaderCircleIcon, Workflow } from 'lucide-vue-next';
 import { ref, watch } from 'vue';
+import OrganizationalUnitController from "@/actions/App/Http/Controllers/Organization/OrganizationalUnitController";
 
 const props = defineProps<{
   activeOrganizations: Array<Organization>;
@@ -32,7 +33,7 @@ const buttonCancel = ref(false);
 const ous = ref<Array<OrganizationalUnit>>();
 
 type OrganizationalUnitForm = {
-  organization_id: string;
+  organization_id: number | null;
   organizational_unit_id: string;
   code: string;
   name: string;
@@ -40,8 +41,8 @@ type OrganizationalUnitForm = {
   floor: string;
 };
 
-const form = useForm('post', route('organizational-units.store'), <OrganizationalUnitForm>{
-  organization_id: '',
+const form = useForm('post', OrganizationalUnitController.store().url, <OrganizationalUnitForm>{
+  organization_id: null,
   organizational_unit_id: '',
   code: '',
   name: '',
@@ -66,7 +67,7 @@ function submit() {
 }
 
 function index() {
-  router.visit(route('organizational-units.index'), {
+  router.visit(OrganizationalUnitController.index(), {
     onStart: () => (buttonCancel.value = true),
     onFinish: () => (buttonCancel.value = false),
   });

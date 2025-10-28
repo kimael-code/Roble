@@ -13,7 +13,7 @@ const props = defineProps<{
   emails: string | undefined;
   position: string | undefined;
   staffType: string | undefined;
-  employeeOu: string | undefined;
+  employeeOus: string[] | undefined;
 }>();
 
 defineEmits(['quitPerson']);
@@ -53,9 +53,9 @@ const description = computed(() => (props.isExternal ? 'Usuario Externo' : 'Usua
           Personal: <span class="text-muted-foreground text-sm">{{ staffType }}</span>
         </p>
       </div>
-      <div v-if="employeeOu" class="space-y-1">
+      <div v-if="employeeOus && employeeOus?.length > 0" class="space-y-1">
         <p class="text-sm leading-none font-medium">
-          Unidad Administrativa: <span class="text-muted-foreground text-sm">{{ employeeOu }}</span>
+          Unidad Administrativa: <span class="text-muted-foreground text-sm">{{ employeeOus.join(', ')}}</span>
         </p>
       </div>
       <div v-if="phones" class="space-y-1">

@@ -2,6 +2,7 @@
 
 namespace App\Actions\Security;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Models\Security\Permission;
 use App\Models\Security\Role;
 use App\Models\User;
@@ -28,10 +29,10 @@ class CreateRole
 
                 $role->givePermissionTo($permission);
 
-                activity(__('Security/Roles'))
+                activity(ActivityLog::LOG_NAMES['roles'])
                     ->causedBy($user)
                     ->performedOn($role)
-                    ->event('authorized')
+                    ->event(ActivityLog::EVENT_NAMES['authorized'])
                     ->withProperties([
                         __('assigned_permission') => $permission,
                         __('to_role') => $role,

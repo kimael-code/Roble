@@ -32,6 +32,7 @@ import { ArrowLeftIcon, EllipsisIcon, LoaderCircleIcon, PencilIcon, PlusIcon, Tr
 import { watch } from 'vue';
 import CardOrganization from './partials/CardOrganization.vue';
 import OrganizationalUnits from './partials/OrganizationalUnits.vue';
+import OrganizationalUnitController from "@/actions/App/Http/Controllers/Organization/OrganizationalUnitController";
 
 const props = defineProps<{
   can: Can;
@@ -52,7 +53,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const { action, requestState, requestAction, resourceID } = useRequestActions('organizational-units');
+const { action, requestState, requestAction, resourceID } = useRequestActions(OrganizationalUnitController);
 const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription } = useConfirmAction();
 
 watch(action, () => {
@@ -185,7 +186,7 @@ watch(action, () => {
               <OrganizationalUnits :filters :resource-id="organizationalUnit.id" :ous="organizationalUnits" />
             </TabsContent>
             <TabsContent value="logs">
-              <ActivityLogs :filters :logs page-route-name="organizational-units.show" :resource-id="organizationalUnit.id" />
+              <ActivityLogs :filters :logs :route="OrganizationalUnitController.show(organizationalUnit.id)" />
             </TabsContent>
           </Tabs>
         </div>

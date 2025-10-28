@@ -11,6 +11,7 @@ import { Head } from '@inertiajs/vue3';
 import { ArrowLeftIcon, LoaderCircleIcon, LogsIcon } from 'lucide-vue-next';
 import CardActivityDetails from './partials/CardActivityDetails.vue';
 import CardUserDetails from './partials/CardUserDetails.vue';
+import ActivityLogController from "@/actions/App/Http/Controllers/Monitoring/ActivityLogController";
 
 defineProps<{
   can: Can;
@@ -29,7 +30,7 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const { requestState, requestAction } = useRequestActions('activity-logs');
+const { requestState, requestAction } = useRequestActions(ActivityLogController);
 </script>
 
 <template>
@@ -43,7 +44,7 @@ const { requestState, requestAction } = useRequestActions('activity-logs');
         <div class="col-span-3 md:col-span-1">
           <Card class="container">
             <CardHeader>
-              <CardTitle>Detalles de la Petición</CardTitle>
+              <CardTitle>Detalles de la Solicitud</CardTitle>
             </CardHeader>
             <CardContent>
               <p class="text-sm font-medium">Marca de tiempo</p>
@@ -55,7 +56,7 @@ const { requestState, requestAction } = useRequestActions('activity-logs');
               <p class="text- text-sm font-medium">Ruta HTTP Solicitada</p>
               <p class="text-sm text-muted-foreground">{{ log.properties.request.request_url }}</p>
               <br />
-              <p class="text- text-sm font-medium">Origen</p>
+              <p class="text- text-sm font-medium">Ruta HTTP Origen</p>
               <p class="text-sm text-muted-foreground">{{ log.properties.request.referer }}</p>
               <br />
               <p class="text-sm font-medium">Método HTTP Ejecutado</p>
@@ -80,7 +81,7 @@ const { requestState, requestAction } = useRequestActions('activity-logs');
           </div>
           <Tabs default-value="user" class="w-auto">
             <TabsList class="grid w-full grid-cols-2">
-              <TabsTrigger value="user">DATOS DEL CAUSANTE</TabsTrigger>
+              <TabsTrigger value="user">REALIZADO POR</TabsTrigger>
               <TabsTrigger value="ous">DATOS DEL EVENTO</TabsTrigger>
             </TabsList>
             <TabsContent value="user">

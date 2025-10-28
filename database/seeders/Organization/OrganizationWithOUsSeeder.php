@@ -28,6 +28,28 @@ class OrganizationWithOUsSeeder extends Seeder
             ->for($activeOrganization)
             ->create(['organizational_unit_id' => null]);
 
+        OrganizationalUnit::factory()
+            ->for($activeOrganization)
+            ->create([
+                'organizational_unit_id' => $rootOU->id,
+                'code' => 'OU001',
+                'name' => 'IT Department',
+            ]);
+        OrganizationalUnit::factory()
+            ->for($activeOrganization)
+            ->create([
+                'organizational_unit_id' => $rootOU->id,
+                'code' => 'OU002',
+                'name' => 'Design Department',
+            ]);
+        OrganizationalUnit::factory()
+            ->for($activeOrganization)
+            ->create([
+                'organizational_unit_id' => $rootOU->id,
+                'code' => 'OU003',
+                'name' => 'Management',
+            ]);
+
         $firstLvlOus = OrganizationalUnit::factory()
             ->count(3)
             ->for($activeOrganization)

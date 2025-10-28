@@ -36,7 +36,6 @@ class PermissionProps
             'sort_by',
             'roles',
             'users',
-            'operations',
             'set_menu',
         ]);
         $filtersAll = Request::all([
@@ -44,7 +43,6 @@ class PermissionProps
             'sort_by',
             'roles',
             'users',
-            'operations',
             'set_menu',
         ]);
         $perPage = Request::input('per_page', 10);
@@ -52,18 +50,8 @@ class PermissionProps
         return [
             'can' => self::getPermissions(),
             'filters' => $filtersAll,
-            'roles' => Inertia::lazy(fn() => Role::select(['id', 'name'])->get()),
-            'users' => Inertia::lazy(fn() => User::select(['id', 'email'])->withTrashed()->get()),
-            'operations' => Inertia::lazy(fn() => [
-                'Creación',
-                'Lectura',
-                'Actualización',
-                'Eliminación',
-                'Exportación',
-                'Activación',
-                'Desactivación',
-                'Restauración',
-            ]),
+            'roles' => Inertia::optional(fn() => Role::select(['id', 'name'])->get()),
+            'users' => Inertia::optional(fn() => User::select(['id', 'email'])->withTrashed()->get()),
             'permissions' => fn() => new PermissionCollection(
                 Permission::filter($filtersOnly)
                     ->paginate($perPage)

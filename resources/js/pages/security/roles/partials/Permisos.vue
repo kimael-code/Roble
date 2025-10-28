@@ -5,10 +5,11 @@ import { router } from '@inertiajs/vue3';
 import { getCoreRowModel, SortingState, TableOptions, useVueTable } from '@tanstack/vue-table';
 import { reactive, ref } from 'vue';
 import { columns } from './columnsPermission';
+import RoleController from "@/actions/App/Http/Controllers/Security/RoleController";
 
 interface Props {
   filters: object;
-  roleId: string | number;
+  roleId: number;
   permissions: PaginatedCollection<Permission>;
 }
 const props = defineProps<Props>();
@@ -27,7 +28,7 @@ function handleSortingChange(item: any) {
       data[sortBy] = sortDirection;
     });
 
-    router.visit(route('permissions.show', { permission: props.roleId }), {
+    router.visit(RoleController.show(props.roleId), {
       data,
       only: ['permissions'],
       preserveScroll: true,
@@ -53,7 +54,7 @@ const tableOptions = reactive<TableOptions<Permission>>({
     };
   },
   getCoreRowModel: getCoreRowModel(),
-  getRowId: (row) => row.id,
+  getRowId: (row) => String(row.id),
   onSortingChange: handleSortingChange,
   state: {
     get sorting() {
@@ -74,7 +75,7 @@ const table = useVueTable(tableOptions);
     :data="permissions"
     :filters
     :search-only="['permissions']"
-    :search-route="route('roles.show', { role: roleId })"
+    :search-route="RoleController.show(roleId)"
     :table
     @search="(s) => (globalFilter = s)"
   />

@@ -4,50 +4,50 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthLayout from '@/layouts/AuthLayout.vue';
-import { Head, useForm } from '@inertiajs/vue3';
+import { store } from '@/routes/password/confirm';
+import { Form, Head } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
-
-const form = useForm({
-    password: '',
-});
-
-const submit = () => {
-    form.post(route('password.confirm'), {
-        onFinish: () => {
-            form.reset();
-        },
-    });
-};
 </script>
 
 <template>
     <AuthLayout title="Confirme su contraseña" description="Antes de continuar, por favor, ingrese su contraseña.">
         <Head title="Confirmar contraseña" />
 
-        <form @submit.prevent="submit">
+        <Form
+            v-bind="store.form()"
+            reset-on-success
+            v-slot="{ errors, processing }"
+        >
             <div class="space-y-6">
                 <div class="grid gap-2">
                     <Label htmlFor="password">Contraseña</Label>
                     <Input
                         id="password"
                         type="password"
+                        name="password"
                         class="mt-1 block w-full"
-                        v-model="form.password"
                         required
                         autocomplete="current-password"
                         autofocus
                     />
 
-                    <InputError :message="form.errors.password" />
+                    <InputError :message="errors.password" />
                 </div>
 
                 <div class="flex items-center">
-                    <Button class="w-full" :disabled="form.processing">
-                        <LoaderCircle v-if="form.processing" class="h-4 w-4 animate-spin" />
+                    <Button
+                        class="w-full"
+                        :disabled="processing"
+                        data-test="confirm-password-button"
+                    >
+                        <LoaderCircle
+                            v-if="processing"
+                            class="h-4 w-4 animate-spin"
+                        />
                         Confirmar Contraseña
                     </Button>
                 </div>
             </div>
-        </form>
+        </Form>
     </AuthLayout>
 </template>

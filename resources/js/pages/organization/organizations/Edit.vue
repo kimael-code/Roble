@@ -14,6 +14,7 @@ import { Head, router } from '@inertiajs/vue3';
 import { useForm } from 'laravel-precognition-vue-inertia';
 import { Building, LoaderCircleIcon } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import routes from "@/actions/App/Http/Controllers/Organization/OrganizationController";
 
 const props = defineProps<{
   organization: Organization;
@@ -43,7 +44,7 @@ type OrganizationForm = {
   disabled: boolean;
 };
 
-const form = useForm('post', route('organizations.update', props.organization.id), <OrganizationForm>{
+const form = useForm('post', routes.update(props.organization.id).url, <OrganizationForm>{
   _method: 'put',
   rif: props.organization.rif,
   name: props.organization.name,
@@ -73,7 +74,7 @@ function submit() {
 }
 
 function index() {
-  router.visit(route('organizations.index'), {
+  router.visit(routes.index(), {
     onStart: () => (buttonCancel.value = true),
     onFinish: () => (buttonCancel.value = false),
   });

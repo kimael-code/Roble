@@ -5,13 +5,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Role, User } from '@/types';
 import { router } from '@inertiajs/vue3';
 import { ref } from 'vue';
-import ComboboxOperations from './ComboboxOperations.vue';
 import ComboboxRoles from './ComboboxRoles.vue';
 import ComboboxUsers from './ComboboxUsers.vue';
 
 defineProps<{
   show: boolean;
-  operations?: Array<string>;
   roles?: Array<Role>;
   users?: Array<User>;
 }>();
@@ -42,19 +40,15 @@ function submitSearch() {
           <SheetDescription>Parametrice la consulta de registros haciendo uso de los siguientes controles.</SheetDescription>
         </SheetHeader>
         <Tabs default-value="users" class="pr-4 pl-4" :unmount-on-hide="false">
-          <TabsList class="grid w-full grid-cols-3">
+          <TabsList class="grid w-full grid-cols-2">
             <TabsTrigger value="users">Usuarios</TabsTrigger>
             <TabsTrigger value="roles">Roles</TabsTrigger>
-            <TabsTrigger value="operations">Operación</TabsTrigger>
           </TabsList>
           <TabsContent value="users">
             <ComboboxUsers :users @selected="(u) => (form.users = u)" />
           </TabsContent>
           <TabsContent value="roles">
             <ComboboxRoles :roles @selected="(r) => (form.roles = r)" />
-          </TabsContent>
-          <TabsContent value="operations">
-            <ComboboxOperations :operations @selected="(o) => (form.operations = o)" />
           </TabsContent>
         </Tabs>
         <SheetFooter>

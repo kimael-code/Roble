@@ -8,7 +8,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Props\Organization\OrganizationalUnitProps;
 use App\Http\Requests\Organization\StoreOrganizationalUnitRequest;
 use App\Http\Requests\Organization\UpdateOrganizationalUnitRequest;
+use App\Actions\Organization\BatchDeleteOrganizationalUnit;
 use App\Models\Organization\OrganizationalUnit;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
@@ -84,5 +86,12 @@ class OrganizationalUnitController extends Controller
         $organizationalUnit->delete();
 
         return redirect(route('organizational-units.index'));
+    }
+
+    public function batchDestroy(): RedirectResponse
+    {
+        $result = BatchDeleteOrganizationalUnit::execute(request()->all());
+
+        return redirect(route('organizational-units.index'))->with('message', $result);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\ProfileUpdateRequest;
+use App\Models\Monitoring\ActivityLog;
 use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
@@ -43,13 +44,14 @@ class ProfileController extends Controller
 
         if ($request->user()->wasChanged())
         {
-            activity(__('Settings/Profile'))
+            activity(ActivityLog::LOG_NAMES['profile'])
                 ->causedBy(auth()->user())
                 ->performedOn($request->user())
-                ->event('updated')
+                ->event(ActivityLog::EVENT_NAMES['updated'])
                 ->withProperties([
                     'attributes' => $request->user()->getChanges(),
                     'old' => $request->user()->getPrevious(),
+                    'causer' => User::with('person')->find(auth()->user()->id)->toArray(),
                     'request' => [
                         'ip_address' => request()->ip(),
                         'user_agent' => request()->header('user-agent'),
@@ -58,7 +60,6 @@ class ProfileController extends Controller
                         'http_method' => request()->method(),
                         'request_url' => request()->fullUrl(),
                     ],
-                    'causer' => User::with('person')->find(auth()->user()->id)->toArray(),
                 ])
                 ->log('updated their profile information');
         }
