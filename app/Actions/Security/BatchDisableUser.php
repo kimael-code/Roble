@@ -6,13 +6,13 @@ use App\Models\User;
 
 class BatchDisableUser
 {
-    public static function execute(array $ids): array
+    public function __construct(
+        private DisableUser $disableUser
+    ) {
+    }
+
+    public function __invoke(array $ids): array
     {
-        $msg = [
-            'message' => 'registros activados.',
-            'title' => '¡PROCESADO!',
-            'type' => 'success',
-        ];
         $deactivateCount = 0;
         $nonDeactivateCount = 0;
         $nonDeactivateReasons = '';
@@ -40,34 +40,36 @@ class BatchDisableUser
             }
             else
             {
-                DisableUser::handle($user);
+                ($this->disableUser)($user);
                 $deactivateCount += 1;
             }
         }
 
-        if ($deactivateCount === 1)
-        {
-            $msg['message'] = "$deactivateCount registro desactivado";
-            $msg['type'] = 'success';
-        }
-        else
-        {
-            $msg['message'] = "$deactivateCount registros desactivados";
-            $msg['type'] = 'success';
-        }
+        return $this->buildMessage($deactivateCount, $nonDeactivateCount, $nonDeactivateReasons);
+    }
 
-        if ($nonDeactivateCount === 1)
+    private function buildMessage(int $successCount, int $failCount, string $reasons): array
+    {
+        $msg = [
+            'content' => $successCount === 1
+                ? "$successCount registro desactivado"
+                : "$successCount registros desactivados",
+            'title' => '¡PROCESADO!',
+            'type' => 'success',
+        ];
+
+        if ($failCount === 1)
         {
-            $msg['message'] .= ". $nonDeactivateCount registro NO desactivado. Causa/s: $nonDeactivateReasons";
+            $msg['content'] .= ". $failCount registro NO desactivado. Causa/s: $reasons";
             $msg['type'] = 'warning';
         }
-        elseif ($nonDeactivateCount > 1)
+        elseif ($failCount > 1)
         {
-            $msg['message'] .= ". $nonDeactivateCount registros NO activados. Causa/s: $nonDeactivateReasons";
+            $msg['content'] .= ". $failCount registros NO desactivados. Causa/s: $reasons";
             $msg['type'] = 'warning';
         }
 
-        $msg['message'] .= '.';
+        $msg['content'] .= '.';
 
         return $msg;
     }

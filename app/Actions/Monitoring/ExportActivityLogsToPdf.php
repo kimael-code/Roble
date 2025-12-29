@@ -26,36 +26,36 @@ class ExportActivityLogsToPdf extends BasePdf
     {
         parent::Header();
 
-        $filters = $this->getFilters();
+        $filters = $this->getAppliedFilters();
+
+        // Sección 1: Filtros con degradado
+        $this->drawSectionHeader('1. FILTROS APLICADOS');
 
         $this->setFont(family: 'helvetica', style: 'B', size: 10);
-        $this->setFillColor(0, 53, 41);
-        $this->setTextColor(255, 255, 255);
-        $this->Cell(w: 0, txt: '1. FILTROS APLICADOS', border: 0, ln: 1, fill: true);
         $this->setTextColor(0, 0, 0);
         $this->MultiCell(w: 40, h: 0, align: 'L', ln: 0, txt: 'Buscar');
         $this->setFont(family: 'iosevkafixedss12', size: 10);
-        $this->MultiCell(w:  0, h: 0, align: 'L', ln: 1, txt: $filters['search'] ?: 'Todo');
+        $this->MultiCell(w: 0, h: 0, align: 'L', ln: 1, txt: $filters['search'] ?: 'Todo');
         $this->setFont(family: 'helvetica', style: 'B', size: 10);
         $this->MultiCell(w: 40, h: 0, align: 'L', border: 'T', ln: 0, txt: 'Usuario(s)');
         $this->setFont(family: 'iosevkafixedss12', size: 10);
-        $this->MultiCell(w:  0, h: 0, border: 'T', ln: 1, txt: $filters['users'] ?: 'Todos');
+        $this->MultiCell(w: 0, h: 0, align: 'L', border: 'T', ln: 1, txt: $filters['users'] ?: 'Todos');
         $this->setFont(family: 'helvetica', style: 'B', size: 10);
         $this->MultiCell(w: 40, h: 0, align: 'L', border: 'T', ln: 0, txt: 'Fecha/Hora');
         $this->setFont(family: 'iosevkafixedss12', size: 10);
-        $this->MultiCell(w:  0, h: 0, border: 'T', ln: 1, txt: $filters['date_time'] ?: 'Todo');
+        $this->MultiCell(w: 0, h: 0, align: 'L', border: 'T', ln: 1, txt: $filters['date_time'] ?: 'Todo');
         $this->setFont(family: 'helvetica', style: 'B', size: 10);
-        $this->MultiCell(w: 40, h: 0, align: 'L', border: 'T', ln: 0, txt: 'Tipo de Actividad');
+        $this->MultiCell(w: 40, h: 0, align: 'L', border: 'T', ln: 0, txt: 'Tipo de Evento');
         $this->setFont(family: 'iosevkafixedss12', size: 10);
-        $this->MultiCell(w:  0, h: 0, border: 'T', ln: 1, txt: $filters['events'] ?: 'Todas');
+        $this->MultiCell(w: 0, h: 0, align: 'L', border: 'T', ln: 1, txt: $filters['events'] ?: 'Todos');
         $this->setFont(family: 'helvetica', style: 'B', size: 10);
         $this->MultiCell(w: 40, h: 0, align: 'L', border: 'T', ln: 0, txt: 'Módulo/Funcionalidad');
         $this->setFont(family: 'iosevkafixedss12', size: 10);
-        $this->MultiCell(w:  0, h: 0, border: 'T', ln: 1, txt: $filters['modules'] ?: 'Todo');
+        $this->MultiCell(w: 0, h: 0, align: 'L', border: 'T', ln: 1, txt: $filters['modules'] ?: 'Todos');
         $this->setFont(family: 'helvetica', style: 'B', size: 10);
-        $this->MultiCell(w: 40, h: 0, align: 'L', border: 'T', ln: 0, txt: 'IP Origen');
+        $this->MultiCell(w: 40, h: 0, align: 'L', border: 'T', ln: 0, txt: 'IP');
         $this->setFont(family: 'iosevkafixedss12', size: 10);
-        $this->MultiCell(w:  0, h: 0, border: 'T', ln: 1, txt: $filters['ip_dirs'] ?: 'Todas');
+        $this->MultiCell(w: 0, h: 0, align: 'L', border: 'T', ln: 1, txt: $filters['ips'] ?: 'Todas');
 
         $this->setLineStyle([
             'width' => 0.75 / $this->k,
@@ -65,46 +65,48 @@ class ExportActivityLogsToPdf extends BasePdf
             'color' => [0, 0, 0],
         ]);
 
-        $this->setFont(family: 'helvetica', style: 'B', size: 10);
-        $this->setFillColor(0, 53, 41);
-        $this->setTextColor(255, 255, 255);
-        $this->Cell(w: 0, txt: '2. DETALLE DE LAS TRAZAS DE ACTIVIDADES', border: 0, ln: 1, fill: true);
+        // Sección 2: Detalle con degradado
+        $this->drawSectionHeader('2. DETALLE DE LAS TRAZAS DE ACTIVIDADES');
         $this->setTextColor(0, 0, 0);
 
-        $this->setFont(family: 'dejavusans', style: 'B', size: 8);
-        $this->MultiCell(w: 30, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Fecha/Hora', 'created_at'));
-        $this->MultiCell(w: 30, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Usuario', 'causer_name'));
-        $this->MultiCell(w: 19.74, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Actividad', 'event'));
-        $this->MultiCell(w: 30, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Módulo/Func.', 'log_name'));
-        $this->MultiCell(w: 107, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Descripción', 'description'));
-        $this->MultiCell(w: 10, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('ID', 'subject_id'));
-        $this->MultiCell(w:  0, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 1, txt: $this->getString('IP', 'ip_address'));
+        // Encabezados de tabla con estilo institucional
+        $this->setTableHeaderStyle();
+        $this->MultiCell(w: 30, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Fecha/Hora', 'created_at'), fill: true);
+        $this->MultiCell(w: 30, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Usuario', 'causer_name'), fill: true);
+        $this->MultiCell(w: 19.74, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Actividad', 'event'), fill: true);
+        $this->MultiCell(w: 30, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Módulo/Func.', 'log_name'), fill: true);
+        $this->MultiCell(w: 107, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('Descripción', 'description'), fill: true);
+        $this->MultiCell(w: 10, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 0, txt: $this->getString('ID', 'subject_id'), fill: true);
+        $this->MultiCell(w: 0, h: 5, maxh: 5, align: 'L', valign: 'M', ln: 1, txt: $this->getString('IP', 'ip_address'), fill: true);
+
+        $this->setTableContentStyle();
 
         // establece el margen superior a la altura ocupada por el header
         $this->tMargin = $this->GetY();
         $this->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
     }
 
-    public function make(): string
+    public function make(string $destination = 'I'): string
     {
         // metadatos del archivo
         $this->setTitle('REPORTE: TRAZAS DE ACTIVIDADES DE USUARIOS');
         $this->setSubject('Reporte de Trazas');
         $this->setKeywords('reporte, PDF, traza, trazas, actividades');
 
-        $organizationLogo = Organization::active()->first()->logo_path ?? '';
+        $organizationLogo = Organization::active()->first()?->logo_path;
+        $imgFile = $organizationLogo ? storage_path("app/public/{$organizationLogo}") : resource_path('images/logo.png');
 
         $this->setHeaderData(
-            ln: storage_path("app/public/{$organizationLogo}"),
+            ln: $imgFile,
             lw: 60,
             ht: 'REPORTE: TRAZAS DE ACTIVIDADES DE USUARIOS',
-            hs: now()->toDateTimeLocalString(),
-            tc: [0, 30, 15],
-            lc: [0, 128, 100],
+            hs: now()->isoFormat('L LTS'),
+            tc: [29, 38, 53],
+            lc: [3, 91, 165],
         );
         $this->setFooterData(
-            tc: [0, 30, 15],
-            lc: [0, 128, 100],
+            tc: [29, 38, 53],
+            lc: [3, 91, 165],
         );
 
         $this->setFooterFont(['helvetica', '', 8]);
@@ -131,7 +133,7 @@ class ExportActivityLogsToPdf extends BasePdf
 
         $this->writeHTML($html);
 
-        return $this->Output('REPORTE: TRAZAS DE ACTIVIDADES DE USUARIOS');
+        return $this->Output('REPORTE_TRAZAS.pdf', $destination);
     }
 
     public function getAppliedFilters(): array

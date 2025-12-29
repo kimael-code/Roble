@@ -5,44 +5,39 @@ namespace App\Actions\Security;
 use App\Models\Monitoring\ActivityLog;
 use App\Models\User;
 use App\Notifications\ActionHandledOnModel;
+use App\Support\ActivityLogger;
 
 class DisableUser
 {
-    public static function handle(User $user): void
+    public function __construct(
+        private ActivityLogger $logger
+    ) {
+    }
+
+    public function __invoke(User $user): void
     {
         $user->disabled_at = now();
         $user->save();
 
-        activity(ActivityLog::LOG_NAMES['users'])
-            ->causedBy(auth()->user())
-            ->performedOn($user)
-            ->event(ActivityLog::EVENT_NAMES['disabled'])
-            ->withProperties([
-                'attributes' => $user->getChanges(),
-                'old' => $user->getPrevious(),
-                'request' => [
-                    'ip_address' => request()->ip(),
-                    'user_agent' => request()->header('user-agent'),
-                    'user_agent_lang' => request()->header('accept-language'),
-                    'referer' => request()->header('referer'),
-                    'http_method' => request()->method(),
-                    'request_url' => request()->fullUrl(),
-                ],
-                'causer' => User::with('person')->find(auth()->user()->id)->toArray(),
-            ])
-            ->log(__('disabled user [:modelName] [:modelEmail]', [
-                'modelName' => $user->name,
-                'modelEmail' => $user->email,
-            ]));
+        $this->logger->logDisabled(
+            ActivityLog::LOG_NAMES['users'],
+            $user,
+            'desactivó usuario [:subject.name] [:subject.email]'
+        );
 
         session()->flash('message', [
-            'message' => "{$user->name}",
-            'title' => __('DISABLED!'),
-            'type'  => 'warning',
+            'content' => "{$user->name}",
+            'title' => '¡DESACTIVADO!',
+            'type' => 'warning',
         ]);
 
+        $this->notifyUsers($user, 'disabled');
+    }
+
+    private function notifyUsers(User $disabledUser, string $action): void
+    {
         $users = User::permission('disable users')->get()->filter(
-            fn (User $user) => $user->id != auth()->user()->id
+            fn(User $user) => $user->id != auth()->user()->id
         )->all();
 
         foreach ($users as $user)
@@ -50,11 +45,11 @@ class DisableUser
             $user->notify(new ActionHandledOnModel(
                 auth()->user(),
                 [
-                    'type' => __('user'),
-                    'name' => "({$user->name})",
+                    'type' => 'usuario',
+                    'name' => "{$disabledUser->name}",
                     'timestamp' => now(),
                 ],
-                'disabled',
+                $action,
                 ['routeName' => 'users', 'routeParam' => 'user']
             ));
         }

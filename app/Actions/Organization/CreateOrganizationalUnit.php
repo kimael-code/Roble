@@ -6,7 +6,7 @@ use App\Models\Organization\OrganizationalUnit;
 
 class CreateOrganizationalUnit
 {
-    public static function handle(array $inputs): void
+    public function __invoke(array $inputs): OrganizationalUnit
     {
         $ou = new OrganizationalUnit([
             'name' => $inputs['name'],
@@ -22,5 +22,7 @@ class CreateOrganizationalUnit
 
         $ou->organization()->associate($inputs['organization_id']);
         $ou->save();
+
+        return $ou;
     }
 }

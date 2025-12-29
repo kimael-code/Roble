@@ -6,13 +6,13 @@ use App\Models\User;
 
 class BatchEnableUser
 {
-    public static function execute(array $ids): array
+    public function __construct(
+        private EnableUser $enableUser
+    ) {
+    }
+
+    public function __invoke(array $ids): array
     {
-        $msg = [
-            'message' => 'registros activados.',
-            'title' => '¡PROCESADO!',
-            'type' => 'success',
-        ];
         $activateCount = 0;
         $nonActivateCount = 0;
         $nonActivateReasons = '';
@@ -40,34 +40,36 @@ class BatchEnableUser
             }
             else
             {
-                EnableUser::handle($user);
+                ($this->enableUser)($user);
                 $activateCount += 1;
             }
         }
 
-        if ($activateCount === 1)
-        {
-            $msg['message'] = "$activateCount registro activado";
-            $msg['type'] = 'success';
-        }
-        else
-        {
-            $msg['message'] = "$activateCount registros activados";
-            $msg['type'] = 'success';
-        }
+        return $this->buildMessage($activateCount, $nonActivateCount, $nonActivateReasons);
+    }
 
-        if ($nonActivateCount === 1)
+    private function buildMessage(int $successCount, int $failCount, string $reasons): array
+    {
+        $msg = [
+            'content' => $successCount === 1
+                ? "$successCount registro activado"
+                : "$successCount registros activados",
+            'title' => '¡PROCESADO!',
+            'type' => 'success',
+        ];
+
+        if ($failCount === 1)
         {
-            $msg['message'] .= ". $nonActivateCount registro NO activado. Causa: $nonActivateReasons";
+            $msg['content'] .= ". $failCount registro NO activado. Causa: $reasons";
             $msg['type'] = 'warning';
         }
-        elseif ($nonActivateCount > 1)
+        elseif ($failCount > 1)
         {
-            $msg['message'] .= ". $nonActivateCount registros NO activados. Causa/s: $nonActivateReasons";
+            $msg['content'] .= ". $failCount registros NO activados. Causa/s: $reasons";
             $msg['type'] = 'warning';
         }
 
-        $msg['message'] .= '.';
+        $msg['content'] .= '.';
 
         return $msg;
     }

@@ -3,44 +3,55 @@
 namespace App\Actions\Organization;
 
 use App\Models\Organization\Organization;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 class UpdateOrganization
 {
-    public static function handle(array $inputs, Organization $organization): void
+    public function __invoke(array $inputs, Organization $organization): Organization
     {
-        $oldLogo = $organization->logo_path;
-        $logoHasChanged = false;
-
-        if (gettype($inputs['logo_path']) === 'object')
-        {
-            $newFilePath = Storage::disk('public')->putFile('logos', $inputs['logo_path']);
-        }
+        $oldLogoPath = $organization->logo_path;
+        $newLogoPath = null;
 
         try
         {
+            // Verificar si se subió un nuevo logo
+            if (isset($inputs['logo_path']) && $inputs['logo_path'] instanceof UploadedFile)
+            {
+                $newLogoPath = Storage::disk('public')->putFile('logos', $inputs['logo_path']);
+            }
+
+            // Actualizar datos de la organización
             $organization->rif = $inputs['rif'] ?? $organization->rif;
             $organization->name = $inputs['name'] ?? $organization->name;
-            $organization->logo_path = $newFilePath ?? null ? $newFilePath : $inputs['logo_path'];
             $organization->acronym = $inputs['acronym'] ?? $organization->acronym;
             $organization->address = $inputs['address'] ?? $organization->address;
             $organization->disabled_at = $inputs['disabled'] ? now() : null;
+
+            // Actualizar logo solo si se subió uno nuevo
+            if ($newLogoPath)
+            {
+                $organization->logo_path = $newLogoPath;
+            }
 
             $logoHasChanged = $organization->isDirty('logo_path');
 
             $organization->save();
 
-            if ($logoHasChanged && $oldLogo)
+            // Eliminar logo anterior si cambió
+            if ($logoHasChanged && $oldLogoPath)
             {
-                Storage::disk('public')->delete($oldLogo);
+                Storage::disk('public')->delete($oldLogoPath);
             }
 
+            return $organization;
         }
         catch (\Throwable $th)
         {
-            if ($newFilePath)
+            // Si algo falla, eliminar el nuevo logo subido
+            if ($newLogoPath)
             {
-                Storage::disk('public')->delete($newFilePath);
+                Storage::disk('public')->delete($newLogoPath);
             }
             throw $th;
         }

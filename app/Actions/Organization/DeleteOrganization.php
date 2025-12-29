@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Storage;
 
 class DeleteOrganization
 {
-    public static function handle(Organization $organization): void
+    public function __invoke(Organization $organization): void
     {
         $logoPath = $organization->logo_path;
 
@@ -15,7 +15,7 @@ class DeleteOrganization
 
         if ($logoPath)
         {
-            Storage::disk('public')->delete($organization->logo_path);
+            Storage::disk('public')->delete($logoPath);
         }
     }
 }

@@ -6,13 +6,8 @@ use App\Models\User;
 
 class BatchDeleteUser
 {
-    public static function execute(array $ids): array
+    public function __invoke(array $ids): array
     {
-        $msg = [
-            'message' => 'registros eliminados.',
-            'title' => __('PROCESSED!'),
-            'type' => 'success',
-        ];
         $deleteCount = 0;
         $nonDeleteCount = 0;
         $nonDeleteReasons = '';
@@ -45,29 +40,31 @@ class BatchDeleteUser
             }
         }
 
-        if ($deleteCount === 1)
-        {
-            $msg['message'] = "$deleteCount registro eliminado";
-            $msg['type'] = 'success';
-        }
-        else
-        {
-            $msg['message'] = "$deleteCount registros eliminados";
-            $msg['type'] = 'success';
-        }
+        return $this->buildMessage($deleteCount, $nonDeleteCount, $nonDeleteReasons);
+    }
 
-        if ($nonDeleteCount === 1)
+    private function buildMessage(int $successCount, int $failCount, string $reasons): array
+    {
+        $msg = [
+            'content' => $successCount === 1
+                ? "$successCount registro eliminado"
+                : "$successCount registros eliminados",
+            'title' => '¡PROCESADO!',
+            'type' => 'success',
+        ];
+
+        if ($failCount === 1)
         {
-            $msg['message'] .= ". $nonDeleteCount registro NO eliminado. Causa/s: $nonDeleteReasons";
+            $msg['content'] .= ". $failCount registro NO eliminado. Causa/s: $reasons";
             $msg['type'] = 'warning';
         }
-        elseif ($nonDeleteCount > 1)
+        elseif ($failCount > 1)
         {
-            $msg['message'] .= ". $nonDeleteCount registros NO eliminados. Causa/s: $nonDeleteReasons";
+            $msg['content'] .= ". $failCount registros NO eliminados. Causa/s: $reasons";
             $msg['type'] = 'warning';
         }
 
-        $msg['message'] .= '.';
+        $msg['content'] .= '.';
 
         return $msg;
     }

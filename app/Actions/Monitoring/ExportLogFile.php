@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ExportLogFile
 {
-    public static function handle(string $file): BinaryFileResponse
+    public function __invoke(string $file): BinaryFileResponse
     {
         $logfile = new Logfile();
 
@@ -20,7 +20,7 @@ class ExportLogFile
             $fileBeingDownloaded = $logfile->relativePaths()[$file];
         }
 
-        $fileName = Str::replace(' ', '_', now()->toDateTimeString()."_{$fileBeingDownloaded}");
+        $fileName = Str::replace(' ', '_', now()->toDateTimeString() . "_{$fileBeingDownloaded}");
 
         return response()->download(Storage::disk('logs')->path($fileBeingDownloaded), $fileName);
     }

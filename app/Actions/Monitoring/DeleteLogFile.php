@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Storage;
 
 class DeleteLogFile
 {
-    public static function handle(string $file): void
+    public function __invoke(string $file): void
     {
         $logfile = new Logfile();
 
@@ -40,9 +40,9 @@ class DeleteLogFile
             ->log("eliminó el archivo [$file]");
 
         session()->flash('message', [
-            'message' => $file,
-            'title' => __('DELETED!'),
-            'type'  => 'danger',
+            'content' => "archivo $file",
+            'title' => '¡ELIMINADO!',
+            'type' => 'danger',
         ]);
     }
 }

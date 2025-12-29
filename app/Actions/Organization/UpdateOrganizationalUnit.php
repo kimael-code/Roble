@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class UpdateOrganizationalUnit
 {
-    public static function handle(array $inputs, OrganizationalUnit $organizationalUnit): void
+    public function __invoke(array $inputs, OrganizationalUnit $organizationalUnit): OrganizationalUnit
     {
         DB::transaction(function () use ($organizationalUnit, $inputs)
         {
@@ -16,7 +16,16 @@ class UpdateOrganizationalUnit
             $organizationalUnit->acronym = $inputs['acronym'];
             $organizationalUnit->floor = $inputs['floor'];
             $organizationalUnit->organizationalUnit()->associate($inputs['organizational_unit_id']);
+
+            // Handle activation/deactivation
+            if (isset($inputs['disabled']))
+            {
+                $organizationalUnit->disabled_at = $inputs['disabled'] ? now() : null;
+            }
+
             $organizationalUnit->save();
         });
+
+        return $organizationalUnit;
     }
 }
