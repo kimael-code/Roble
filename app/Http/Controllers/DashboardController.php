@@ -2,17 +2,16 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Props\DashboardProps;
-use Illuminate\Http\Request;
+use App\InertiaProps\DashboardProps;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
     /**
-     * Handle the incoming request.
+     * Display the dashboard.
      */
-    public function __invoke(Request $request)
+    public function index(DashboardProps $props)
     {
-        return Inertia::render('Dashboard', DashboardProps::all($request->user()));
+        return Inertia::render('Dashboard', $props->toArray(auth()->user()));
     }
 }
