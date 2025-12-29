@@ -1,24 +1,36 @@
 import { createInertiaApp } from '@inertiajs/vue3';
 import createServer from '@inertiajs/vue3/server';
+import { configureEcho } from '@laravel/echo-vue';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createSSRApp, DefineComponent, h } from 'vue';
 import { renderToString } from 'vue/server-renderer';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+// Configurar Echo (no se usará en SSR pero evita errores de referencia)
+configureEcho({
+  broadcaster: 'reverb',
+  key: import.meta.env.VITE_REVERB_APP_KEY,
+  wsHost: import.meta.env.VITE_REVERB_HOST,
+  wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
+  wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
+  forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+  enabledTransports: ['ws', 'wss'],
+});
+
 createServer(
-    (page) =>
-        createInertiaApp({
-            page,
-            render: renderToString,
-            title: (title) => (title ? `${title} - ${appName}` : appName),
-            resolve: (name) =>
-                resolvePageComponent(
-                    `./pages/${name}.vue`,
-                    import.meta.glob<DefineComponent>('./pages/**/*.vue'),
-                ),
-            setup: ({ App, props, plugin }) =>
-                createSSRApp({ render: () => h(App, props) }).use(plugin),
-        }),
-    { cluster: true },
+  (page) =>
+    createInertiaApp({
+      page,
+      render: renderToString,
+      title: (title) => (title ? `${title} - ${appName}` : appName),
+      resolve: (name) =>
+        resolvePageComponent(
+          `./pages/${name}.vue`,
+          import.meta.glob<DefineComponent>('./pages/**/*.vue'),
+        ),
+      setup: ({ App, props, plugin }) =>
+        createSSRApp({ render: () => h(App, props) }).use(plugin),
+    }),
+  { cluster: true },
 );

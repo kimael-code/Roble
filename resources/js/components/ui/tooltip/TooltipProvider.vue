@@ -2,9 +2,7 @@
 import type { TooltipProviderProps } from "reka-ui"
 import { TooltipProvider } from "reka-ui"
 
-const props = withDefaults(defineProps<TooltipProviderProps>(), {
-  delayDuration: 0,
-})
+const props = defineProps<TooltipProviderProps>()
 </script>
 
 <template>

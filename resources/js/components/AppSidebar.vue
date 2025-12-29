@@ -2,21 +2,33 @@
 import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
+import NotificationsSheet from '@/components/NotificationsSheet.vue';
 import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import { dashboard } from '@/routes';
 import { useRememberScroll } from '@/composables/useRememberScroll';
+import { dashboard } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { Bug, Building, Construction, FolderGit2, KeySquare, LayoutGrid, LogsIcon, User, Users, Workflow } from 'lucide-vue-next';
-import { computed } from 'vue';
+import {
+  Bell,
+  Bug,
+  Building,
+  Construction,
+  Gauge,
+  KeySquare,
+  LogsIcon,
+  User,
+  Users,
+  Workflow,
+} from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import AppLogo from './AppLogo.vue';
 import NavCompany from './NavCompany.vue';
 import NavDebug from './NavDebug.vue';
@@ -24,13 +36,24 @@ import NavSecurity from './NavSecurity.vue';
 
 const { scrollable, handleScroll } = useRememberScroll('sidebar-scroll');
 const page = usePage();
-const hasSuperuserRole = computed(() => page.props.auth?.user?.roles?.some((r) => r.id == '1'));
+
+const hasMenuPermission = (permissionName: string): boolean => {
+  return (
+    page.props.auth?.menuPermissions?.includes(permissionName) ||
+    hasSuperuserRole.value
+  );
+};
+
+const hasSuperuserRole = computed(() =>
+  page.props.auth?.roles?.some((r) => r === 'Superusuario'),
+);
 
 const mainNavItems: NavItem[] = [
   {
     title: 'Tablero',
     href: dashboard(),
-    icon: LayoutGrid,
+    icon: Gauge,
+    hasPermission: true,
   },
 ];
 const companyNavItems: NavItem[] = [
@@ -38,13 +61,13 @@ const companyNavItems: NavItem[] = [
     title: 'Entes',
     href: '/organizations',
     icon: Building,
-    hasPermission: page.props.auth?.menu.includes('read any organization') || hasSuperuserRole.value,
+    hasPermission: hasMenuPermission('read any organization'),
   },
   {
     title: 'Unidades Administrativas',
     href: '/organizational-units',
     icon: Workflow,
-    hasPermission: page.props.auth?.menu.includes('read any organizational unit') || hasSuperuserRole.value,
+    hasPermission: hasMenuPermission('read any organizational unit'),
   },
 ];
 const securityNavItems: NavItem[] = [
@@ -52,19 +75,19 @@ const securityNavItems: NavItem[] = [
     title: 'Permisos',
     href: '/permissions',
     icon: KeySquare,
-    hasPermission: page.props.auth?.menu.includes('read any permission') || hasSuperuserRole.value,
+    hasPermission: hasMenuPermission('read any permission'),
   },
   {
     title: 'Roles',
     href: '/roles',
     icon: Users,
-    hasPermission: page.props.auth?.menu.includes('read any role') || hasSuperuserRole.value,
+    hasPermission: hasMenuPermission('read any role'),
   },
   {
     title: 'Usuarios',
     href: '/users',
     icon: User,
-    hasPermission: page.props.auth?.menu.includes('read any user') || hasSuperuserRole.value,
+    hasPermission: hasMenuPermission('read any user'),
   },
 ];
 const debugNavItems: NavItem[] = [
@@ -72,33 +95,42 @@ const debugNavItems: NavItem[] = [
     title: 'Trazas',
     href: '/activity-logs',
     icon: LogsIcon,
-    hasPermission: page.props.auth?.menu.includes('read any activity trace') || hasSuperuserRole.value,
+    hasPermission: hasMenuPermission('read any activity trace'),
   },
   {
     title: 'Depuración',
     href: '/log-files',
     icon: Bug,
-    hasPermission: page.props.auth?.menu.includes('read any system log') || hasSuperuserRole.value,
+    hasPermission: hasMenuPermission('read any system log'),
   },
   {
     title: 'Modo Mantenimiento',
     href: '/maintenance-mode',
     icon: Construction,
-    hasPermission: page.props.auth?.menu.includes('manage maintenance mode') || hasSuperuserRole.value,
+    hasPermission: hasMenuPermission('manage maintenance mode'),
   },
 ];
 
-const footerNavItems: NavItem[] = [
+// Estado para NotificationsSheet
+const notificationsSheetOpen = ref(false);
+const unreadCount = computed(() => page.props.unreadNotifications?.length || 0);
+
+const footerNavItems = computed<NavItem[]>(() => [
   {
-    title: 'Github Repo',
-    href: 'https://github.com/kimael-code/roble-vue-tailwind',
-    icon: FolderGit2,
+    title: 'Notificaciones',
+    href: '', // No se usa porque tiene onClick
+    icon: Bell,
+    badge: unreadCount.value,
+    onClick: () => {
+      notificationsSheetOpen.value = true;
+    },
+    hasPermission: true,
   },
-];
+]);
 </script>
 
 <template>
-  <Sidebar collapsible="icon" variant="floating">
+  <Sidebar collapsible="icon" variant="inset">
     <SidebarHeader>
       <SidebarMenu>
         <SidebarMenuItem>
@@ -123,31 +155,9 @@ const footerNavItems: NavItem[] = [
       <NavUser />
     </SidebarFooter>
   </Sidebar>
+
+  <!-- Sheet de Notificaciones -->
+  <NotificationsSheet v-model:open="notificationsSheetOpen" />
+
   <slot />
 </template>
-
-<style lang="css" scoped>
-/* Sólo para navegadores basados en Chromium (Chrome, Opera, Brave, Edge...) */
-
-/* Estilo general para la barra de desplazamiento */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 8px;
-}
-
-/* Fondo de la barra de desplazamiento */
-::-webkit-scrollbar-track {
-  border-radius: 10px;
-}
-
-/* El "pulgar" o la parte arrastrable de la barra de desplazamiento */
-::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 10px;
-}
-
-/* El "pulgar" al pasar el ratón por encima */
-::-webkit-scrollbar-thumb:hover {
-  background: #555;
-}
-</style>

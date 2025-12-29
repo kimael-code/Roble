@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import NotificationController from '@/actions/App/Http/Controllers/NotificationController';
 import { getInitials } from '@/composables/useInitials';
 import { router, usePage } from '@inertiajs/vue3';
 import { useEchoModel } from '@laravel/echo-vue';
@@ -12,12 +13,17 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { ScrollArea } from './ui/scroll-area';
 
 const page = ref(usePage());
-const unreadNotifications = computed(() => page.value.props.unreadNotifications);
+const unreadNotifications = computed(
+  () => page.value.props.unreadNotifications,
+);
 const unreadCount = computed(() => page.value.props.unreadNotifications.length);
-const { channel } = useEchoModel('App.Models.User', page.value.props.auth.user.id);
+const { channel } = useEchoModel(
+  'App.Models.User',
+  page.value.props.auth.user.id,
+);
 
 function markAsRead(notificationID: string) {
-  router.visit(route('notifications.mark-as-read', notificationID), {
+  router.visit(NotificationController.markAsRead(notificationID), {
     method: 'put',
   });
 }
@@ -36,10 +42,14 @@ router.reload();
     <Popover>
       <PopoverTrigger as-child>
         <div class="relative">
-          <Button v-show="unreadCount" variant="ghost" size="icon"> <BellRingIcon /> </Button>
-          <Badge v-if="unreadCount > 0" class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full p-0">{{
-            unreadCount
-          }}</Badge>
+          <Button v-show="unreadCount" variant="ghost" size="icon">
+            <BellRingIcon />
+          </Button>
+          <Badge
+            v-if="unreadCount > 0"
+            class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full p-0"
+            >{{ unreadCount }}</Badge
+          >
         </div>
       </PopoverTrigger>
       <PopoverContent class="w-96">
@@ -54,15 +64,28 @@ router.reload();
                 @click="markAsRead(notification.id)"
               >
                 <Avatar>
-                  <AvatarImage v-if="notification.data.photoUrl" :src="notification.data.photoUrl" />
-                  <AvatarFallback>{{ getInitials(notification.data.causer) }}</AvatarFallback>
+                  <AvatarImage
+                    v-if="notification.data.photoUrl"
+                    :src="notification.data.photoUrl"
+                  />
+                  <AvatarFallback>{{
+                    getInitials(notification.data.causer)
+                  }}</AvatarFallback>
                 </Avatar>
                 <div class="space-y-1">
-                  <h4 class="text-sm font-semibold">{{ notification.data?.causer }}</h4>
+                  <h4 class="text-sm font-semibold">
+                    {{ notification.data?.causer }}
+                  </h4>
                   <p class="text-sm">{{ notification.data?.message }}</p>
                   <div class="flex items-center pt-2">
                     <CalendarClockIcon class="mr-2 h-4 w-4 opacity-70" />
-                    <span class="text-xs text-muted-foreground"> {{ DateTime.fromISO(notification.data?.timestamp).toRelative() }} </span>
+                    <span class="text-xs text-muted-foreground">
+                      {{
+                        DateTime.fromISO(
+                          notification.data?.timestamp,
+                        ).toRelative()
+                      }}
+                    </span>
                   </div>
                 </div>
               </div>

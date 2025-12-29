@@ -9,10 +9,7 @@ const forwarded = useForwardPropsEmits(props, emits)
 </script>
 
 <template>
-  <TooltipRoot
-    data-slot="tooltip"
-    v-bind="forwarded"
-  >
+  <TooltipRoot v-bind="forwarded">
     <slot />
   </TooltipRoot>
 </template>

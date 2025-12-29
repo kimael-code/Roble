@@ -1,18 +1,23 @@
 <script setup lang="ts">
+import routes from '@/actions/App/Http/Controllers/Monitoring/ActivityLogController';
 import DataTable from '@/components/DataTable.vue';
 import { useRequestActions } from '@/composables';
 import { ActivityLog, PaginatedCollection, SearchFilter } from '@/types';
+import { RouteDefinition } from '@/wayfinder';
 import { router } from '@inertiajs/vue3';
-import { getCoreRowModel, SortingState, TableOptions, useVueTable } from '@tanstack/vue-table';
+import {
+  getCoreRowModel,
+  SortingState,
+  TableOptions,
+  useVueTable,
+} from '@tanstack/vue-table';
 import { reactive, ref, watchEffect } from 'vue';
 import { columns, processingRowId } from './columns';
-import routes from "@/actions/App/Http/Controllers/Monitoring/ActivityLogController";
-import { RouteDefinition } from '@/wayfinder';
 
 const props = defineProps<{
   filters: SearchFilter;
   logs: PaginatedCollection<ActivityLog>;
-  route: RouteDefinition<"get">;
+  route: RouteDefinition<'get'>;
 }>();
 
 const { resourceID, requestAction } = useRequestActions(routes);
@@ -71,7 +76,9 @@ const tableOptions = reactive<TableOptions<ActivityLog>>({
 
 const table = useVueTable(tableOptions);
 
-watchEffect(() => (resourceID.value === null ? (processingRowId.value = null) : false));
+watchEffect(() =>
+  resourceID.value === null ? (processingRowId.value = null) : false,
+);
 </script>
 
 <template>
@@ -82,7 +89,13 @@ watchEffect(() => (resourceID.value === null ? (processingRowId.value = null) : 
     :search-only="['logs']"
     :search-route="route"
     :table
+    :has-advanced-search="false"
     @search="(s) => (globalFilter = s)"
-    @read="(row) => (requestAction({ operation: 'read', data: { id: row.id } }), (processingRowId = row.id))"
+    @read="
+      (row) => (
+        requestAction({ operation: 'read', data: { id: row.id } }),
+        (processingRowId = row.id)
+      )
+    "
   />
 </template>

@@ -245,8 +245,8 @@ const spawnPulse = (
   <div
     class="fixed inset-0 z-0 overflow-hidden"
     :class="[
-      'bg-linear-to-t from-emerald-50 via-green-50/30 to-white',
-      'dark:bg-linear-to-t dark:from-emerald-950 dark:via-gray-900 dark:to-gray-950',
+      'bg-linear-to-t from-emerald-50 via-emerald-50/30 to-white',
+      'dark:bg-linear-to-t dark:from-emerald-950 dark:via-emerald-900 dark:to-emerald-950',
     ]"
   >
     <svg
@@ -257,9 +257,9 @@ const spawnPulse = (
       <defs>
         <!-- Gradiente para el pulso -->
         <radialGradient id="pulseGradient-bg" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="rgba(52, 211, 153, 1)" />
-          <stop offset="50%" stop-color="rgba(52, 211, 153, 0.8)" />
-          <stop offset="100%" stop-color="rgba(52, 211, 153, 0)" />
+          <stop offset="0%" stop-color="oklch(0.648 0.2 131.684 / 1)" />
+          <stop offset="50%" stop-color="oklch(0.648 0.2 131.684 / 0.8)" />
+          <stop offset="100%" stop-color="oklch(0.648 0.2 131.684 / 0)" />
         </radialGradient>
 
         <!-- Filtro de brillo sutil -->
@@ -362,34 +362,34 @@ const spawnPulse = (
 </template>
 
 <style>
-/* Líneas del circuito - más sutiles */
+/* Líneas del circuito - más visibles en modo claro */
 .circuit-line {
-  stroke: rgba(16, 185, 129, 0.15); /* Reduced opacity */
+  stroke: oklch(0.648 0.2 131.684 / 0.4);
   transition: stroke 0.3s ease;
 }
 
 .circuit-node {
-  fill: rgba(16, 185, 129, 0.25); /* Reduced opacity */
+  fill: oklch(0.648 0.2 131.684 / 0.5);
   transition: fill 0.3s ease;
 }
 
 .node-ring {
   fill: none;
-  stroke: rgba(16, 185, 129, 0.2); /* Reduced opacity */
+  stroke: oklch(0.648 0.2 131.684 / 0.4);
   stroke-width: 0.15;
 }
 
 .light-pulse {
-  fill: rgba(52, 211, 153, 0.9);
+  fill: oklch(0.648 0.2 131.684 / 0.9);
 }
 
 .pulse-trail {
-  fill: rgba(52, 211, 153, 0.3);
+  fill: oklch(0.648 0.2 131.684 / 0.3);
 }
 
-/* Modo oscuro */
+/* Modo oscuro: Restaurar colores antiguos */
 .dark .circuit-line {
-  stroke: rgba(110, 231, 183, 0.1); /* Very subtle in dark */
+  stroke: rgba(110, 231, 183, 0.1);
 }
 
 .dark .circuit-node {
