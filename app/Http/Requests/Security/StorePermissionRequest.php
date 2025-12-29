@@ -25,7 +25,7 @@ class StorePermissionRequest extends FormRequest
             'name' => ['required', 'string', 'lowercase', 'max:255', 'doesnt_end_with:.', 'unique:permissions',],
             'description' => ['required', 'string', 'lowercase', 'max:255', 'doesnt_end_with:.',],
             'guard_name' => ['required', 'string', 'lowercase', 'regex:/^(web)$/',],
-            'set_menu' => ['nullable', 'boolean',],
+            'set_menu'    => ['nullable', 'boolean',],
         ];
     }
 
@@ -39,8 +39,8 @@ class StorePermissionRequest extends FormRequest
         return [
             'name' => 'Nombre',
             'description' => 'Descripción',
-            'guard_name' => 'Autentificación',
-            'set_menu' => 'Define menú',
+            'guard_name' => 'Autenticación',
+            'set_menu' => 'Establece menú',
         ];
     }
 }

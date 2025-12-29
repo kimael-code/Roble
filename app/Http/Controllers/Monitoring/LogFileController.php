@@ -5,24 +5,24 @@ namespace App\Http\Controllers\Monitoring;
 use App\Actions\Monitoring\DeleteLogFile;
 use App\Actions\Monitoring\ExportLogFile;
 use App\Http\Controllers\Controller;
-use App\Http\Props\Monitoring\LogFileProps;
+use App\InertiaProps\Monitoring\LogFileIndexProps;
 use Inertia\Inertia;
 
 class LogFileController extends Controller
 {
-    public function index()
+    public function index(LogFileIndexProps $props)
     {
-        return Inertia::render('monitoring/log-files/Index', LogFileProps::index());
+        return Inertia::render('monitoring/log-files/Index', $props->toArray());
     }
 
-    public function export(string $file)
+    public function export(string $file, ExportLogFile $exportLogFile)
     {
-        return ExportLogFile::handle($file);
+        return $exportLogFile($file);
     }
 
-    public function delete(string $file)
+    public function delete(string $file, DeleteLogFile $deleteLogFile)
     {
-        DeleteLogFile::handle($file);
+        $deleteLogFile($file);
 
         return redirect()->route('log-files.index');
     }

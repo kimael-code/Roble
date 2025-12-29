@@ -50,7 +50,7 @@ class PasswordController extends Controller
                     'request_url' => $request->fullUrl(),
                 ],
             ])
-            ->log(__('updated their own password'));
+            ->log('actualizó su propia contraseña');
 
         return back();
     }

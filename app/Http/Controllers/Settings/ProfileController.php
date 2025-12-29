@@ -31,7 +31,7 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        abort(403, __('Not allowed. Contact Technical Support if you need to update your information.'));
+        abort(403, 'No se permite. Contacte con Soporte Técnico si necesita actualizar sus datos.');
 
         $request->user()->fill($request->validated());
 
@@ -61,7 +61,7 @@ class ProfileController extends Controller
                         'request_url' => request()->fullUrl(),
                     ],
                 ])
-                ->log('updated their profile information');
+                ->log('actualizó información de su perfil');
         }
 
         return to_route('profile.edit');
@@ -72,6 +72,8 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        abort(403, 'No se permite. Contacte con Soporte Técnico si necesita actualizar sus datos.');
+
         $request->validate([
             'password' => ['required', 'current_password'],
         ]);

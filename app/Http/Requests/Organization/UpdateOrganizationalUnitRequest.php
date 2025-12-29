@@ -28,6 +28,7 @@ class UpdateOrganizationalUnitRequest extends FormRequest
             'acronym' => ['nullable', 'string', 'max:20'],
             'floor' => ['nullable', 'string', 'max:5'],
             'organizational_unit_id' => ['nullable', 'numeric', 'integer', 'exists:organizational_units,id'],
+            'disabled' => ['sometimes', 'boolean'],
         ];
     }
 

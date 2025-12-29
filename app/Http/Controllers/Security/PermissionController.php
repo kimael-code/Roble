@@ -5,13 +5,13 @@ namespace App\Http\Controllers\Security;
 use App\Actions\Security\CreatePermission;
 use App\Actions\Security\UpdatePermission;
 use App\Http\Controllers\Controller;
-use App\Http\Props\Security\PermissionProps;
+use App\InertiaProps\Security\PermissionIndexProps;
+use App\InertiaProps\Security\PermissionShowProps;
+use App\InertiaProps\Security\PermissionEditProps;
 use App\Http\Requests\Security\StorePermissionRequest;
 use App\Http\Requests\Security\UpdatePermissionRequest;
-use App\Actions\Security\BatchDeletePermission;
 use App\Models\Security\Permission;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Gate;
+use Gate;
 use Inertia\Inertia;
 
 class PermissionController extends Controller
@@ -19,11 +19,11 @@ class PermissionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(PermissionIndexProps $props)
     {
         Gate::authorize('viewAny', Permission::class);
 
-        return Inertia::render('security/permissions/Index', PermissionProps::index());
+        return Inertia::render('security/permissions/Index', $props->toArray());
     }
 
     /**
@@ -39,41 +39,41 @@ class PermissionController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StorePermissionRequest $request)
+    public function store(StorePermissionRequest $request, CreatePermission $createPermission)
     {
-        CreatePermission::handle($request->validated());
+        $createPermission($request->validated());
 
-        return redirect()->route('permissions.index');
+        return redirect(route('permissions.index'));
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Permission $permission)
+    public function show(Permission $permission, PermissionShowProps $props)
     {
         Gate::authorize('view', $permission);
 
-        return Inertia::render('security/permissions/Show', PermissionProps::show($permission));
+        return Inertia::render('security/permissions/Show', $props->toArray($permission));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Permission $permission)
+    public function edit(Permission $permission, PermissionEditProps $props)
     {
         Gate::authorize('update', $permission);
 
-        return Inertia::render('security/permissions/Edit', PermissionProps::edit($permission));
+        return Inertia::render('security/permissions/Edit', $props->toArray($permission));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdatePermissionRequest $request, Permission $permission)
+    public function update(UpdatePermissionRequest $request, Permission $permission, UpdatePermission $updatePermission)
     {
-        UpdatePermission::handle($request->validated(), $permission);
+        $updatePermission($permission, $request->validated());
 
-        return redirect()->route('permissions.index');
+        return redirect(route('permissions.index'));
     }
 
     /**
@@ -85,13 +85,6 @@ class PermissionController extends Controller
 
         $permission->delete();
 
-        return redirect()->route('permissions.index');
-    }
-
-    public function batchDestroy(): RedirectResponse
-    {
-        $result = BatchDeletePermission::execute(request()->all());
-
-        return redirect(route('permissions.index'))->with('message', $result);
+        return redirect(route('permissions.index'));
     }
 }
