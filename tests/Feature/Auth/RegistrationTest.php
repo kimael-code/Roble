@@ -162,29 +162,13 @@ class RegistrationTest extends TestCase
     public function test_registration_fails_when_cedula_is_already_registered()
     {
         Event::fake();
-        // Mock de un empleado válido que será usado por la validación ActiveEmployee
-        $employeeDto = new EmployeeDto(
-            company_code: '001',
-            nationality: 'V',
-            id_card: '11223344',
-            rif: 'V11223344-9',
-            names: 'Existing',
-            surnames: 'User',
-            staff_type_code: '0000001',
-            org_unit_code: 'IT001',
-            position: 'Developer',
-            email: 'existing.user@empresa.com',
-            phone_ext: '123',
-            staff_type_name: 'Empleado',
-            org_unit_name: 'Tecnología'
-        );
 
-        $mock = $this->mock(EmployeeRepository::class, function (MockInterface $mock) use ($employeeDto)
+        // Mock para evitar llamadas reales - con 'bail', la validación unique se detiene antes de ActiveEmployee
+        $mock = $this->mock(EmployeeRepository::class, function (MockInterface $mock)
         {
             $mock->shouldReceive('find')
                 ->with('11223344')
-                ->once()
-                ->andReturn($employeeDto);
+                ->never();
         });
 
         $this->app->instance(EmployeeRepository::class, $mock);
@@ -262,6 +246,17 @@ class RegistrationTest extends TestCase
     public function test_registration_fails_with_non_numeric_cedula()
     {
         Event::fake();
+
+        // Mock para evitar llamadas reales al repositorio
+        $mock = $this->mock(EmployeeRepository::class, function (MockInterface $mock)
+        {
+            $mock->shouldReceive('find')
+                ->with('abc123')
+                ->never(); // No debería llegar a buscar porque la validación numérica debe fallar primero
+        });
+
+        $this->app->instance(EmployeeRepository::class, $mock);
+
         $response = $this->post(route('register.store'), [
             'id_card' => 'abc123',
             'password' => 'Password123!',
@@ -275,6 +270,17 @@ class RegistrationTest extends TestCase
     public function test_registration_fails_with_cedula_too_long()
     {
         Event::fake();
+
+        // Mock para evitar llamadas reales al repositorio
+        $mock = $this->mock(EmployeeRepository::class, function (MockInterface $mock)
+        {
+            $mock->shouldReceive('find')
+                ->with('123456789')
+                ->never(); // No debería llegar a buscar porque la validación de longitud debe fallar primero
+        });
+
+        $this->app->instance(EmployeeRepository::class, $mock);
+
         $response = $this->post(route('register.store'), [
             'id_card' => '123456789',
             'password' => 'Password123!',
