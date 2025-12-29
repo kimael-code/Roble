@@ -39,7 +39,7 @@ class RolePolicy
     {
         if ($role->id === 1)
         {
-            return Response::deny(__('The Superuser role cannot be updated.'));
+            return Response::deny('El rol Superusuario no puede ser modificado.');
         }
 
         return $user->can('update roles') ? true : null;
@@ -52,17 +52,17 @@ class RolePolicy
     {
         if ($role->id === 1)
         {
-            return Response::deny(__('The Superuser role cannot be deleted.'));
+            return Response::deny('El rol Superusuario no puede ser eliminado');
         }
 
         if ($role->permissions->isNotEmpty())
         {
-            return Response::deny(__('There are permissions having this role.'));
+            return Response::deny('Existen permisos asociados a este rol');
         }
 
         if ($role->users->isNotEmpty())
         {
-            return Response::deny(__('There are users having this role.'));
+            return Response::deny('Existen usuarios asignados a este rol');
         }
 
         return $user->can('delete roles') ? true : null;

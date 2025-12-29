@@ -27,13 +27,13 @@ class Permission extends SpatiePermission
      * Nombre usado para trazar el tipo de objeto.
      * @var string
      */
-    protected $traceModelType = 'permission';
+    protected $traceModelType = 'permiso';
 
     /**
      * Nombre usado para trazar el nombre del log.
      * @var string
      */
-    protected $traceLogName = 'Security/Permissions';
+    protected $traceLogName = 'Seguridad/Permisos';
 
     /**
      * The storage format of the model's date columns.
@@ -92,8 +92,13 @@ class Permission extends SpatiePermission
     public function getActivityLogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logAll()
-            ->useLogName(__($this->traceLogName))
+            ->logOnly([
+                'name',
+                'description',
+                'guard_name',
+            ])
+            ->logOnlyDirty()
+            ->useLogName('Seguridad/Permisos')
             ->setDescriptionForEvent(fn(string $eventName) => __(':event :model [:modelName] [:modelDescription]', [
                 'event' => __($eventName),
                 'model' => __($this->traceModelType),
@@ -102,6 +107,10 @@ class Permission extends SpatiePermission
             ]));
     }
 
+    /**
+     * Tap into the activity log to add request and causer metadata.
+     * This ensures HTTP request data is captured in activity logs.
+     */
     public function tapActivity(Activity $activity, string $eventName): void
     {
         switch ($eventName)
@@ -123,22 +132,15 @@ class Permission extends SpatiePermission
         }
 
         $activity->properties = $activity->properties
-            ->put('causer', User::with('person')->find(auth()->user()->id)->toArray())
-            ->put('request', [
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->header('user-agent'),
-                'user_agent_lang' => request()->header('accept-language'),
-                'referer' => request()->header('referer'),
-                'http_method' => request()->method(),
-                'request_url' => request()->fullUrl(),
-            ]);
+            ->put('causer', \App\Support\UserMetadata::capture())
+            ->put('request', \App\Support\RequestMetadata::capture());
     }
 
     #[Scope]
     protected function filter(Builder $query, array $filters): void
     {
         $query
-            ->when(empty($filters) ?? null, function (Builder $query)
+            ->when(empty($filters['sort_by'] ?? []), function (Builder $query)
             {
                 $query->latest();
             })
@@ -156,9 +158,6 @@ class Permission extends SpatiePermission
                 {
                     switch ($field)
                     {
-                        case 'db_operation':
-                            $query->orderBy('name', $direction);
-                            break;
                         case 'created_at_human':
                             $query->orderBy('created_at', $direction);
                             break;
@@ -168,24 +167,24 @@ class Permission extends SpatiePermission
                     }
                 }
             })
-            ->when($filters['roles'] ?? null, function (Builder $query, array $roles)
+            ->when($filters['roles'] ?? null, function (Builder $query, array $names)
             {
-                $roles = Role::whereIn('name', $roles)->get();
+                $roles = Role::whereIn('name', $names)->get();
 
                 $query->whereAttachedTo($roles);
             })
-            ->when($filters['users'] ?? null, function (Builder $query, array $userEmails)
+            ->when($filters['users'] ?? null, function (Builder $query, array $names)
             {
-                foreach ($userEmails as $userEmail)
+                foreach ($names as $username)
                 {
                     $query
-                        ->orWhereHas('users', function (Builder $query) use ($userEmail)
+                        ->orWhereHas('users', function (Builder $query) use ($username)
                         {
-                            $query->where('email', $userEmail);
+                            $query->where('name', $username);
                         })
-                        ->orWhereHas('roles', function (Builder $query) use ($userEmail)
+                        ->orWhereHas('roles', function (Builder $query) use ($username)
                         {
-                            $user = User::where('email', $userEmail)->first();
+                            $user = User::where('name', $username)->first();
 
                             foreach ($user->roles as $role)
                             {

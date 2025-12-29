@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table)
         {
-            $table->boolean('is_password_set')
+            $table->boolean('is_active')
                 ->default(false)
-                ->comment('Determina si se cambió la contraseña al intentar acceder por primera vez.');
+                ->comment('Determina si el usuario ha activado su "cuenta".');
         });
     }
 
@@ -26,7 +26,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table)
         {
-            $table->dropColumn('is_password_set');
+            $table->dropColumn('is_active');
         });
     }
 };

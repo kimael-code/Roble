@@ -29,7 +29,7 @@ class ActivityLog extends Activity
     ];
 
     public const LOG_NAMES = [
-        'auth' => 'Autentificación',
+        'auth' => 'Autenticación',
         'password' => 'Configuración/Contraseña',
         'profile' => 'Configuración/Perfil',
         'orgs' => 'Ente/Entes',
@@ -59,7 +59,7 @@ class ActivityLog extends Activity
         return Attribute::make(
             get: fn(mixed $value, array $attributes) => Carbon::createFromTimeString($attributes['created_at'])
                 ->isoFormat('L LT')
-                . ' (' . Carbon::createFromTimeString($attributes['created_at'])->diffForHumans() . ')',
+            . ' (' . Carbon::createFromTimeString($attributes['created_at'])->diffForHumans() . ')',
         );
     }
 
@@ -68,7 +68,7 @@ class ActivityLog extends Activity
         return Attribute::make(
             get: fn(mixed $value, array $attributes) => Carbon::createFromTimeString($attributes['updated_at'])
                 ->isoFormat('L LT')
-                . ' (' . Carbon::createFromTimeString($attributes['updated_at'])->diffForHumans() . ')',
+            . ' (' . Carbon::createFromTimeString($attributes['updated_at'])->diffForHumans() . ')',
         );
     }
 
@@ -112,7 +112,7 @@ class ActivityLog extends Activity
     protected function filter(Builder $query, array $filters): void
     {
         $query
-            ->when(empty($filters) ?? null, function (Builder $query)
+            ->when(empty($filters['sort_by'] ?? []), function (Builder $query)
             {
                 $query->latest();
             })

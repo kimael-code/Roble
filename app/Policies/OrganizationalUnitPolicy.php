@@ -47,7 +47,7 @@ class OrganizationalUnitPolicy
     {
         if ($organizationalUnit->users->isNotEmpty())
         {
-            return Response::deny(__('There are users who belong to this administrative unit'));
+            return Response::deny('Existen usuarios que están asociados a esta unidad administrativa');
         }
 
         return $user->can('delete organizational units') ? true : null;

@@ -13,7 +13,9 @@ return new class extends Migration
     {
         Schema::table('permissions', function (Blueprint $table)
         {
-            $table->boolean('set_menu')->default(false);
+            $table->boolean('set_menu')
+                ->default(false)
+                ->comment('Indica si el permiso configura el menú de navegación');
         });
     }
 

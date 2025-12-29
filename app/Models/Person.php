@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\AsCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\Activitylog\LogOptions;
 
-class Person extends BaseModel
+class Person extends Model
 {
     /** @use HasFactory<\Database\Factories\PersonFactory> */
     use HasFactory;
@@ -18,13 +19,13 @@ class Person extends BaseModel
      * Nombre usado para trazar el tipo de objeto.
      * @var string
      */
-    protected $traceModelType = 'person';
+    protected $traceModelType = 'persona';
 
     /**
      * Nombre usado para trazar el nombre del log.
      * @var string
      */
-    protected $traceLogName = 'Security/Users';
+    protected $traceLogName = 'Seguridad/Usuarios';
 
     /**
      * The attributes that are mass assignable.
@@ -70,6 +71,10 @@ class Person extends BaseModel
     protected function filter(Builder $query, array $filters): void
     {
         $query
+            ->when(empty($filters['sort_by'] ?? []), function (Builder $query)
+            {
+                $query->latest();
+            })
             ->when($filters['search'] ?? null, function (Builder $query, string $term)
             {
                 $query->where(function (Builder $query) use ($term)
@@ -77,10 +82,6 @@ class Person extends BaseModel
                     $query->whereRaw('unaccent(names) ilike unaccent(?)', ["%$term%"])
                         ->orWhereRaw('unaccent(surnames) ilike unaccent(?)', ["%$term%"]);
                 });
-            })
-            ->when(empty($filters) ?? null, function (Builder $query)
-            {
-                $query->latest();
             });
     }
 

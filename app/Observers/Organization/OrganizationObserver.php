@@ -14,22 +14,30 @@ class OrganizationObserver
     public function created(Organization $organization): void
     {
         session()->flash('message', [
-            'message' => "{$organization->rif} ({$organization->name})",
-            'title' => __('SAVED!'),
-            'type'  => 'success',
+            'content' => "{$organization->rif} ({$organization->name})",
+            'title' => '¡GUARDADO!',
+            'type' => 'success',
         ]);
 
-        $users = User::permission('create new organizations')->get()->filter(
-            fn (User $user) => $user->id != auth()->user()->id
-        )->all();
-
-        foreach ($users as $user)
+        $usersToNotify = User::where(function ($query)
         {
-            $user->notify(new ActionHandledOnModel(
+            $query->permission('create new organizations')
+                ->orWhereHas('roles', function ($q)
+                {
+                    $q->where('name', 'Superusuario');
+                });
+        })
+            ->where('id', '!=', auth()->id())
+            ->whereNull('disabled_at')
+            ->get();
+
+        foreach ($usersToNotify as $userToNotify)
+        {
+            $userToNotify->notify(new ActionHandledOnModel(
                 auth()->user(),
                 [
                     'id' => $organization->id,
-                    'type' => __('organization'),
+                    'type' => 'ente',
                     'name' => "{$organization->rif} ({$organization->name})",
                     'timestamp' => $organization->created_at,
                 ],
@@ -45,22 +53,30 @@ class OrganizationObserver
     public function updated(Organization $organization): void
     {
         session()->flash('message', [
-            'message' => "{$organization->rif} ({$organization->name})",
-            'title' => __('SAVED!'),
-            'type'  => 'success',
+            'content' => "{$organization->rif} ({$organization->name})",
+            'title' => '¡GUARDADO!',
+            'type' => 'success',
         ]);
 
-        $users = User::permission('update organizations')->get()->filter(
-            fn (User $user) => $user->id != auth()->user()->id
-        )->all();
-
-        foreach ($users as $user)
+        $usersToNotify = User::where(function ($query)
         {
-            $user->notify(new ActionHandledOnModel(
+            $query->permission('update organizations')
+                ->orWhereHas('roles', function ($q)
+                {
+                    $q->where('name', 'Superusuario');
+                });
+        })
+            ->where('id', '!=', auth()->id())
+            ->whereNull('disabled_at')
+            ->get();
+
+        foreach ($usersToNotify as $userToNotify)
+        {
+            $userToNotify->notify(new ActionHandledOnModel(
                 auth()->user(),
                 [
                     'id' => $organization->id,
-                    'type' => __('organization'),
+                    'type' => 'ente',
                     'name' => "{$organization->rif} ({$organization->name})",
                     'timestamp' => $organization->updated_at,
                 ],
@@ -76,21 +92,29 @@ class OrganizationObserver
     public function deleted(Organization $organization): void
     {
         session()->flash('message', [
-            'message' => "{$organization->rif} ({$organization->name})",
-            'title' => __('DELETED!'),
-            'type'  => 'danger',
+            'content' => "{$organization->rif} ({$organization->name})",
+            'title' => '¡ELIMINADO!',
+            'type' => 'danger',
         ]);
 
-        $users = User::permission('delete organizations')->get()->filter(
-            fn (User $user) => $user->id != auth()->user()->id
-        )->all();
-
-        foreach ($users as $user)
+        $usersToNotify = User::where(function ($query)
         {
-            $user->notify(new ActionHandledOnModel(
+            $query->permission('delete organizations')
+                ->orWhereHas('roles', function ($q)
+                {
+                    $q->where('name', 'Superusuario');
+                });
+        })
+            ->where('id', '!=', auth()->id())
+            ->whereNull('disabled_at')
+            ->get();
+
+        foreach ($usersToNotify as $userToNotify)
+        {
+            $userToNotify->notify(new ActionHandledOnModel(
                 auth()->user(),
                 [
-                    'type' => __('organization'),
+                    'type' => 'ente',
                     'name' => "{$organization->rif} ({$organization->name})",
                     'timestamp' => now(),
                 ],

@@ -22,13 +22,13 @@ class Organization extends BaseModel
      * Nombre usado para trazar el tipo de objeto.
      * @var string
      */
-    protected $traceModelType = 'organization';
+    protected $traceModelType = 'ente';
 
     /**
      * Nombre usado para trazar el nombre del log.
      * @var string
      */
-    protected $traceLogName = 'Organization/Organizations';
+    protected $traceLogName = 'Ente/Entes';
 
     /**
      * The attributes that are mass assignable.
@@ -78,6 +78,19 @@ class Organization extends BaseModel
         );
     }
 
+    public function getActivityLogOptions(): \Spatie\Activitylog\LogOptions
+    {
+        return parent::getActivityLogOptions()
+            ->logOnly([
+                'name',
+                'acronym',
+                'rif',
+                'address',
+                'logo_path',
+                'disabled_at',
+            ]);
+    }
+
     public function organizationalUnits(): HasMany
     {
         return $this->hasMany(OrganizationalUnit::class);
@@ -98,7 +111,7 @@ class Organization extends BaseModel
     protected function filter(Builder $query, array $filters): void
     {
         $query
-            ->when(empty($filters) ?? null, function (Builder $query)
+            ->when(empty($filters['sort_by'] ?? []), function (Builder $query)
             {
                 $query->orderByDesc('disabled_at')->latest();
             })

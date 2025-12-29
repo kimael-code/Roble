@@ -24,12 +24,15 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'name' => fake()->userName(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(),
-            'is_password_set' => true,
+            'remember_token' => Str::random(10),
+            'two_factor_secret' => Str::random(10),
+            'two_factor_recovery_codes' => Str::random(10),
+            'two_factor_confirmed_at' => now(),
+            'is_active' => true,
         ];
     }
 
@@ -44,12 +47,21 @@ class UserFactory extends Factory
     }
 
     /**
-     * Indicate that the model's password is not set by the user.
+     * Indicate that the model does not have two-factor authentication configured.
      */
-    public function passwordNotSet(): static
+    public function withoutTwoFactor(): static
     {
         return $this->state(fn (array $attributes) => [
-            'is_password_set' => false,
+            'two_factor_secret' => null,
+            'two_factor_recovery_codes' => null,
+            'two_factor_confirmed_at' => null,
+        ]);
+    }
+
+    public function notActive() : static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_active'=> false,
         ]);
     }
 }

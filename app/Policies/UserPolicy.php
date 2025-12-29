@@ -65,7 +65,7 @@ class UserPolicy
 
         if ($user->is($model))
         {
-            return Response::deny(__('You cannot delete yourself.'));
+            return Response::deny('Usted no puede eliminar su propio usuario.');
         }
 
         return $user->can('delete users') ? true : null;
@@ -95,12 +95,12 @@ class UserPolicy
 
         if ($creatorUsersCount === 1 && $model->can('create new users'))
         {
-            return Response::deny(__('This is the only user with Superuser permissions.'));
+            return Response::deny("{$model->name} es el único usuario con el permiso para crear nuevos usuarios. Asigne este permiso a otro usuario antes de eliminarlo.");
         }
 
         if ($user->is($model))
         {
-            return Response::deny(__('You cannot delete yourself.'));
+            return Response::deny('Usted no puede eliminar su propio usuario.');
         }
 
         return $user->can('force delete users') ? true : null;
@@ -130,9 +130,51 @@ class UserPolicy
 
         if ($user->is($model))
         {
-            return Response::deny(__('You cannot deactivate yourself.'));
+            return Response::deny('Usted no puede desactivar su propio usuario.');
         }
 
         return $user->can('disable users') ? true : null;
+    }
+
+    public function resetPassword(User $user, User $model): Response|bool|null
+    {
+        if (!$model->is_active || $model->disabled_at || $model->deleted_at)
+        {
+            return Response::deny('No se puede restablecer la contraseña de un usuario inactivo.');
+        }
+
+        return $user->can('reset user passwords') ? true : null;
+    }
+
+    /**
+     * Determina si el usuario puede reenviar el enlace de activación.
+     *
+     * Solo aplicable a usuarios que aún no han activado su cuenta.
+     */
+    public function resendActivation(User $user, User $model): bool|null
+    {
+        // Solo permitir para usuarios no activos, no deshabilitados y no eliminados
+        if ($model->is_active || $model->disabled_at !== null || $model->deleted_at !== null)
+        {
+            return null;
+        }
+
+        return $user->can('reset user passwords') ? true : null;
+    }
+
+    /**
+     * Determina si el usuario puede activar manualmente.
+     *
+     * Solo aplicable a usuarios que aún no han activado su cuenta.
+     */
+    public function manuallyActivate(User $user, User $model): bool|null
+    {
+        // Solo permitir para usuarios no activos, no deshabilitados y no eliminados
+        if ($model->is_active || $model->disabled_at !== null || $model->deleted_at !== null)
+        {
+            return null;
+        }
+
+        return $user->can('enable users') ? true : null;
     }
 }

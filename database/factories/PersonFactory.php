@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -17,7 +18,14 @@ class PersonFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'user_id' => User::factory(),
+            'id_card' => fake()->nationalId(),
+            'names' => fake()->name(),
+            'surnames' => fake()->lastName(),
+            'phones' => null,
+            'emails' => null,
+            'position' => fake()->jobTitle(),
+            'staff_type' => $this->faker->randomElement(['Empleado', 'Obrero', 'Contratado']),
         ];
     }
 }

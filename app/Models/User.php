@@ -14,8 +14,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
-use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 
 #[ObservedBy([UserObserver::class])]
 class User extends Authenticatable
@@ -29,13 +29,13 @@ class User extends Authenticatable
      * Nombre usado para trazar el tipo de objeto.
      * @var string
      */
-    protected $traceModelType = 'user';
+    protected $traceModelType = 'usuario';
 
     /**
      * Nombre usado para trazar el nombre del log.
      * @var string
      */
-    protected $traceLogName = 'Security/Users';
+    protected $traceLogName = 'Seguridad/Usuarios';
 
     /**
      * The attributes that are mass assignable.
@@ -46,6 +46,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_active',
     ];
 
     /**
@@ -91,8 +92,21 @@ class User extends Authenticatable
         return $this->belongsToMany(OrganizationalUnit::class)->withTimestamps();
     }
 
+    public function getActivityLogOptions(): \Spatie\Activitylog\LogOptions
+    {
+        return parent::getActivityLogOptions()
+            ->logOnly([
+                'name',
+                'email',
+                'is_active',
+                'disabled_at',
+                'email_verified_at',
+            ])
+            ->logExcept(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes']);
+    }
+
     #[Scope]
-    protected function active(Builder $query) : void
+    protected function active(Builder $query): void
     {
         $query->whereNull('disabled_at');
     }
@@ -101,7 +115,7 @@ class User extends Authenticatable
     protected function filter(Builder $query, array $filters): void
     {
         $query
-            ->when(empty($filters) ?? null, function (Builder $query)
+            ->when(empty($filters['sort_by'] ?? []), function (Builder $query)
             {
                 $query->latest();
             })
@@ -135,11 +149,11 @@ class User extends Authenticatable
                     }
                 }
             })
-            ->when($filters['permissions'] ?? null, function (Builder $query, array $permissions)
+            ->when($filters['permissions'] ?? null, function (Builder $query, array $names)
             {
-                foreach ($permissions as $permission)
+                foreach ($names as $name)
                 {
-                    $query->permission($permission);
+                    $query->permission($name);
                 }
             })
             ->when($filters['roles'] ?? null, function (Builder $query, array $roles)
@@ -153,7 +167,25 @@ class User extends Authenticatable
             {
                 foreach ($statuses as $status)
                 {
-                    $query->whereNotNull($status);
+                    switch ($status)
+                    {
+                        case 'active':
+                            $query->where('is_active', true)
+                                ->whereNull('disabled_at')
+                                ->whereNull('deleted_at');
+                            break;
+                        case 'inactive':
+                            $query->where('is_active', false)
+                                ->whereNull('disabled_at')
+                                ->whereNull('deleted_at');
+                            break;
+                        case 'disabled':
+                            $query->whereNotNull('disabled_at');
+                            break;
+                        case 'deleted':
+                            $query->whereNotNull('deleted_at');
+                            break;
+                    }
                 }
             });
     }

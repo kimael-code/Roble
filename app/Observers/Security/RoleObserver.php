@@ -14,22 +14,30 @@ class RoleObserver
     public function created(Role $role): void
     {
         session()->flash('message', [
-            'message' => "{$role->name} ({$role->description})",
-            'title' => __('SAVED!'),
-            'type'  => 'success',
+            'content' => "{$role->name} ({$role->description})",
+            'title' => '¡GUARDADO!',
+            'type' => 'success',
         ]);
 
-        $users = User::permission('create new roles')->get()->filter(
-            fn (User $user) => $user->id != auth()->user()->id
-        )->all();
-
-        foreach ($users as $user)
+        $usersToNotify = User::where(function ($query)
         {
-            $user->notify(new ActionHandledOnModel(
+            $query->permission('create new roles')
+                ->orWhereHas('roles', function ($q)
+                {
+                    $q->where('name', 'Superusuario');
+                });
+        })
+            ->where('id', '!=', auth()->id())
+            ->whereNull('disabled_at')
+            ->get();
+
+        foreach ($usersToNotify as $userToNotify)
+        {
+            $userToNotify->notify(new ActionHandledOnModel(
                 auth()->user(),
                 [
                     'id' => $role->id,
-                    'type' => __('role'),
+                    'type' => 'rol',
                     'name' => "{$role->name}",
                     'timestamp' => $role->created_at,
                 ],
@@ -45,22 +53,30 @@ class RoleObserver
     public function updated(Role $role): void
     {
         session()->flash('message', [
-            'message' => "{$role->name} ({$role->description})",
-            'title' => __('SAVED!'),
-            'type'  => 'success',
+            'content' => "{$role->name} ({$role->description})",
+            'title' => '¡GUARDADO!',
+            'type' => 'success',
         ]);
 
-        $users = User::permission('update roles')->get()->filter(
-            fn (User $user) => $user->id != auth()->user()->id
-        )->all();
-
-        foreach ($users as $user)
+        $usersToNotify = User::where(function ($query)
         {
-            $user->notify(new ActionHandledOnModel(
+            $query->permission('update roles')
+                ->orWhereHas('roles', function ($q)
+                {
+                    $q->where('name', 'Superusuario');
+                });
+        })
+            ->where('id', '!=', auth()->id())
+            ->whereNull('disabled_at')
+            ->get();
+
+        foreach ($usersToNotify as $userToNotify)
+        {
+            $userToNotify->notify(new ActionHandledOnModel(
                 auth()->user(),
                 [
                     'id' => $role->id,
-                    'type' => __('role'),
+                    'type' => 'rol',
                     'name' => "{$role->name}",
                     'timestamp' => $role->updated_at,
                 ],
@@ -76,21 +92,29 @@ class RoleObserver
     public function deleted(Role $role): void
     {
         session()->flash('message', [
-            'message' => "{$role->name} ({$role->description})",
-            'title' => __('DELETED!'),
-            'type'  => 'danger',
+            'content' => "{$role->name} ({$role->description})",
+            'title' => '¡ELIMINADO!',
+            'type' => 'danger',
         ]);
 
-        $users = User::permission('delete roles')->get()->filter(
-            fn (User $user) => $user->id != auth()->user()->id
-        )->all();
-
-        foreach ($users as $user)
+        $usersToNotify = User::where(function ($query)
         {
-            $user->notify(new ActionHandledOnModel(
+            $query->permission('delete roles')
+                ->orWhereHas('roles', function ($q)
+                {
+                    $q->where('name', 'Superusuario');
+                });
+        })
+            ->where('id', '!=', auth()->id())
+            ->whereNull('disabled_at')
+            ->get();
+
+        foreach ($usersToNotify as $userToNotify)
+        {
+            $userToNotify->notify(new ActionHandledOnModel(
                 auth()->user(),
                 [
-                    'type' => __('role'),
+                    'type' => 'rol',
                     'name' => "{$role->name}",
                     'timestamp' => now(),
                 ],

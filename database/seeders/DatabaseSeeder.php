@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Auth\RolesAndPermissionsSeeder;
 use Database\Seeders\Organization\OrganizationWithOUsSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Database\Seeders\Auth\SysadmiRolesAndPermissionsSeeder;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -17,7 +17,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            SysadmiRolesAndPermissionsSeeder::class,
+            RolesAndPermissionsSeeder::class,
             OrganizationWithOUsSeeder::class,
         ]);
     }

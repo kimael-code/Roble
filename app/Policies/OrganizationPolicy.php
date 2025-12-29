@@ -69,12 +69,12 @@ class OrganizationPolicy
 
         if (!$ThereIsOtherActiveOrganization)
         {
-            return Response::deny(__('You cannot delete the only active Organization'));
+            return Response::deny('No es posible eliminar el único ente activo');
         }
 
         if ($organization->organizationalUnits->isNotEmpty())
         {
-            return Response::deny(__('The organization has associated organizational units.'));
+            return Response::deny('El ente tiene unidades administrativas asociadas');
         }
 
         return $user->can('delete organizations') ? true : null;

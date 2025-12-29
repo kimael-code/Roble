@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use App\Models\Monitoring\ActivityLog;
+use App\Support\RequestMetadata;
 use App\Support\Traits\MergesAppends;
+use App\Support\UserMetadata;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -99,7 +101,7 @@ class BaseModel extends Model
             ->setDescriptionForEvent(fn(string $eventName) => __(':event :model [:modelName]', [
                 'event' => __($eventName),
                 'model' => __($this->traceModelType),
-                'modelName' => $this?->name ?? $this?->title ?? '',
+                'modelName' => $this?->name ?? $this?->nombre ?? $this?->title ?? $this?->descripcion ?? '',
             ]));
     }
 
@@ -124,14 +126,7 @@ class BaseModel extends Model
         }
 
         $activity->properties = $activity->properties
-            ->put('causer', User::with('person')->find(auth()->user()->id)->toArray())
-            ->put('request', [
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->header('user-agent'),
-                'user_agent_lang' => request()->header('accept-language'),
-                'referer' => request()->header('referer'),
-                'http_method' => request()->method(),
-                'request_url' => request()->fullUrl(),
-            ]);
+            ->put('causer', UserMetadata::capture())
+            ->put('request', RequestMetadata::capture());
     }
 }
