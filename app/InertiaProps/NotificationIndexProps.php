@@ -1,14 +1,17 @@
 <?php
 
-namespace App\Http\Props;
+namespace App\InertiaProps;
 
 use App\Models\User;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Inertia\Inertia;
 
-class NotificationProps
+/**
+ * InertiaProps para la vista Index de Notifications.
+ */
+class NotificationIndexProps
 {
-    public static function index(Authenticatable|User $user): array
+    public function toArray(Authenticatable|User $user): array
     {
         $page = request()->input('page', 1);
         $perPage = request()->input('per_page', 10);
