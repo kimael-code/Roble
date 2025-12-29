@@ -1,68 +1,126 @@
 <script setup lang="ts">
+import MultiSelectCombobox from '@/components/MultiSelectCombobox.vue';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Permission, Role } from '@/types';
 import { router } from '@inertiajs/vue3';
-import { Ref, ref } from 'vue';
-import ComboboxPermissions from './ComboboxPermissions.vue';
-import ComboboxRoles from './ComboboxRoles.vue';
-import ComboboxStatus from './ComboboxStatus.vue';
-import UserController from "@/actions/App/Http/Controllers/Security/UserController";
+import { computed, ref } from 'vue';
 
-defineProps<{
+const props = defineProps<{
   show: boolean;
-  permissions?: Array<Permission>;
-  roles?: Array<Role>;
-  statuses?: Array<{ [key: string]: string }>;
+  permissions?: Permission[];
+  roles?: Role[];
+  statuses?: { label: string; value: string }[];
 }>();
 
 const emit = defineEmits(['close', 'advancedSearch']);
 
-const form: Ref<{ [key: string]: any }> = ref({});
+const selectedStatuses = ref<string[]>([]);
+const selectedRoles = ref<string[]>([]);
+const selectedPermissions = ref<string[]>([]);
 
-function submitSearch() {
-  router.visit(UserController.index(), {
-    data: form.value,
+// Mapeo de props a formato {label, value} requerido por el componente MultiSelectCombobox
+const statusOptions = computed(() =>
+  (props.statuses ?? []).map((s) => ({ label: s.label, value: s.value })),
+);
+const roleOptions = computed(() =>
+  (props.roles ?? []).map((r) => ({ label: r.name, value: r.name })),
+);
+const permissionOptions = computed(() =>
+  (props.permissions ?? []).map((p) => ({
+    value: p.name,
+    label: p.description,
+  })),
+);
+
+function clearFilters() {
+  selectedStatuses.value = [];
+  selectedRoles.value = [];
+  selectedPermissions.value = [];
+}
+
+function handleSubmit() {
+  const form = {
+    statuses: selectedStatuses.value.length
+      ? selectedStatuses.value
+      : undefined,
+    roles: selectedRoles.value.length ? selectedRoles.value : undefined,
+    permissions: selectedPermissions.value.length
+      ? selectedPermissions.value
+      : undefined,
+  };
+  router.reload({
+    data: form,
     only: ['users'],
-    preserveScroll: true,
-    preserveState: true,
-    preserveUrl: false,
-    onSuccess: () => emit('advancedSearch', form.value),
+    preserveUrl: true,
+    onSuccess: () => emit('advancedSearch', form),
   });
 }
 </script>
 
 <template>
-  <div class="grid grid-cols-2 gap-2">
-    <Sheet :open="show" @update:open="$emit('close')">
-      <SheetContent side="top">
-        <SheetHeader>
-          <SheetTitle>Usuarios: Filtros de Búsqueda Avanzados</SheetTitle>
-          <SheetDescription>Parametrice la consulta de registros haciendo uso de los siguientes controles.</SheetDescription>
-        </SheetHeader>
-        <Tabs default-value="statuses" class="pr-4 pl-4" :unmount-on-hide="false">
-          <TabsList class="grid w-full grid-cols-3">
-            <TabsTrigger value="statuses">Estatus</TabsTrigger>
-            <TabsTrigger value="roles">Roles</TabsTrigger>
-            <TabsTrigger value="permissions">Permisos</TabsTrigger>
-          </TabsList>
-          <TabsContent value="statuses">
-            <ComboboxStatus :statuses @selected="(s) => (form.statuses = s)" />
-          </TabsContent>
-          <TabsContent value="roles">
-            <ComboboxRoles :roles @selected="(r) => (form.roles = r)" />
-          </TabsContent>
-          <TabsContent value="permissions">
-            <ComboboxPermissions :permissions @selected="(p) => (form.permissions = p)" />
-          </TabsContent>
-        </Tabs>
-        <SheetFooter>
-          <SheetClose as-child>
-            <Button type="button" @click="submitSearch"> Aplicar Filtros </Button>
-          </SheetClose>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
-  </div>
+  <Sheet :open="show" @update:open="$emit('close')">
+    <SheetContent side="top" class="overflow-y-auto">
+      <SheetHeader>
+        <SheetTitle>Usuarios: Filtros de Búsqueda Avanzados</SheetTitle>
+        <SheetDescription>
+          Parametrice la consulta de registros haciendo uso de los siguientes
+          controles. Navegue entre las pestañas para seleccionar los filtros
+          deseados.
+        </SheetDescription>
+      </SheetHeader>
+      <Tabs
+        default-value="permissions"
+        class="pr-4 pl-4"
+        :unmount-on-hide="false"
+      >
+        <TabsList class="grid w-full grid-cols-3">
+          <TabsTrigger value="permissions">Permisos</TabsTrigger>
+          <TabsTrigger value="roles">Roles</TabsTrigger>
+          <TabsTrigger value="statuses">Estatus</TabsTrigger>
+        </TabsList>
+        <TabsContent value="permissions">
+          <MultiSelectCombobox
+            id="permissions"
+            v-model="selectedPermissions"
+            :options="permissionOptions"
+            placeholder="Seleccione uno o más permisos"
+          />
+        </TabsContent>
+        <TabsContent value="roles">
+          <MultiSelectCombobox
+            id="roles"
+            v-model="selectedRoles"
+            :options="roleOptions"
+            placeholder="Seleccione uno o más roles"
+          />
+        </TabsContent>
+        <TabsContent value="statuses">
+          <MultiSelectCombobox
+            id="statuses"
+            v-model="selectedStatuses"
+            :options="statusOptions"
+            placeholder="Seleccione uno o más estatus"
+          />
+        </TabsContent>
+      </Tabs>
+      <SheetFooter>
+        <Button type="button" @click="handleSubmit"> Filtrar </Button>
+        <SheetClose as-child>
+          <Button type="button" variant="outline" @click="clearFilters">
+            Cerrar
+          </Button>
+        </SheetClose>
+      </SheetFooter>
+    </SheetContent>
+  </Sheet>
 </template>

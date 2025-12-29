@@ -1,36 +1,56 @@
 <script setup lang="ts">
+import UserExporterController from '@/actions/App/Http/Controllers/Exporters/UserExporterController';
+import UserController from '@/actions/App/Http/Controllers/Security/UserController';
+import ActionAlertDialog from '@/components/ActionAlertDialog.vue';
 import DataTable from '@/components/DataTable.vue';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { valueUpdater } from '@/components/ui/table/utils';
-import { useConfirmAction, useRequestActions } from '@/composables';
+import { useActionAlerts, useRequestActions } from '@/composables';
+import { useExportUrl } from '@/composables/useExportUrl';
 import AppLayout from '@/layouts/AppLayout.vue';
 import ContentLayout from '@/layouts/ContentLayout.vue';
-import { BreadcrumbItem, Can, OperationType, PaginatedCollection, Permission, Role, User } from '@/types';
-import { Head, router, usePage } from '@inertiajs/vue3';
-import { getCoreRowModel, RowSelectionState, SortingState, TableOptions, useVueTable } from '@tanstack/vue-table';
+import {
+  BreadcrumbItem,
+  Can,
+  OperationType,
+  PaginatedCollection,
+  Permission,
+  Role,
+  SearchFilter,
+  User,
+} from '@/types';
+import { Head, router } from '@inertiajs/vue3';
+import {
+  getCoreRowModel,
+  RowSelectionState,
+  SortingState,
+  TableOptions,
+  useVueTable,
+} from '@tanstack/vue-table';
 import { UserIcon } from 'lucide-vue-next';
-import { computed, reactive, ref, watch, watchEffect } from 'vue';
-import { columns, permissions as permissionsDT, processingRowId } from './partials/columns';
+import { computed, reactive, ref, watchEffect } from 'vue';
+import {
+  columns,
+  permissions as permissionsDT,
+  processingRowId,
+} from './partials/columns';
+import ManualActivationDialog from './partials/ManualActivationDialog.vue';
+import ResetPasswordDialog from './partials/ResetPasswordDialog.vue';
 import SheetAdvancedFilters from './partials/SheetAdvancedFilters.vue';
-import UserController from "@/actions/App/Http/Controllers/Security/UserController";
-import UserExporterController from "@/actions/App/Http/Controllers/Exporters/UserExporterController";
 
 const props = defineProps<{
   can: Can;
-  filters: object;
-  permissions?: Array<Permission>;
-  roles?: Array<Role>;
+  filters: SearchFilter;
+  permissions?: Permission[];
+  roles?: Role[];
   users: PaginatedCollection<User>;
+  statuses?: { label: string; value: string }[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -40,18 +60,26 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const { action, resourceID, requestState, requestAction } = useRequestActions(UserController);
-const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription, alertData } = useConfirmAction();
+const { action, resourceID, requestState, requestAction, isProcessing } =
+  useRequestActions(UserController);
+
+const alertData = ref<any>(null);
+const resourceName = computed(() => alertData.value?.name || '');
+
+const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription } =
+  useActionAlerts(action, resourceName);
+
 const showPdf = ref(false);
 const showAdvancedFilters = ref(false);
 const advancedSearchApplied = ref(false);
-const advancedFilters = ref({});
-const page = usePage();
 
-const urlQueryString = computed(() => {
-  const queryString = page.url.indexOf('?');
-
-  return queryString >= 0 ? page.url.substring(queryString) : '';
+const activeFilters = reactive({
+  search: props.filters.search ?? '',
+  per_page: props.users.meta.per_page,
+  sort_by: {} as Record<string, string>,
+  // Filtros avanzados (pueden ser undefined al inicio)
+  roles: props.filters.roles,
+  permissions: props.filters.permissions,
 });
 
 permissionsDT.value = props.can;
@@ -59,29 +87,97 @@ const sorting = ref<SortingState>([]);
 const globalFilter = ref('');
 const rowSelection = ref<RowSelectionState>({});
 
-function handleSortingChange(item: any) {
-  if (typeof item === 'function') {
-    const sortValue = item(sorting.value);
-    const data: { [index: string]: any } = {
-      ...advancedFilters.value, // Preserve advanced filters
-      per_page: table.getState().pagination.pageSize,
-    };
+const pdfUrl = useExportUrl(
+  UserExporterController.indexToPdf().url,
+  activeFilters,
+);
 
-    sortValue.forEach((element: any) => {
-      const sortBy = element?.id ? element.id : '';
-      if (sortBy) {
-        data[`sort_by[${sortBy}]`] = element?.desc ? 'desc' : 'asc';
-      }
-    });
+const excelUrl = useExportUrl(
+  UserExporterController.indexToExcel().url,
+  activeFilters,
+);
 
-    router.visit(UserController.index(), {
-      data,
-      only: ['users'],
+const jsonUrl = useExportUrl(
+  UserExporterController.indexToJson().url,
+  activeFilters,
+);
+
+function handleExport(format: 'pdf' | 'excel' | 'json') {
+  switch (format) {
+    case 'pdf':
+      showPdf.value = true;
+      break;
+    case 'excel':
+      window.open(excelUrl.value, '_blank');
+      break;
+    case 'json':
+      window.open(jsonUrl.value, '_blank');
+      break;
+  }
+}
+
+// Estado para activación manual
+const manualActivationDialog = ref(false);
+const manualActivationData = ref<{
+  password: string;
+  user: string;
+  email: string;
+} | null>(null);
+
+// Función para manejar activación manual desde DataTable
+function handleManualActivation(row: User) {
+  router.post(
+    UserController.manuallyActivate(row.id).url,
+    {},
+    {
       preserveScroll: true,
       preserveState: true,
-      onSuccess: () => (sorting.value = sortValue),
-    });
-  }
+      onSuccess: (page) => {
+        // Extraer datos de la respuesta
+        const response = page.props as any;
+
+        if (response.flash?.manualActivation) {
+          manualActivationData.value = response.flash.manualActivation;
+          manualActivationDialog.value = true;
+        }
+      },
+      onError: (errors) => {
+        console.error('Error en activación manual:', errors);
+      },
+    },
+  );
+}
+
+// Función para confirmar activación
+function confirmManualActivation() {
+  manualActivationDialog.value = false;
+  router.reload({ only: ['users'] });
+}
+
+function applyFilters() {
+  router.visit(UserController.index(), {
+    data: activeFilters,
+    only: ['logs'],
+    preserveScroll: true,
+    preserveState: true,
+    preserveUrl: true,
+  });
+}
+
+function handleSortingChange(updater: any) {
+  const newSorting =
+    typeof updater === 'function' ? updater(sorting.value) : updater;
+  sorting.value = newSorting;
+
+  const sort_by: Record<string, string> = {};
+  newSorting.forEach((col: any) => {
+    if (col.id) {
+      sort_by[col.id] = col.desc ? 'desc' : 'asc';
+    }
+  });
+  activeFilters.sort_by = sort_by;
+
+  applyFilters();
 }
 
 function handleAction(operation: OperationType, rowData: Record<string, any>) {
@@ -113,7 +209,8 @@ const tableOptions = reactive<TableOptions<User>>({
   getCoreRowModel: getCoreRowModel(),
   getRowId: (row) => String(row.id),
   onSortingChange: handleSortingChange,
-  onRowSelectionChange: (updaterOrValue) => valueUpdater(updaterOrValue, rowSelection),
+  onRowSelectionChange: (updaterOrValue) =>
+    valueUpdater(updaterOrValue, rowSelection),
   state: {
     get sorting() {
       return sorting.value;
@@ -129,74 +226,14 @@ const tableOptions = reactive<TableOptions<User>>({
 
 const table = useVueTable(tableOptions);
 
-watch(action, () => {
-  switch (action.value) {
-    case 'destroy':
-      alertAction.value = 'Eliminar';
-      alertActionCss.value = 'bg-destructive text-destructive-foreground hover:bg-destructive/90';
-      alertTitle.value = `¿Eliminar usuario(a) «${alertData.value?.name}»?`;
-      alertDescription.value = `«${alertData.value?.name}» perderá el acceso al sistema. Sus datos se conservarán.`;
-      alertOpen.value = true;
-      break;
-    case 'restore':
-      alertAction.value = 'Restaurar';
-      alertActionCss.value = '';
-      alertTitle.value = `¿Restaurar usuario(a) «${alertData.value?.name}»?`;
-      alertDescription.value = `«${alertData.value?.name}» recuperará el acceso al sistema. Sus datos se restaurarán.`;
-      alertOpen.value = true;
-      break;
-    case 'force_destroy':
-      alertAction.value = 'Eliminar permanentemente';
-      alertActionCss.value = 'bg-destructive text-destructive-foreground hover:bg-destructive/90';
-      alertTitle.value = `¿Eliminar usuario(a) «${alertData.value?.name}» permanentemente?`;
-      alertDescription.value = `Esta acción no podrá revertirse. «${alertData.value?.name}» perderá el acceso al sistema. Sus datos se eliminarán.`;
-      alertOpen.value = true;
-      break;
-    case 'enable':
-      alertAction.value = 'Activar';
-      alertActionCss.value = '';
-      alertTitle.value = `Activar usuario(a) «${alertData.value?.name}»?`;
-      alertDescription.value = `«${alertData.value?.name}» recuperará el acceso al sistema. Sus datos se restaurarán.`;
-      alertOpen.value = true;
-      break;
-    case 'disable':
-      alertAction.value = 'Desactivar';
-      alertActionCss.value = 'bg-amber-500 text-foreground hover:bg-amber-500/90';
-      alertTitle.value = `Desactivar usuario(a) «${alertData.value?.name}»?`;
-      alertDescription.value = `«${alertData.value?.name}» perderá el acceso al sistema. Sus datos se conservarán.`;
-      alertOpen.value = true;
-      break;
-    case 'batch_destroy':
-      alertAction.value = 'Eliminar seleccionados';
-      alertActionCss.value = 'bg-destructive text-destructive-foreground hover:bg-destructive/90';
-      alertTitle.value = `¿Eliminar los registros que Usted ha seleccionado?`;
-      alertDescription.value = `Esta acción podrá revertirse. Los datos no se eliminarán, sin embargo, los usuarios no podrán ingresar al sistema.`;
-      alertOpen.value = true;
-      break;
-    case 'batch_enable':
-      alertAction.value = 'Activar seleccionados';
-      alertActionCss.value = '';
-      alertTitle.value = `¿Activar los usuarios que Usted ha seleccionado?`;
-      alertDescription.value = `Los usuarios recuperarán el acceso al sistema. Sus datos serán restaurados.`;
-      alertOpen.value = true;
-      break;
-    case 'batch_disable':
-      alertAction.value = 'Desactivar seleccionados';
-      alertActionCss.value = 'bg-amber-500 text-foreground hover:bg-amber-500/90';
-      alertTitle.value = `¿Desactivar los usuarios que Usted ha seleccionado?`;
-      alertDescription.value = `Los usuarios perderán el acceso al sistema. Sus datos se conservarán.`;
-      alertOpen.value = true;
-      break;
-
-    default:
-      break;
-  }
-});
-watchEffect(() => (resourceID.value === null ? (processingRowId.value = null) : false));
+// ¡67 líneas de watch eliminadas! Ahora usa useActionAlerts
+watchEffect(() =>
+  resourceID.value === null ? (processingRowId.value = null) : false,
+);
 
 function handleAdvancedSearch() {
   router.reload({
-    only: ['roles', 'permissions'],
+    only: ['roles', 'permissions', 'statuses'],
     onSuccess: () => (showAdvancedFilters.value = true),
   });
 }
@@ -220,37 +257,80 @@ function handleAdvancedSearch() {
         :table="table"
         :is-advanced-search="advancedSearchApplied"
         :is-loading-new="requestState.create"
-        :is-loading-dropdown="requestState.batchDestroy"
+        :is-loading-dropdown="isProcessing"
         @batch-enable="handleBatchAction('batch_enable')"
         @batch-disable="handleBatchAction('batch_disable')"
         @batch-destroy="handleBatchAction('batch_destroy')"
-        @search="(s) => (globalFilter = s)"
+        @search="
+          (s) => {
+            activeFilters.search = s;
+            applyFilters();
+          }
+        "
         @new="requestAction({ operation: 'create' })"
-        @read="(row) => (requestAction({ operation: 'read', data: { id: row.id } }), (processingRowId = row.id))"
-        @update="(row) => (requestAction({ operation: 'edit', data: { id: row.id } }), (processingRowId = row.id))"
+        @read="
+          (row) => (
+            requestAction({ operation: 'read', data: { id: row.id } }),
+            (processingRowId = row.id)
+          )
+        "
+        @update="
+          (row) => (
+            requestAction({ operation: 'edit', data: { id: row.id } }),
+            (processingRowId = row.id)
+          )
+        "
         @destroy="(row) => handleAction('destroy', row)"
         @force-destroy="(row) => handleAction('force_destroy', row)"
         @restore="(row) => handleAction('restore', row)"
         @enable="(row) => handleAction('enable', row)"
         @disable="(row) => handleAction('disable', row)"
-        @export="showPdf = true"
+        @export="handleExport"
         @advanced-search="handleAdvancedSearch"
+        @reset-password="
+          (row) =>
+            router.visit(UserController.resetPassword(row.id), {
+              preserveScroll: true,
+              preserveState: true,
+              preserveUrl: true,
+            })
+        "
+        @resend-activation="
+          (row: User) =>
+            router.visit(UserController.resendActivation(row.id), {
+              method: 'post',
+              preserveScroll: true,
+              preserveState: false,
+            })
+        "
+        @manually-activate="(row: User) => handleManualActivation(row)"
       />
 
-      <AlertDialog v-model:open="alertOpen">
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{{ alertTitle }}</AlertDialogTitle>
-            <AlertDialogDescription>{{ alertDescription }}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel @click="((action = null), (processingRowId = null))">Cancelar</AlertDialogCancel>
-            <AlertDialogAction :class="alertActionCss" @click="requestAction({ data: alertData, options: { preserveState: false } })">
-              {{ alertAction }}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ActionAlertDialog
+        :open="alertOpen"
+        :title="alertTitle"
+        :description="alertDescription"
+        :action-text="alertAction"
+        :action-css="alertActionCss"
+        @cancel="((action = null), (processingRowId = null))"
+        @confirm="
+          requestAction({
+            data: alertData,
+            options: { preserveState: false },
+          })
+        "
+      />
+
+      <ResetPasswordDialog />
+
+      <ManualActivationDialog
+        v-if="manualActivationData"
+        :open="manualActivationDialog"
+        :user-name="manualActivationData.user"
+        :user-email="manualActivationData.email"
+        :password="manualActivationData.password"
+        @confirm="confirmManualActivation"
+      />
 
       <Sheet v-model:open="showPdf">
         <SheetContent side="bottom">
@@ -259,7 +339,12 @@ function handleAdvancedSearch() {
             <SheetDescription>Reporte: Permisos</SheetDescription>
           </SheetHeader>
           <div class="h-[70dvh]">
-            <iframe :src="`${UserExporterController.indexToPdf().url}/${urlQueryString}`" frameborder="0" width="100%" height="100%"></iframe>
+            <iframe
+              :src="pdfUrl"
+              frameborder="0"
+              width="100%"
+              height="100%"
+            ></iframe>
           </div>
         </SheetContent>
       </Sheet>
@@ -267,13 +352,16 @@ function handleAdvancedSearch() {
       <SheetAdvancedFilters
         :permissions
         :roles
-        :statuses="[
-          { value: 'disabled_at', name: 'Desactivado' },
-          { value: 'deleted_at', name: 'Eliminado' },
-        ]"
+        :statuses
         :show="showAdvancedFilters"
         @close="showAdvancedFilters = false"
-        @advanced-search="(advFilters) => ((advancedSearchApplied = true), (advancedFilters = advFilters))"
+        @advanced-search="
+          (advFilters) => {
+            Object.assign(activeFilters, advFilters);
+            advancedSearchApplied = true;
+            applyFilters();
+          }
+        "
       />
     </ContentLayout>
   </AppLayout>

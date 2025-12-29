@@ -1,18 +1,39 @@
 <script setup lang="ts">
+import ActivityLogExporter from '@/actions/App/Http/Controllers/Exporters/ActivityLogExporterController';
+import ActivityLogController from '@/actions/App/Http/Controllers/Monitoring/ActivityLogController';
 import DataTable from '@/components/DataTable.vue';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { valueUpdater } from '@/components/ui/table/utils';
 import { useRequestActions } from '@/composables';
+import { useExportUrl } from '@/composables/useExportUrl';
 import AppLayout from '@/layouts/AppLayout.vue';
 import ContentLayout from '@/layouts/ContentLayout.vue';
-import { ActivityLog, BreadcrumbItem, Can, PaginatedCollection, SearchFilter, User } from '@/types';
-import { Head, router, usePage } from '@inertiajs/vue3';
-import { getCoreRowModel, RowSelectionState, SortingState, TableOptions, useVueTable } from '@tanstack/vue-table';
+import {
+  ActivityLog,
+  BreadcrumbItem,
+  Can,
+  PaginatedCollection,
+  SearchFilter,
+  User,
+} from '@/types';
+import { Head, router } from '@inertiajs/vue3';
+import {
+  getCoreRowModel,
+  RowSelectionState,
+  SortingState,
+  TableOptions,
+  useVueTable,
+} from '@tanstack/vue-table';
 import { LogsIcon } from 'lucide-vue-next';
-import { computed, reactive, ref, watchEffect } from 'vue';
+import { reactive, ref, watchEffect } from 'vue';
 import { columns, permissions, processingRowId } from './partials/columns';
 import SheetAdvancedFilters from './partials/SheetAdvancedFilters.vue';
-import ActivityLogController from "@/actions/App/Http/Controllers/Monitoring/ActivityLogController";
 
 const props = defineProps<{
   can: Can;
@@ -26,21 +47,30 @@ const props = defineProps<{
 const breadcrumbs: BreadcrumbItem[] = [
   {
     title: 'Trazas',
-    href: '/activity-logs',
   },
 ];
 
-const { requestAction, requestState } = useRequestActions(ActivityLogController);
+const { requestAction, requestState } = useRequestActions(
+  ActivityLogController,
+);
 const showPdf = ref(false);
 const showAdvancedFilters = ref(false);
 const advancedSearchApplied = ref(false);
-const advancedFilters = ref({});
-const page = usePage();
 
-const urlQueryString = computed(() => {
-  const queryString = page.url.indexOf('?');
-
-  return queryString >= 0 ? page.url.substring(queryString) : '';
+const activeFilters = reactive({
+  search: props.filters.search ?? '',
+  per_page: props.logs.meta.per_page,
+  sort_by: {} as Record<string, string>,
+  // Filtros avanzados (pueden ser undefined al inicio)
+  date: props.filters.date,
+  date_range: props.filters.date_range,
+  ips: props.filters.ips,
+  users: props.filters.users,
+  events: props.filters.events,
+  modules: props.filters.modules,
+  time: props.filters.time,
+  time_from: props.filters.time_from,
+  time_until: props.filters.time_until,
 });
 
 permissions.value = props.can;
@@ -48,29 +78,35 @@ const sorting = ref<SortingState>([]);
 const globalFilter = ref('');
 const rowSelection = ref<RowSelectionState>({});
 
-function handleSortingChange(item: any) {
-  if (typeof item === 'function') {
-    const sortValue = item(sorting.value);
-    const data: { [index: string]: any } = {
-      ...advancedFilters.value, // Preserve advanced filters
-      per_page: table.getState().pagination.pageSize,
-    };
+const pdfUrl = useExportUrl(
+  ActivityLogExporter.indexToPdf().url,
+  activeFilters,
+);
 
-    sortValue.forEach((element: any) => {
-      const sortBy = element?.id ? element.id : '';
-      if (sortBy) {
-        data[`sort_by[${sortBy}]`] = element?.desc ? 'desc' : 'asc';
-      }
-    });
+function applyFilters() {
+  router.visit(ActivityLogController.index(), {
+    data: activeFilters,
+    only: ['logs'],
+    preserveScroll: true,
+    preserveState: true,
+    preserveUrl: true,
+  });
+}
 
-    router.visit(ActivityLogController.index(), {
-      data,
-      only: ['logs'],
-      preserveScroll: true,
-      preserveState: true,
-      onSuccess: () => (sorting.value = sortValue),
-    });
-  }
+function handleSortingChange(updater: any) {
+  const newSorting =
+    typeof updater === 'function' ? updater(sorting.value) : updater;
+  sorting.value = newSorting;
+
+  const sort_by: Record<string, string> = {};
+  newSorting.forEach((col: any) => {
+    if (col.id) {
+      sort_by[col.id] = col.desc ? 'desc' : 'asc';
+    }
+  });
+  activeFilters.sort_by = sort_by;
+
+  applyFilters();
 }
 
 const tableOptions = reactive<TableOptions<ActivityLog>>({
@@ -91,7 +127,8 @@ const tableOptions = reactive<TableOptions<ActivityLog>>({
   getCoreRowModel: getCoreRowModel(),
   getRowId: (row) => String(row.id),
   onSortingChange: handleSortingChange,
-  onRowSelectionChange: (updaterOrValue) => valueUpdater(updaterOrValue, rowSelection),
+  onRowSelectionChange: (updaterOrValue) =>
+    valueUpdater(updaterOrValue, rowSelection),
   state: {
     get sorting() {
       return sorting.value;
@@ -107,7 +144,9 @@ const tableOptions = reactive<TableOptions<ActivityLog>>({
 
 const table = useVueTable(tableOptions);
 
-watchEffect(() => (requestState.value.read === false ? (processingRowId.value = null) : false));
+watchEffect(() =>
+  requestState.value.read === false ? (processingRowId.value = null) : false,
+);
 
 function handleAdvancedSearch() {
   router.reload({
@@ -134,8 +173,18 @@ function handleAdvancedSearch() {
         :search-route="ActivityLogController.index()"
         :table="table"
         :is-advanced-search="advancedSearchApplied"
-        @search="(s) => (globalFilter = s)"
-        @read="(row) => (requestAction({ operation: 'read', data: { id: row.id } }), (processingRowId = row.id))"
+        @search="
+          (s) => {
+            activeFilters.search = s;
+            applyFilters();
+          }
+        "
+        @read="
+          (row) => (
+            requestAction({ operation: 'read', data: { id: row.id } }),
+            (processingRowId = row.id)
+          )
+        "
         @export="showPdf = true"
         @advanced-search="handleAdvancedSearch"
       />
@@ -144,10 +193,17 @@ function handleAdvancedSearch() {
         <SheetContent side="bottom">
           <SheetHeader>
             <SheetTitle>Exportar a PDF</SheetTitle>
-            <SheetDescription>Reporte: Trazas de Actividades de Usuarios</SheetDescription>
+            <SheetDescription
+              >Reporte: Trazas de Actividades de Usuarios</SheetDescription
+            >
           </SheetHeader>
           <div class="h-[70dvh]">
-            <iframe :src="`${ActivityLogController.index().url}/${urlQueryString}`" frameborder="0" width="100%" height="100%"></iframe>
+            <iframe
+              :src="pdfUrl"
+              frameborder="0"
+              width="100%"
+              height="100%"
+            ></iframe>
           </div>
         </SheetContent>
       </Sheet>
@@ -158,7 +214,13 @@ function handleAdvancedSearch() {
         :users
         :show="showAdvancedFilters"
         @close="showAdvancedFilters = false"
-        @advanced-search="(advFilters) => ((advancedSearchApplied = true), (advancedFilters = advFilters))"
+        @advanced-search="
+          (advFilters) => {
+            Object.assign(activeFilters, advFilters);
+            advancedSearchApplied = true;
+            applyFilters();
+          }
+        "
       />
     </ContentLayout>
   </AppLayout>

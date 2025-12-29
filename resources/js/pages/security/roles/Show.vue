@@ -1,16 +1,9 @@
 <script setup lang="ts">
+import RoleController from '@/actions/App/Http/Controllers/Security/RoleController';
+import ActionAlertDialog from '@/components/ActionAlertDialog.vue';
 import ActivityLogs from '@/components/activity-logs/ActivityLogs.vue';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   DropdownMenu,
@@ -21,18 +14,40 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useConfirmAction, useRequestActions } from '@/composables';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { useActionAlerts, useRequestActions } from '@/composables';
 import AppLayout from '@/layouts/AppLayout.vue';
 import ContentLayout from '@/layouts/ContentLayout.vue';
-import { ActivityLog, BreadcrumbItem, Can, PaginatedCollection, Permission, Role, SearchFilter, User } from '@/types';
+import {
+  ActivityLog,
+  BreadcrumbItem,
+  Can,
+  PaginatedCollection,
+  Permission,
+  Role,
+  SearchFilter,
+  User,
+} from '@/types';
 import { Head } from '@inertiajs/vue3';
-import { ArrowLeftIcon, EllipsisIcon, LoaderCircleIcon, PencilIcon, PlusIcon, Trash2Icon, Users } from 'lucide-vue-next';
-import { watch } from 'vue';
+import { breakpointsTailwind, useBreakpoints } from '@vueuse/core';
+import {
+  ArrowLeftIcon,
+  EllipsisIcon,
+  PencilIcon,
+  PlusIcon,
+  Trash2Icon,
+  Users,
+} from 'lucide-vue-next';
+import { computed } from 'vue';
 import Permisos from './partials/Permisos.vue';
 import Usuarios from './partials/Usuarios.vue';
-import RoleController from "@/actions/App/Http/Controllers/Security/RoleController";
 
 const props = defineProps<{
   can: Can;
@@ -54,23 +69,18 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const { action, requestState, requestAction, resourceID } = useRequestActions(RoleController);
-const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription } = useConfirmAction();
+const { action, requestState, requestAction, resourceID, isProcessing } =
+  useRequestActions(RoleController);
 
-watch(action, () => {
-  switch (action.value) {
-    case 'destroy':
-      alertAction.value = 'Eliminar permanentemente';
-      alertActionCss.value = 'bg-destructive text-destructive-foreground hover:bg-destructive/90';
-      alertTitle.value = `¿Eliminar rol «${props.role.name}» permanentemente?`;
-      alertDescription.value = `Esta acción no podrá revertirse. Los datos de «${props.role.name}» se perderán permanentemente.`;
-      alertOpen.value = true;
-      break;
+const breakpoints = useBreakpoints(breakpointsTailwind);
+const isSmallScreen = breakpoints.smaller('lg');
 
-    default:
-      break;
-  }
-});
+const resourceName = computed(() => props.role.name || '');
+
+const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription } =
+  useActionAlerts(action, resourceName);
+
+// ¡14 líneas de watch eliminadas! Ahora usa useActionAlerts
 </script>
 
 <template>
@@ -88,10 +98,14 @@ watch(action, () => {
             </CardHeader>
             <CardContent>
               <p class="text-sm font-medium">Creado</p>
-              <p class="text-sm text-muted-foreground">{{ role.created_at_human }}</p>
+              <p class="text-sm text-muted-foreground">
+                {{ role.created_at_human }}
+              </p>
               <br />
               <p class="text-sm font-medium">Modificado</p>
-              <p class="text-sm text-muted-foreground">{{ role.updated_at_human }}</p>
+              <p class="text-sm text-muted-foreground">
+                {{ role.updated_at_human }}
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -100,8 +114,12 @@ watch(action, () => {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger as-child>
-                  <Button variant="secondary" @click="requestAction({ operation: 'read_all' })" :disabled="requestState.readAll">
-                    <LoaderCircleIcon v-if="requestState.readAll" class="h-4 w-4 animate-spin" />
+                  <Button
+                    variant="secondary"
+                    @click="requestAction({ operation: 'read_all' })"
+                    :disabled="requestState.readAll"
+                  >
+                    <Spinner v-if="requestState.readAll" class="mr-2" />
                     <ArrowLeftIcon v-else class="mr-2 h-4 w-4" />
                     Regresar
                   </Button>
@@ -110,18 +128,21 @@ watch(action, () => {
               </Tooltip>
             </TooltipProvider>
             <div class="flex items-center">
-              <DropdownMenu>
+              <!-- Mobile View: Dropdown Menu -->
+              <DropdownMenu v-if="isSmallScreen">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger as-child>
                       <DropdownMenuTrigger as-child>
-                        <Button variant="outline" :disabled="resourceID !== null">
+                        <Button variant="outline" :disabled="isProcessing">
                           <EllipsisIcon v-if="resourceID === null" />
-                          <LoaderCircleIcon v-else class="animate-spin" />
+                          <Spinner v-else />
                         </Button>
                       </DropdownMenuTrigger>
                     </TooltipTrigger>
-                    <TooltipContent> Editar, exportar y otras acciones </TooltipContent>
+                    <TooltipContent>
+                      Editar, exportar y otras acciones
+                    </TooltipContent>
                     <DropdownMenuContent>
                       <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                       <DropdownMenuSeparator />
@@ -129,7 +150,13 @@ watch(action, () => {
                         <DropdownMenuItem
                           v-if="can.update"
                           class="flex items-center gap-2"
-                          @click="requestAction({ operation: 'edit', data: { id: role.id }, options: { preserveState: false } })"
+                          @click="
+                            requestAction({
+                              operation: 'edit',
+                              data: { id: role.id },
+                              options: { preserveState: false },
+                            })
+                          "
                         >
                           <PencilIcon />
                           <span>Editar</span>
@@ -147,11 +174,47 @@ watch(action, () => {
                   </Tooltip>
                 </TooltipProvider>
               </DropdownMenu>
+
+              <!-- Desktop View: Button Group -->
+              <ButtonGroup v-else>
+                <Button
+                  v-if="can.update"
+                  variant="outline"
+                  :disabled="isProcessing"
+                  @click="
+                    requestAction({
+                      operation: 'edit',
+                      data: { id: role.id },
+                      options: { preserveState: false },
+                    })
+                  "
+                >
+                  <Spinner v-if="resourceID !== null" class="mr-2" />
+                  <PencilIcon v-else class="mr-2" />
+                  <span>Editar</span>
+                </Button>
+                <Button
+                  v-if="can.delete"
+                  variant="outline"
+                  :disabled="isProcessing"
+                  class="text-red-600 transition-colors focus:bg-accent focus:text-accent-foreground"
+                  @click="action = 'destroy'"
+                >
+                  <Spinner v-if="resourceID !== null" class="mr-2" />
+                  <Trash2Icon v-else class="mr-2 text-red-600" />
+                  <span>Eliminar</span>
+                </Button>
+              </ButtonGroup>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger as-child>
-                    <Button v-if="can.create" class="ml-3" @click="requestAction({ operation: 'create' })" :disabled="requestState.create">
-                      <LoaderCircleIcon v-if="requestState.create" class="h-4 w-4 animate-spin" />
+                    <Button
+                      v-if="can.create"
+                      class="ml-3"
+                      @click="requestAction({ operation: 'create' })"
+                      :disabled="requestState.create"
+                    >
+                      <Spinner v-if="requestState.create" class="mr-2" />
                       <PlusIcon v-else class="mr-2 h-4 w-4" />
                       Nuevo
                     </Button>
@@ -176,26 +239,31 @@ watch(action, () => {
               <Usuarios :filters :role-id="role.id" :users></Usuarios>
             </TabsContent>
             <TabsContent value="logs">
-              <ActivityLogs :filters :logs :route="RoleController.show(role.id)" />
+              <ActivityLogs
+                :filters
+                :logs
+                :route="RoleController.show(role.id)"
+              />
             </TabsContent>
           </Tabs>
         </div>
       </section>
 
-      <AlertDialog v-model:open="alertOpen">
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{{ alertTitle }}</AlertDialogTitle>
-            <AlertDialogDescription>{{ alertDescription }}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel @click="action = null">Cancelar</AlertDialogCancel>
-            <AlertDialogAction :class="alertActionCss" @click="requestAction({ data: { id: role.id }, options: { preserveState: false } })">
-              {{ alertAction }}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ActionAlertDialog
+        :open="alertOpen"
+        :title="alertTitle"
+        :description="alertDescription"
+        :action-text="alertAction"
+        :action-css="alertActionCss"
+        :is-processing="isProcessing"
+        @cancel="action = null"
+        @confirm="
+          requestAction({
+            data: { id: role.id },
+            options: { preserveState: false },
+          })
+        "
+      />
     </ContentLayout>
   </AppLayout>
 </template>

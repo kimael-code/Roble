@@ -1,14 +1,20 @@
 <script setup lang="ts">
+import PermissionController from '@/actions/App/Http/Controllers/Security/PermissionController';
 import DataTable from '@/components/DataTable.vue';
 import { PaginatedCollection, User } from '@/types';
 import { router } from '@inertiajs/vue3';
-import { getCoreRowModel, SortingState, TableOptions, useVueTable } from '@tanstack/vue-table';
+import {
+  getCoreRowModel,
+  SortingState,
+  TableOptions,
+  useVueTable,
+} from '@tanstack/vue-table';
 import { reactive, ref } from 'vue';
 import { columns } from './columnsUser';
 
 interface Props {
   filters: object;
-  permissionId: string | number;
+  permissionId: number;
   users: PaginatedCollection<User>;
 }
 const props = defineProps<Props>();
@@ -27,13 +33,16 @@ function handleSortingChange(item: any) {
       data[sortBy] = sortDirection;
     });
 
-    router.visit(route('permissions.show', { permission: props.permissionId }), {
-      data,
-      only: ['users'],
-      preserveScroll: true,
-      preserveState: true,
-      onSuccess: () => (sorting.value = sortValue),
-    });
+    router.visit(
+      PermissionController.show({ permission: props.permissionId }),
+      {
+        data,
+        only: ['users'],
+        preserveScroll: true,
+        preserveState: true,
+        onSuccess: () => (sorting.value = sortValue),
+      },
+    );
   }
 }
 
@@ -74,8 +83,11 @@ const table = useVueTable(tableOptions);
     :data="users"
     :filters
     :search-only="['users']"
-    :search-route="route('permissions.show', { permission: permissionId })"
+    :search-route="PermissionController.show({ permission: permissionId })"
     :table
+    :has-advanced-search="false"
+    per-page-name="per_page_u"
     @search="(s) => (globalFilter = s)"
   />
 </template>
+

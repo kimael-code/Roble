@@ -1,23 +1,52 @@
 <script lang="ts" setup>
+import UserController from '@/actions/App/Http/Controllers/Security/UserController';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { TagsInput, TagsInputInput, TagsInputItem, TagsInputItemDelete, TagsInputItemText } from '@/components/ui/tags-input';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import {
+  TagsInput,
+  TagsInputInput,
+  TagsInputItem,
+  TagsInputItemDelete,
+  TagsInputItemText,
+} from '@/components/ui/tags-input';
 import AppLayout from '@/layouts/AppLayout.vue';
 import ContentLayout from '@/layouts/ContentLayout.vue';
-import { BreadcrumbItem, Employee, OrganizationalUnit, Pagination, Permission, Role, SearchFilter, User } from '@/types';
+import {
+  BreadcrumbItem,
+  Employee,
+  OrganizationalUnit,
+  Pagination,
+  Permission,
+  Role,
+  SearchFilter,
+  User,
+} from '@/types';
 import { Head, router, WhenVisible } from '@inertiajs/vue3';
 import { watchDebounced } from '@vueuse/core';
 import { useForm } from 'laravel-precognition-vue-inertia';
 import { LoaderCircleIcon, Search, UserIcon } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
-import UserController from "@/actions/App/Http/Controllers/Security/UserController";
 
 const props = defineProps<{
   filters: SearchFilter;
@@ -48,9 +77,13 @@ const openSheetRoles = ref(false);
 const openSheetOUs = ref(false);
 const search = ref(props.filters.search);
 
-const ouNames = computed(() => props.user.active_organizational_units?.map((ou) => ou.name));
+const ouNames = computed(() =>
+  props.user.active_organizational_units?.map((ou) => ou.name),
+);
 const roleNames = computed(() => props.user.roles?.map((r) => r.name));
-const permissionNames = computed(() => props.user.permissions?.map((p) => p.description));
+const permissionNames = computed(() =>
+  props.user.permissions?.map((p) => p.description),
+);
 
 type formUser = {
   name: string;
@@ -68,7 +101,9 @@ type formUser = {
   permissions: string[];
 };
 
-const form = useForm('put', UserController.update(props.user.id).url, <formUser>{
+const form = useForm('put', UserController.update(props.user.id).url, <
+  formUser
+>{
   name: props.user.name,
   email: props.user.email,
   is_external: props.user.is_external,
@@ -139,18 +174,27 @@ watchDebounced(
   { debounce: 500, maxWait: 1000 },
 );
 
-watch([openSheetPermissions, openSheetRoles, openSheetOUs], ([isOpenSheetPermissions, isOpenSheetRoles, isOpenSheetOUs]) => {
-  if (!isOpenSheetRoles || !isOpenSheetPermissions || !isOpenSheetOUs) {
-    search.value = undefined;
-    router.visit(UserController.edit(props.user.id), { preserveScroll: true, preserveState: true });
-  }
-});
+watch(
+  [openSheetPermissions, openSheetRoles, openSheetOUs],
+  ([isOpenSheetPermissions, isOpenSheetRoles, isOpenSheetOUs]) => {
+    if (!isOpenSheetRoles || !isOpenSheetPermissions || !isOpenSheetOUs) {
+      search.value = undefined;
+      router.visit(UserController.edit(props.user.id), {
+        preserveScroll: true,
+        preserveState: true,
+      });
+    }
+  },
+);
 
 function handlePermissionSelection(permission: Permission) {
   if (!form.permissions.includes(permission.description)) {
     form.permissions.push(permission.description);
   } else {
-    form.permissions.splice(form.permissions.indexOf(permission.description), 1);
+    form.permissions.splice(
+      form.permissions.indexOf(permission.description),
+      1,
+    );
   }
 }
 
@@ -181,13 +225,17 @@ function handleOUSelection(ou: OrganizationalUnit) {
       <section class="mx-auto w-full">
         <Card class="container">
           <CardHeader>
-            <CardDescription>Los campos con asterisco rojo son requeridos.</CardDescription>
+            <CardDescription
+              >Los campos con asterisco rojo son requeridos.</CardDescription
+            >
           </CardHeader>
           <CardContent>
             <form @submit.prevent="submit" @keyup.enter.prevent="submit">
               <div class="grid w-full items-center gap-4">
                 <div class="flex flex-col space-y-1.5">
-                  <Label class="is-required" for="name">Nombre de Usuario</Label>
+                  <Label class="is-required" for="name"
+                    >Nombre de Usuario</Label
+                  >
                   <Input
                     id="name"
                     v-model="form.name"
@@ -202,7 +250,9 @@ function handleOUSelection(ou: OrganizationalUnit) {
                   <InputError :message="form.errors.name" />
                 </div>
                 <div class="flex flex-col space-y-1.5">
-                  <Label class="is-required" for="email">Correo Electrónico</Label>
+                  <Label class="is-required" for="email"
+                    >Correo Electrónico</Label
+                  >
                   <Input
                     id="email"
                     v-model="form.email"
@@ -218,12 +268,19 @@ function handleOUSelection(ou: OrganizationalUnit) {
                 <br />
                 <div class="5 flex flex-col space-y-1">
                   <Label class="flex items-center space-x-3" for="is_external">
-                    <Checkbox id="is_external" v-model:model-value="form.is_external" />
+                    <Checkbox
+                      id="is_external"
+                      v-model:model-value="form.is_external"
+                    />
                     <span>Usuario Externo</span>
                   </Label>
                 </div>
                 <div class="flex flex-col space-y-1.5">
-                  <Label :class="{ 'is-required': form.is_external }" for="id_card">Nro. de CI</Label>
+                  <Label
+                    :class="{ 'is-required': form.is_external }"
+                    for="id_card"
+                    >Nro. de CI</Label
+                  >
                   <Input
                     id="id_card"
                     v-model="form.id_card"
@@ -235,7 +292,11 @@ function handleOUSelection(ou: OrganizationalUnit) {
                   <InputError :message="form.errors.id_card" />
                 </div>
                 <div class="flex flex-col space-y-1.5">
-                  <Label :class="{ 'is-required': form.is_external }" for="names">Nombres</Label>
+                  <Label
+                    :class="{ 'is-required': form.is_external }"
+                    for="names"
+                    >Nombres</Label
+                  >
                   <Input
                     id="names"
                     v-model="form.names"
@@ -247,7 +308,11 @@ function handleOUSelection(ou: OrganizationalUnit) {
                   <InputError :message="form.errors.names" />
                 </div>
                 <div class="flex flex-col space-y-1.5">
-                  <Label :class="{ 'is-required': form.is_external }" for="surnames">Apellidos</Label>
+                  <Label
+                    :class="{ 'is-required': form.is_external }"
+                    for="surnames"
+                    >Apellidos</Label
+                  >
                   <Input
                     id="surnames"
                     v-model="form.surnames"
@@ -286,33 +351,54 @@ function handleOUSelection(ou: OrganizationalUnit) {
                 <div class="5 flex flex-col space-y-1">
                   <Label for="ou_names">Unidades Administrativas</Label>
                   <TagsInput id="ou_names" v-model="form.ou_names">
-                    <TagsInputItem v-for="ou_name in form.ou_names" :key="ou_name" :value="ou_name">
+                    <TagsInputItem
+                      v-for="ou_name in form.ou_names"
+                      :key="ou_name"
+                      :value="ou_name"
+                    >
                       <TagsInputItemText />
                       <TagsInputItemDelete />
                     </TagsInputItem>
-                    <TagsInputInput placeholder="Unidades Administrativas seleccionados..." @click="openSheetOUs = true" />
+                    <TagsInputInput
+                      placeholder="Unidades Administrativas seleccionados..."
+                      @click="openSheetOUs = true"
+                    />
                   </TagsInput>
                   <InputError :message="ouNamesError" />
                 </div>
                 <div class="5 flex flex-col space-y-1">
                   <Label for="roles">Roles</Label>
                   <TagsInput id="roles" v-model="form.roles">
-                    <TagsInputItem v-for="role in form.roles" :key="role" :value="role">
+                    <TagsInputItem
+                      v-for="role in form.roles"
+                      :key="role"
+                      :value="role"
+                    >
                       <TagsInputItemText />
                       <TagsInputItemDelete />
                     </TagsInputItem>
-                    <TagsInputInput placeholder="Roles seleccionados..." @click="openSheetRoles = true" />
+                    <TagsInputInput
+                      placeholder="Roles seleccionados..."
+                      @click="openSheetRoles = true"
+                    />
                   </TagsInput>
                   <InputError :message="rolesError" />
                 </div>
                 <div class="5 flex flex-col space-y-1">
                   <Label for="permissions">Permisos Directos</Label>
                   <TagsInput id="permissions" v-model="form.permissions">
-                    <TagsInputItem v-for="permission in form.permissions" :key="permission" :value="permission">
+                    <TagsInputItem
+                      v-for="permission in form.permissions"
+                      :key="permission"
+                      :value="permission"
+                    >
                       <TagsInputItemText />
                       <TagsInputItemDelete />
                     </TagsInputItem>
-                    <TagsInputInput placeholder="Permisos seleccionados..." @click="openSheetPermissions = true" />
+                    <TagsInputInput
+                      placeholder="Permisos seleccionados..."
+                      @click="openSheetPermissions = true"
+                    />
                   </TagsInput>
                   <InputError :message="permissionsError" />
                 </div>
@@ -320,12 +406,29 @@ function handleOUSelection(ou: OrganizationalUnit) {
             </form>
           </CardContent>
           <CardFooter class="flex justify-between px-6 pb-6">
-            <Button variant="outline" :disabled="buttonCancel" @click="index" @keyup.esc="index" @keyup.enter="index">
-              <LoaderCircleIcon v-if="buttonCancel" class="h-4 w-4 animate-spin" />
+            <Button
+              variant="outline"
+              :disabled="buttonCancel"
+              @click="index"
+              @keyup.esc="index"
+              @keyup.enter="index"
+            >
+              <LoaderCircleIcon
+                v-if="buttonCancel"
+                class="h-4 w-4 animate-spin"
+              />
               Cancelar
             </Button>
-            <Button :disabled="buttonCancel || form.processing" @click="submit" @keyup.esc="index" @keyup.enter="submit">
-              <LoaderCircleIcon v-if="form.processing" class="h-4 w-4 animate-spin" />
+            <Button
+              :disabled="buttonCancel || form.processing"
+              @click="submit"
+              @keyup.esc="index"
+              @keyup.enter="submit"
+            >
+              <LoaderCircleIcon
+                v-if="form.processing"
+                class="h-4 w-4 animate-spin"
+              />
               Guardar
             </Button>
           </CardFooter>
@@ -336,21 +439,35 @@ function handleOUSelection(ou: OrganizationalUnit) {
             <SheetHeader>
               <SheetTitle>Seleccionar Roles</SheetTitle>
               <SheetDescription>
-                Haga clic en el rol que necesite ser asignado al usuario. El usuario puede pertenecer a más de un rol a la vez, por lo que puede
-                seleccionar varios. Haga clic en Seleccionar cuando haya terminado.
+                Haga clic en el rol que necesite ser asignado al usuario. El
+                usuario puede pertenecer a más de un rol a la vez, por lo que
+                puede seleccionar varios. Haga clic en Seleccionar cuando haya
+                terminado.
               </SheetDescription>
             </SheetHeader>
             <div class="relative w-full max-w-sm items-center p-4">
-              <Input id="search" type="text" placeholder="Buscar..." class="pl-10" v-model="search" />
-              <span class="absolute inset-y-0 start-0 flex items-center justify-center px-5">
-                <Search class="text-muted-foreground size-6" />
+              <Input
+                id="search"
+                type="text"
+                placeholder="Buscar..."
+                class="pl-10"
+                v-model="search"
+              />
+              <span
+                class="absolute inset-y-0 start-0 flex items-center justify-center px-5"
+              >
+                <Search class="size-6 text-muted-foreground" />
               </span>
             </div>
             <ScrollArea class="m-3 h-75 rounded-md border">
               <div class="p-4">
                 <div v-for="(role, i) in roles" :key="i">
                   <Label :for="role.name" class="flex items-center space-x-3">
-                    <Checkbox :id="role.name" :model-value="form.roles.includes(role.name)" @update:model-value="handleRoleSelection(role)" />
+                    <Checkbox
+                      :id="role.name"
+                      :model-value="form.roles.includes(role.name)"
+                      @update:model-value="handleRoleSelection(role)"
+                    />
                     <span>{{ role.name }}</span>
                   </Label>
                   <Separator class="my-2" />
@@ -379,24 +496,40 @@ function handleOUSelection(ou: OrganizationalUnit) {
             <SheetHeader>
               <SheetTitle>Seleccionar Permisos</SheetTitle>
               <SheetDescription>
-                Haga clic en los permisos que necesiten ser asignados directamente al usuario, sin tomar en cuenta el rol (o roles) al que pertenezca.
-                Haga clic en Seleccionar cuando haya terminado.
+                Haga clic en los permisos que necesiten ser asignados
+                directamente al usuario, sin importar su rol o roles. Cuando
+                haya finalizado cierre este cuadro de diálogo.
               </SheetDescription>
             </SheetHeader>
             <div class="relative w-full max-w-sm items-center p-4">
-              <Input id="search" type="text" placeholder="Buscar..." class="pl-10" v-model="search" />
-              <span class="absolute inset-y-0 start-0 flex items-center justify-center px-5">
-                <Search class="text-muted-foreground size-6" />
+              <Input
+                id="search"
+                type="text"
+                placeholder="Buscar..."
+                class="pl-10"
+                v-model="search"
+              />
+              <span
+                class="absolute inset-y-0 start-0 flex items-center justify-center px-5"
+              >
+                <Search class="size-6 text-muted-foreground" />
               </span>
             </div>
             <ScrollArea class="m-3 h-75 rounded-md border">
               <div class="p-4">
                 <div v-for="(permission, i) in permissions" :key="i">
-                  <Label :for="permission.description" class="flex items-center space-x-3">
+                  <Label
+                    :for="permission.description"
+                    class="flex items-center space-x-3"
+                  >
                     <Checkbox
                       :id="permission.description"
-                      :model-value="form.permissions.includes(permission.description)"
-                      @update:model-value="handlePermissionSelection(permission)"
+                      :model-value="
+                        form.permissions.includes(permission.description)
+                      "
+                      @update:model-value="
+                        handlePermissionSelection(permission)
+                      "
                     />
                     <span>{{ permission.description }}</span>
                   </Label>
@@ -426,21 +559,34 @@ function handleOUSelection(ou: OrganizationalUnit) {
             <SheetHeader>
               <SheetTitle>Seleccionar Unidades Administrativas</SheetTitle>
               <SheetDescription>
-                Haga clic en la unidad administrativa a la que pertenecerá el usuario. Si es necesario, puede seleccionar varias unidades
+                Haga clic en la unidad administrativa a la que pertenecerá el
+                usuario. Si es necesario, puede seleccionar varias unidades
                 administrativas. Cuando haya terminado, haga clic en Cerrar .
               </SheetDescription>
             </SheetHeader>
             <div class="relative w-full max-w-sm items-center p-4">
-              <Input id="search" type="text" placeholder="Buscar..." class="pl-10" v-model="search" />
-              <span class="absolute inset-y-0 start-0 flex items-center justify-center px-5">
-                <Search class="text-muted-foreground size-6" />
+              <Input
+                id="search"
+                type="text"
+                placeholder="Buscar..."
+                class="pl-10"
+                v-model="search"
+              />
+              <span
+                class="absolute inset-y-0 start-0 flex items-center justify-center px-5"
+              >
+                <Search class="size-6 text-muted-foreground" />
               </span>
             </div>
             <ScrollArea class="m-3 h-75 rounded-md border">
               <div class="p-4">
                 <div v-for="(ou, i) in ous" :key="i">
                   <Label :for="ou.name" class="flex items-center space-x-3">
-                    <Checkbox :id="ou.name" :model-value="form.ou_names.includes(ou.name)" @update:model-value="handleOUSelection(ou)" />
+                    <Checkbox
+                      :id="ou.name"
+                      :model-value="form.ou_names.includes(ou.name)"
+                      @update:model-value="handleOUSelection(ou)"
+                    />
                     <span>{{ ou.name }}</span>
                   </Label>
                   <Separator class="my-2" />

@@ -1,26 +1,29 @@
 <script setup lang="ts">
+import routes from '@/actions/App/Http/Controllers/Organization/OrganizationController';
+import ActionAlertDialog from '@/components/ActionAlertDialog.vue';
 import DataTable from '@/components/DataTable.vue';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { valueUpdater } from '@/components/ui/table/utils';
-import { useConfirmAction, useRequestActions } from '@/composables';
+import { useRequestActions, useActionAlerts } from '@/composables';
 import AppLayout from '@/layouts/AppLayout.vue';
 import ContentLayout from '@/layouts/ContentLayout.vue';
-import { BreadcrumbItem, Can, OperationType, Organization, PaginatedCollection } from '@/types';
+import {
+  BreadcrumbItem,
+  Can,
+  OperationType,
+  Organization,
+  PaginatedCollection,
+} from '@/types';
 import { Head, router } from '@inertiajs/vue3';
-import { getCoreRowModel, RowSelectionState, SortingState, TableOptions, useVueTable } from '@tanstack/vue-table';
+import {
+  getCoreRowModel,
+  RowSelectionState,
+  SortingState,
+  TableOptions,
+  useVueTable,
+} from '@tanstack/vue-table';
 import { Building } from 'lucide-vue-next';
-import { reactive, ref, watch, watchEffect } from 'vue';
+import { reactive, ref, computed, watchEffect } from 'vue';
 import { columns, permissions, processingRowId } from './partials/columns';
-import routes from "@/actions/App/Http/Controllers/Organization/OrganizationController";
 
 const props = defineProps<{
   can: Can;
@@ -35,8 +38,14 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const { action, resourceID, requestState, requestAction } = useRequestActions(routes);
-const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription, alertData } = useConfirmAction();
+const { action, resourceID, requestState, requestAction, isProcessing } =
+  useRequestActions(routes);
+
+const alertData = ref<any>(null);
+const resourceName = computed(() => alertData.value?.name || '');
+
+const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription } =
+  useActionAlerts(action, resourceName);
 
 permissions.value = props.can;
 const sorting = ref<SortingState>([]);
@@ -96,7 +105,8 @@ const tableOptions = reactive<TableOptions<Organization>>({
   getCoreRowModel: getCoreRowModel(),
   getRowId: (row) => String(row.id),
   onSortingChange: handleSortingChange,
-  onRowSelectionChange: (updaterOrValue) => valueUpdater(updaterOrValue, rowSelection),
+  onRowSelectionChange: (updaterOrValue) =>
+    valueUpdater(updaterOrValue, rowSelection),
   state: {
     get sorting() {
       return sorting.value;
@@ -112,29 +122,11 @@ const tableOptions = reactive<TableOptions<Organization>>({
 
 const table = useVueTable(tableOptions);
 
-watch(action, () => {
-  switch (action.value) {
-    case 'destroy':
-      alertAction.value = 'Eliminar permanentemente';
-      alertActionCss.value = 'bg-destructive text-destructive-foreground hover:bg-destructive/90';
-      alertTitle.value = `¿Eliminar ente «${alertData.value.name}» permanentemente?`;
-      alertDescription.value = `Esta acción no podrá revertirse. Los datos de «${alertData.value.name}» se perderán permanentemente.`;
-      alertOpen.value = true;
-      break;
-    case 'batch_destroy':
-      alertAction.value = 'Eliminar seleccionados';
-      alertActionCss.value = 'bg-destructive text-destructive-foreground hover:bg-destructive/90';
-      alertTitle.value = `¿Eliminar los registros que Usted ha seleccionado?`;
-      alertDescription.value = `Esta acción no podrá revertirse. Los datos se perderán permanentemente.`;
-      alertOpen.value = true;
-      break;
+// ¡22 líneas de watch eliminadas! Ahora usa useActionAlerts
 
-    default:
-      break;
-  }
-});
-
-watchEffect(() => (resourceID.value === null ? (processingRowId.value = null) : false));
+watchEffect(() =>
+  resourceID.value === null ? (processingRowId.value = null) : false,
+);
 </script>
 
 <template>
@@ -154,29 +146,40 @@ watchEffect(() => (resourceID.value === null ? (processingRowId.value = null) : 
         :search-route="routes.index()"
         :table="table"
         :is-loading-new="requestState.create"
-        :is-loading-dropdown="requestState.batchDestroy"
+        :is-loading-dropdown="isProcessing"
+        :has-advanced-search="false"
         @batch-destroy="handleBatchAction('batch_destroy')"
         @search="(s) => (globalFilter = s)"
         @new="requestAction({ operation: 'create' })"
-        @read="(row) => (requestAction({ operation: 'read', data: { id: row.id } }), (processingRowId = row.id))"
-        @update="(row) => (requestAction({ operation: 'edit', data: { id: row.id } }), (processingRowId = row.id))"
+        @read="
+          (row) => (
+            requestAction({ operation: 'read', data: { id: row.id } }),
+            (processingRowId = row.id)
+          )
+        "
+        @update="
+          (row) => (
+            requestAction({ operation: 'edit', data: { id: row.id } }),
+            (processingRowId = row.id)
+          )
+        "
         @destroy="(row) => handleAction('destroy', row)"
       />
 
-      <AlertDialog v-model:open="alertOpen">
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{{ alertTitle }}</AlertDialogTitle>
-            <AlertDialogDescription>{{ alertDescription }}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel @click="((action = null), (processingRowId = null))">Cancelar</AlertDialogCancel>
-            <AlertDialogAction :class="alertActionCss" @click="requestAction({ data: alertData, options: { preserveState: false } })">
-              {{ alertAction }}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ActionAlertDialog
+        :open="alertOpen"
+        :title="alertTitle"
+        :description="alertDescription"
+        :action-text="alertAction"
+        :action-css="alertActionCss"
+        @cancel="((action = null), (processingRowId = null))"
+        @confirm="
+          requestAction({
+            data: alertData,
+            options: { preserveState: false },
+          })
+        "
+      />
     </ContentLayout>
   </AppLayout>
 </template>

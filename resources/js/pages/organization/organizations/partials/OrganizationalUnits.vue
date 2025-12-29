@@ -1,12 +1,16 @@
 <script setup lang="ts">
+import { show } from '@/actions/App/Http/Controllers/Organization/OrganizationController';
 import DataTable from '@/components/DataTable.vue';
 import { OrganizationalUnit, PaginatedCollection } from '@/types';
 import { router } from '@inertiajs/vue3';
-import { getCoreRowModel, SortingState, TableOptions, useVueTable } from '@tanstack/vue-table';
+import {
+  getCoreRowModel,
+  SortingState,
+  TableOptions,
+  useVueTable,
+} from '@tanstack/vue-table';
 import { reactive, ref } from 'vue';
 import { columns } from './columnsOrganizationalUnit';
-import { show } from "@/actions/App/Http/Controllers/Organization/OrganizationController";
-
 
 interface Props {
   filters: object;
@@ -78,6 +82,9 @@ const table = useVueTable(tableOptions);
     :search-only="['ous']"
     :search-route="show(resourceId)"
     :table
+    :has-advanced-search="false"
+    per-page-name="per_page_o"
     @search="(s) => (globalFilter = s)"
   />
 </template>
+

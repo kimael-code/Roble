@@ -1,8 +1,15 @@
 <script lang="ts" setup>
+import routes from '@/actions/App/Http/Controllers/Organization/OrganizationController';
 import InputError from '@/components/InputError.vue';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,7 +20,6 @@ import { Head, router } from '@inertiajs/vue3';
 import { useForm } from 'laravel-precognition-vue-inertia';
 import { Building, LoaderCircleIcon } from 'lucide-vue-next';
 import { ref } from 'vue';
-import routes from "@/actions/App/Http/Controllers/Organization/OrganizationController";
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
@@ -35,7 +41,7 @@ type OrganizationForm = {
   logo_path: File | null;
   acronym: string;
   address: string;
-}
+};
 
 const form = useForm('post', routes.store().url, <OrganizationForm>{
   rif: '',
@@ -50,7 +56,7 @@ function handleLogoChange(e: Event) {
 
   if (inputElement && inputElement.files && inputElement.files.length) {
     urlLogo.value = URL.createObjectURL(inputElement.files[0]);
-    form.logo_path = inputElement.files[0]
+    form.logo_path = inputElement.files[0];
   } else {
     urlLogo.value = '';
     form.logo_path = null;
@@ -82,7 +88,9 @@ function index() {
       <section class="mx-auto w-full">
         <Card class="container">
           <CardHeader>
-            <CardDescription>Los campos con asterisco rojo son requeridos.</CardDescription>
+            <CardDescription
+              >Los campos con asterisco rojo son requeridos.</CardDescription
+            >
           </CardHeader>
           <CardContent>
             <form @submit.prevent="submit">
@@ -154,21 +162,45 @@ function index() {
                   />
                   <InputError :message="form.errors.logo_path" />
                 </div>
-                <div v-if="urlLogo" class="w-full overflow-hidden rounded-xs shadow-sm sm:w-[350px]">
+                <div
+                  v-if="urlLogo"
+                  class="w-full overflow-hidden rounded-xs shadow-sm sm:w-[350px]"
+                >
                   <AspectRatio :ratio="31 / 8">
-                    <img class="h-full w-full object-cover" :src="urlLogo" alt="Logo seleccionado" />
+                    <img
+                      class="h-full w-full object-cover"
+                      :src="urlLogo"
+                      alt="Logo seleccionado"
+                    />
                   </AspectRatio>
                 </div>
               </div>
             </form>
           </CardContent>
           <CardFooter class="flex justify-between px-6 pb-6">
-            <Button variant="outline" :disabled="buttonCancel" @click="index" @keyup.esc="index" @keyup.enter="index">
-              <LoaderCircleIcon v-if="buttonCancel" class="h-4 w-4 animate-spin" />
+            <Button
+              variant="outline"
+              :disabled="buttonCancel"
+              @click="index"
+              @keyup.esc="index"
+              @keyup.enter="index"
+            >
+              <LoaderCircleIcon
+                v-if="buttonCancel"
+                class="h-4 w-4 animate-spin"
+              />
               Cancelar
             </Button>
-            <Button :disabled="buttonCancel || form.processing" @click="submit" @keyup.esc="index" @keyup.enter="submit">
-              <LoaderCircleIcon v-if="form.processing" class="h-4 w-4 animate-spin" />
+            <Button
+              :disabled="buttonCancel || form.processing"
+              @click="submit"
+              @keyup.esc="index"
+              @keyup.enter="submit"
+            >
+              <LoaderCircleIcon
+                v-if="form.processing"
+                class="h-4 w-4 animate-spin"
+              />
               Guardar
             </Button>
           </CardFooter>

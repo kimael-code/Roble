@@ -1,11 +1,16 @@
 <script setup lang="ts">
+import RoleController from '@/actions/App/Http/Controllers/Security/RoleController';
 import DataTable from '@/components/DataTable.vue';
 import { PaginatedCollection, User } from '@/types';
 import { router } from '@inertiajs/vue3';
-import { getCoreRowModel, SortingState, TableOptions, useVueTable } from '@tanstack/vue-table';
+import {
+  getCoreRowModel,
+  SortingState,
+  TableOptions,
+  useVueTable,
+} from '@tanstack/vue-table';
 import { reactive, ref } from 'vue';
 import { columns } from './columnsUser';
-import RoleController from "@/actions/App/Http/Controllers/Security/RoleController";
 
 interface Props {
   filters: object;
@@ -77,6 +82,9 @@ const table = useVueTable(tableOptions);
     :search-only="['users']"
     :search-route="RoleController.show(roleId)"
     :table
+    :has-advanced-search="false"
+    per-page-name="per_page_u"
     @search="(s) => (globalFilter = s)"
   />
 </template>
+

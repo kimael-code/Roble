@@ -1,6 +1,20 @@
 <script setup lang="ts">
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { ActivityLog } from '@/types';
 import { computed } from 'vue';
 
@@ -43,7 +57,8 @@ const cardHeader = computed(() => {
       break;
     case 'autorización':
       data.css = 'text-primary';
-      data.description = 'Datos técnicos de los objetos procesados en la autorización';
+      data.description =
+        'Datos técnicos de los objetos procesados en la autorización';
       break;
     case 'creación':
     case 'restauración':
@@ -76,7 +91,7 @@ const authorizedObjects = computed(() => {
 
   Object.keys(props.log.properties).forEach((d) => {
     if (d !== 'request' && d !== 'causer') {
-      // @ts-expect-error: deja la ladilla typescript
+      // @ts-expect-error: ignorar error de TypeScript
       authObjects[d] = props.log.properties[d];
     }
   });
@@ -97,11 +112,20 @@ function compareObjects(obj1: GenericModel, obj2: GenericModel) {
     let displayValue2 = value2;
 
     // Manejo de tipos de datos complejos (objetos y arrays)
-    if (typeof value1 === 'object' && value1 !== null && typeof value2 === 'object' && value2 !== null) {
+    if (
+      typeof value1 === 'object' &&
+      value1 !== null &&
+      typeof value2 === 'object' &&
+      value2 !== null
+    ) {
       if (Array.isArray(value1) && Array.isArray(value2)) {
         // Comparar arrays (el orden no importa si sólo comparamos elementos)
         // @ts-expect-error: la propiedad no existe en el objeto
-        if (value1.length !== value2.length || !value1.every((item) => value2.includes(item)) || !value2.every((item) => value1.includes(item))) {
+        if (
+          value1.length !== value2.length ||
+          !value1.every((item) => value2.includes(item)) ||
+          !value2.every((item) => value1.includes(item))
+        ) {
           areEqual = false;
         }
         displayValue1 = JSON.stringify(value1);
@@ -136,7 +160,9 @@ function compareObjects(obj1: GenericModel, obj2: GenericModel) {
       <CardTitle :class="cardHeader.css">{{ cardHeader.title }}</CardTitle>
       <CardDescription>{{ cardHeader.description }}</CardDescription>
     </CardHeader>
-    <CardContent v-if="log.event === 'creación' || log.event === 'restauración'">
+    <CardContent
+      v-if="log.event === 'creación' || log.event === 'restauración'"
+    >
       <Table>
         <TableCaption>Datos del registro creado.</TableCaption>
         <TableHeader>
@@ -146,7 +172,10 @@ function compareObjects(obj1: GenericModel, obj2: GenericModel) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          <TableRow v-for="(value, key) in log.properties.attributes" :key="key">
+          <TableRow
+            v-for="(value, key) in log.properties.attributes"
+            :key="key"
+          >
             <TableCell class="font-mono text-xs">{{ key }}</TableCell>
             <TableCell class="font-mono text-xs">{{ value }}</TableCell>
           </TableRow>
@@ -170,7 +199,13 @@ function compareObjects(obj1: GenericModel, obj2: GenericModel) {
         </TableBody>
       </Table>
     </CardContent>
-    <CardContent v-else-if="log.event === 'modificación' || log.event === 'activación' || log.event === 'desactivación'">
+    <CardContent
+      v-else-if="
+        log.event === 'modificación' ||
+        log.event === 'activación' ||
+        log.event === 'desactivación'
+      "
+    >
       <Table>
         <TableCaption>Datos del registro modificado.</TableCaption>
         <TableHeader>
@@ -181,14 +216,26 @@ function compareObjects(obj1: GenericModel, obj2: GenericModel) {
           </TableRow>
         </TableHeader>
         <TableBody v-if="log.properties.attributes && log.properties.old">
-          <TableRow v-for="(item, i) in compareObjects(log.properties.old, log.properties.attributes)" :key="i">
+          <TableRow
+            v-for="(item, i) in compareObjects(
+              log.properties.old,
+              log.properties.attributes,
+            )"
+            :key="i"
+          >
             <TableCell class="font-mono text-xs">{{ item.key }}</TableCell>
-            <TableCell class="text-right font-mono text-xs text-muted-foreground" :class="{ 'bg-red-100 font-medium text-red-700': !item.areEqual }">
+            <TableCell
+              class="text-right font-mono text-xs text-muted-foreground"
+              :class="{ 'bg-red-100 font-medium text-red-700': !item.areEqual }"
+            >
               {{ item.value1 !== undefined ? item.value1 : 'N/A' }}
             </TableCell>
             <TableCell
               class="font-mono text-xs text-muted-foreground"
-              :class="{ 'bg-green-100 font-medium text-green-700': !item.areEqual, 'text-muted-foreground': item.areEqual }"
+              :class="{
+                'bg-green-100 font-medium text-green-700': !item.areEqual,
+                'text-muted-foreground': item.areEqual,
+              }"
             >
               {{ item.value2 !== undefined ? item.value2 : 'N/A' }}
             </TableCell>
@@ -199,15 +246,21 @@ function compareObjects(obj1: GenericModel, obj2: GenericModel) {
     <CardContent v-else-if="log.event === 'autorización'">
       <div class="grid w-full items-center gap-4">
         <div class="space-y-1">
-          <p class="text-sm leading-none font-medium">Propiedades de los Registros:</p>
-          <pre class="text-xs text-pretty text-muted-foreground">{{ authorizedObjects }}</pre>
+          <p class="text-sm leading-none font-medium">
+            Propiedades de los Registros:
+          </p>
+          <pre class="text-xs text-pretty text-muted-foreground">{{
+            authorizedObjects
+          }}</pre>
         </div>
       </div>
     </CardContent>
     <CardContent v-else>
       <div class="grid w-full items-center gap-4">
         <div class="space-y-1">
-          <pre class="text-xs text-pretty text-muted-foreground">{{ log.properties }}</pre>
+          <pre class="text-xs text-pretty text-muted-foreground">{{
+            log.properties
+          }}</pre>
         </div>
       </div>
     </CardContent>
