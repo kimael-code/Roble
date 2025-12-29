@@ -4,6 +4,7 @@ namespace App\Listeners\Auth;
 
 use App\Models\Monitoring\ActivityLog;
 use App\Models\User;
+use App\Support\UserMetadata;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -28,7 +29,8 @@ class LogPasswordReset
             ->causedBy($event->user)
             ->performedOn($event->user)
             ->withProperties([
-                'causer', User::with('person')->find($event->user->id)->toArray(),
+                // @phpstan-ignore-next-line argument.type (User implementa Authenticatable)
+                'causer' => UserMetadata::capture($event->user),
                 'request' => [
                     'ip_address' => request()->ip(),
                     'user_agent' => request()->header('user-agent'),
@@ -38,6 +40,6 @@ class LogPasswordReset
                     'request_url' => request()->fullUrl(),
                 ],
             ])
-            ->log(__('reset their password'));
+            ->log('restableció su propia contraseña');
     }
 }

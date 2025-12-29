@@ -4,6 +4,7 @@ namespace App\Listeners\Auth;
 
 use App\Models\Monitoring\ActivityLog;
 use App\Models\User;
+use App\Support\UserMetadata;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -25,9 +26,11 @@ class LogVerified
     {
         activity(ActivityLog::LOG_NAMES['auth'])
             ->event(ActivityLog::EVENT_NAMES['verified'])
+            // @phpstan-ignore-next-line argument.type (User implementa MustVerifyEmail)
             ->causedBy($event->user)
             ->withProperties([
-                'causer', User::with('person')->find($event->user->id)->toArray(),
+                // @phpstan-ignore-next-line argument.type (User implementa MustVerifyEmail)
+                'causer' => UserMetadata::capture($event->user),
                 'request' => [
                     'ip_address' => request()->ip(),
                     'user_agent' => request()->header('user-agent'),
@@ -37,6 +40,6 @@ class LogVerified
                     'request_url' => request()->fullUrl(),
                 ],
             ])
-            ->log(__('was verified'));
+            ->log('verificó su correo electrónico');
     }
 }

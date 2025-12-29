@@ -4,6 +4,7 @@ namespace App\Listeners\Auth;
 
 use App\Models\Monitoring\ActivityLog;
 use App\Models\User;
+use App\Support\UserMetadata;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -27,7 +28,8 @@ class LogFailed
             ->event(ActivityLog::EVENT_NAMES['failed_login'])
             ->causedBy($event->user)
             ->withProperties([
-                'causer', User::with('person')->find($event->user?->id)?->toArray() ?? $event->credentials['name'],
+                // @phpstan-ignore-next-line argument.type (User implementa Authenticatable)
+                'causer' => UserMetadata::capture($event->user) ?? $event->credentials['name'],
                 'request' => [
                     'ip_address' => request()->ip(),
                     'user_agent' => request()->header('user-agent'),
@@ -39,6 +41,6 @@ class LogFailed
                     'credentials' => $event->credentials,
                 ],
             ])
-            ->log(__('failed login'));
+            ->log('falló en iniciar sesión');
     }
 }

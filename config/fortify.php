@@ -143,17 +143,15 @@ return [
     |
     */
 
-    'features' => [
-        // Features::registration(),
-        // Features::resetPasswords(),
-        // Features::emailVerification(),
-        // Features::updateProfileInformation(),
-        // Features::updatePasswords(),
-        Features::twoFactorAuthentication([
+    'features' => array_values(array_filter([
+        env('FORTIFY_REGISTRATION', true) ? Features::registration() : null,
+        env('FORTIFY_RESET_PASSWORDS', true) ? Features::resetPasswords() : null,
+        env('FORTIFY_EMAIL_VERIFICATION', true) ? Features::emailVerification() : null,
+        env('FORTIFY_TWO_FACTOR_AUTHENTICATION', true) ? Features::twoFactorAuthentication([
             'confirm' => true,
             'confirmPassword' => true,
-            // 'window' => 0
-        ]),
-    ],
+            'window' => 1,
+        ]) : null,
+    ])),
 
 ];

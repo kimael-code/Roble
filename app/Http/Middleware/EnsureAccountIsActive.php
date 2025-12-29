@@ -4,9 +4,10 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
-class EnsurePasswordIsSetByUser
+class EnsureAccountIsActive
 {
     /**
      * Handle an incoming request.
@@ -15,8 +16,12 @@ class EnsurePasswordIsSetByUser
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->user()->is_password_set)
-            return redirect(route('set.password'));
+        if (Auth::check() && !Auth::user()->is_active)
+        {
+            Auth::logout();
+
+            abort(403, 'Su usuario aún no ha sido activado. Por favor, revise su correo.');
+        }
 
         return $next($request);
     }

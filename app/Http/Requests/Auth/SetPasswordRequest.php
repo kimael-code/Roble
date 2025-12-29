@@ -35,8 +35,8 @@ class SetPasswordRequest extends FormRequest
     public function attributes(): array
     {
         return [
-            'password' => __('Confirm Password'),
-            'password_confirmation' => __('Confirm Password'),
+            'password' => 'Confirmar Contraseña',
+            'password_confirmation' => 'Confirmar Contraseña',
         ];
     }
 }

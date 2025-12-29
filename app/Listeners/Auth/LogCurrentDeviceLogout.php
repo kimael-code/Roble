@@ -4,6 +4,7 @@ namespace App\Listeners\Auth;
 
 use App\Models\Monitoring\ActivityLog;
 use App\Models\User;
+use App\Support\UserMetadata;
 use Illuminate\Auth\Events\CurrentDeviceLogout;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -27,7 +28,8 @@ class LogCurrentDeviceLogout
             ->event(ActivityLog::EVENT_NAMES['logged_out'])
             ->causedBy($event->user)
             ->withProperties([
-                'causer', User::with('person')->find($event->user->id)->toArray(),
+                // @phpstan-ignore-next-line argument.type (User implementa Authenticatable)
+                'causer' => UserMetadata::capture($event->user),
                 'request' => [
                     'ip_address' => request()->ip(),
                     'user_agent' => request()->header('user-agent'),
@@ -38,6 +40,6 @@ class LogCurrentDeviceLogout
                     'guard_name' => $event->guard,
                 ],
             ])
-            ->log(__('logged out from their current device'));
+            ->log('cerró sesión desde su dispositivo actual');
     }
 }

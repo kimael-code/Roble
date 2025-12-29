@@ -6,25 +6,19 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
-class ResetPassword extends Notification implements ShouldQueue
+class UserActivationMail extends Notification implements ShouldQueue
 {
     use Queueable;
 
     /**
-     * The password reset token.
-     *
-     * @var string
-     */
-    public $token;
-
-    /**
      * Create a new notification instance.
      */
-    public function __construct(#[\SensitiveParameter] $token)
+    public function __construct()
     {
-        $this->token = $token;
+        //
     }
 
     /**
@@ -43,13 +37,13 @@ class ResetPassword extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Restablecimiento de Contraseña')
-            ->markdown('mail.auth.reset-password', [
-                'actionText' => 'Restablecer Contraseña',
-                'url' => route('password.reset', [
-                    'token' => $this->token,
-                    'email' => $notifiable->getEmailForPasswordReset(),
-                ]),
+            ->subject('Activación de Usuario')
+            ->markdown('mail.auth.activate-account', [
+                'url' => URL::temporarySignedRoute(
+                    'user.activate',
+                    now()->addMinutes(1440), // 24 horas
+                    ['user' => $notifiable->id],
+                ),
                 'firstName' => Str::of($notifiable?->person?->names ?? $notifiable->name)
                     ->words(1, '')
                     ->title(),

@@ -4,6 +4,7 @@ namespace App\Listeners\Auth;
 
 use App\Models\Monitoring\ActivityLog;
 use App\Models\User;
+use App\Support\UserMetadata;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -29,7 +30,8 @@ class LogLockout
             ->event(ActivityLog::EVENT_NAMES['locked'])
             ->causedBy($causer)
             ->withProperties([
-                'causer', User::with('person')->find($causer->id)->toArray() ?? '',
+                // @phpstan-ignore-next-line argument.type (User implementa Authenticatable)
+                'causer' => UserMetadata::capture($causer),
                 'request' => [
                     'ip_address' => $event->request->ip(),
                     'user_agent' => $event->request->header('user-agent'),
@@ -40,6 +42,6 @@ class LogLockout
                     'credentials' => $event->request->all(),
                 ],
             ])
-            ->log(__('locked out'));
+            ->log('bloqueado');
     }
 }
