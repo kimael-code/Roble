@@ -1,176 +1,166 @@
-# ROBLE Vue-Tailwind
+# ROBLE
 
-Starter kit for developing monolithic web applications based on Laravel, Inertia.js, Vue.js, and Tailwind CSS (with PostgreSQL as the database).
+Kit de inicio para desarrollar aplicaciones web monolíticas basadas en Laravel, Inertia.js, Vue.js y Tailwind CSS.
 
-## Made with
+## Construido con 🛠️
 
-- Laravel
-- Vue (shadcn-vue)
-- Inertia
-- Tailwind CSS
-- PostgreSQL
+- [Laravel](https://laravel.com/docs)
+- [Vue](https://vuejs.org)
+- [shadcn-vue](https://www.shadcn-vue.com)
+- [Inertia](https://inertiajs.com)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [PostgreSQL](https://www.postgresql.org)
 
-## Users
+## Usuarios y Roles 👥
 
-Default users are created depending on the value of the `APP_ENV` variable.
+En Roble, ningún usuario es creado cuando se alimenta por primera vez la base de datos. Solamente se crean los perfiles (roles) mínimos necesarios, los cuales son:
 
-- For local environment only:
-  - `root.dev`:
-    - password `12345678`
-    - role `Superuser`
-  - `admin.dev`:
-    - password `12345678`
-    - role `Systems Administrator`
-- for any other environment:
-  - `root`:
-    - password `root`
-    - role `Superuser`
+1- **Superusuario**: tiene acceso a cualquier ruta del sistema y puede ejecutar cualquier acción que no viole la estabilidad del sistema. Es un perfil protegido, de sólo lectura.
+2- **Administrador de Sistemas**: gestiona los datos básicos, de seguridad y de monitoreo del sistema. Es un perfil editable e incluso eliminable.
 
-The `root.dev` and `root` users are read-only; they cannot be updated or deleted. These users act like the root user on Unix/Unix-like operating systems: they have full access to any route, but they are not allowed to bypass the system's defined policies.
+_La eliminación de roles y permisos es irreversible_, los roles o permisos, una vez eliminados, no se pueden volver a recuperar; deberán ser registrados nuevamente.
 
-## Getting started in Local Environment (`localhost`) using Docker & Laravel Sail
+A partir del superusuario creado, se pueden crear nuevos roles y usuarios, además de gestionar cualquier proceso del sistema.
 
-### Requirements
+Hay que destacar que los usuarios también pueden ser creados de manera autogestionada por los propios empleados activos de la institución, sin embargo, se crearán sin perfiles asociados por lo que solamente tendrán acceso en el sistema al menú propio del usuario.
 
-- Docker Engine v28.1 or higher
-- Docker Compose v2.35 or higher
-- Internet connection
-- Shell alias configured to use Laravel Sail (<https://laravel.com/docs/12.x/sail#configuring-a-shell-alias>)
+## Características 🤩
 
-1. Clone this repo:
+_Nota_: si lo prefiere, entiéndase la palabra 'gestión' como `CRUD` (crear, leer, editar y eliminar registros o datos), sin embargo la exportación de datos a archivos también forma parte de la gestión de los datos en ROBLE.
 
-    ```sh
-    git clone https://github.com/kimael-code/roble-vue-tailwind.git
-    ```
+- Tablero básico con gráficas resúmenes de usuarios, roles y otros datos básicos.
+- Gestión de:
+  - los datos básicos de la organización, así como de sus respectivas unidades administrativas,
+  - permisos,
+  - roles (perfiles de usuarios),
+  - usuarios,
+  - modo de mantenimiento del sistema.
+- Consulta y exportación de trazas de las actividades de los usuarios.
+- Consulta, vaciado/eliminación y exportación de los registros de depuración del sistema.
+- Notificaciones, en tiempo real, de las acciones realizadas por los usuarios.
 
-2. Go to the root project folder and create the `.env` file:
+## Instalación en Entorno Local 🚀
 
-    ```sh
-    cd roble-vue-tailwind && cp .env.example .env
-    ```
+Esta guía cubre la instalación usando **Laravel Herd** (recomendado para macOS y Windows) y **Laravel Sail** (basado en Docker, para cualquier sistema operativo).
 
-3. Set the credentials for **Laravel Reverb**:
+### Requisitos Previos
 
-    ```env
-    REVERB_APP_ID=my-reverb-app-id
-    REVERB_APP_KEY=my-reverb-app-key
-    REVERB_APP_SECRET=my-reverb-app-secret
-    ```
+Asegúrate de tener instalado el software correspondiente a tu entorno de elección:
 
-    *More info here*: <https://laravel.com/docs/12.x/reverb#main-content>  
-    *To generate random numbers*: <https://www.random.org/integers>  
-    *To generate random strings*: <https://www.random.org/strings>
+| Software                | Entorno Herd | Entorno Sail |
+| ----------------------- | :----------: | :----------: |
+| **Laravel Herd**        |      ✅      |              |
+| **Servidor PostgreSQL** |      ✅      |              |
+| **Node.js y npm**       |      ✅      |              |
+| **Composer**            |      ✅      |              |
+| **Docker Engine**       |              |      ✅      |
 
-4. Install Composer dependencies:
+> **Nota para Herd**: Se recomienda usar [DBngin](https://dbngin.com/) para gestionar fácilmente tu servidor de PostgreSQL.
 
-    ```sh
-    docker run --rm --interactive --tty \
-    --volume $PWD:/app \
-    --user $(id -u):$(id -g) \
-    composer install --ignore-platform-reqs
-    ```
+### Paso 1: Clonar el Repositorio
 
-5. Start the containers (*it's necessary to configure a shell alias*):
+```sh
+git clone URL_DEL_REPOSITORIO
+cd roble
+```
 
+> **Nota para Herd**: Si usas Laravel Herd, clona el repositorio dentro de la carpeta que Herd esté monitorizando (normalmente `~/Herd`).
+
+### Paso 2: Configurar Variables de Entorno (.env)
+
+Este proyecto requiere credenciales para dos bases de datos y para el servidor de WebSockets (Laravel Reverb).
+
+La forma más sencilla de configurar todo es usando el asistente interactivo:
+
+```sh
+./install.sh
+```
+
+Este script te guiará para configurar todas las variables necesarias.
+
+Si prefieres hacerlo manualmente, copia el archivo de ejemplo y edítalo:
+
+```sh
+cp .env.example .env
+```
+
+Asegúrate de configurar como mínimo las variables `DB_*`, `DB_ORG_*` y `REVERB_*`.
+
+### Paso 3: Instalar Dependencias
+
+**Para Entorno Herd:**
+
+Ejecuta los siguientes comandos en tu terminal:
+
+```sh
+composer install
+npm install
+```
+
+**Para Entorno Sail:**
+
+1.  Primero, inicia los contenedores de Sail. La primera vez puede tardar varios minutos mientras se descargan las imágenes de Docker.
     ```sh
     sail up -d
     ```
-
-6. Create the app encryption key:
-
+2.  Una vez que los contenedores estén corriendo, instala las dependencias _dentro_ de ellos:
     ```sh
-    sail artisan key:generate
+    sail composer install
+    sail npm install
     ```
 
-7. Run database migrations and seeders:
+### Paso 4: Ejecutar el Instalador de la Aplicación
 
-    ```sh
-    sail artisan migrate:fresh --seed
-    ```
+Este proyecto incluye un comando para automatizar la preparación de la aplicación.
 
-8. Install Node dependencies:
+> **⚠️ ADVERTENCIA MUY IMPORTANTE ⚠️**
+> Este comando **eliminará todos los datos** de tu base de datos principal y los reemplazará con los datos de prueba iniciales (`migrate:fresh --seed`). Úsalo solo en la configuración inicial.
 
-    ```sh
-    sail npm i
-    ```
+| Entorno Herd              | Entorno Sail               |
+| ------------------------- | -------------------------- |
+| `php artisan app:install` | `sail artisan app:install` |
 
-9. Build Node dependencies:
+Este comando se encargará de:
 
-    ```sh
-    sail npm run build
-    ```
+- Generar la clave de la aplicación.
+- Limpiar y generar cachés de configuración.
+- Crear el enlace simbólico al `storage`.
+- Ejecutar las migraciones y los _seeders_ de la base de datos.
 
-10. Open your favorite web browser and go to <http://localhost>.
+### Paso 5: Iniciar Servicios en Segundo Plano
 
-## Getting started in Local Environment (`localhost`) using Laravel Herd
+Para que las notificaciones en tiempo real y las tareas en cola funcionen, debes iniciar dos procesos. Se recomienda abrir dos terminales separadas en la raíz del proyecto para ejecutar cada uno.
 
-### Requirements
+| Servicio           | Comando para Herd          | Comando para Sail           |
+| :----------------- | :------------------------- | :-------------------------- |
+| **Laravel Reverb** | `php artisan reverb:start` | `sail artisan reverb:start` |
+| **Cola de Tareas** | `php artisan queue:listen` | `sail artisan queue:listen` |
 
-- Laravel Herd
-- PostgreSQL with pgAdmin or any other universal database tool
+### Paso 6: Crear el Superusuario Inicial
 
-1. Clone this repo inside Herd folder:
+Con el entorno ya configurado y los servicios corriendo, el paso final es crear el primer usuario con rol `Superusuario`.
 
-    ```sh
-    git clone https://github.com/kimael-code/roble-vue-tailwind.git
-    ```
+1.  Abre tu navegador web.
+2.  Visita la URL de tu proyecto seguida de `/su-install`.
+    - **URL con Herd:** `http://roble.test/su-install`
+    - **URL con Sail:** `http://localhost/su-install`
+3.  Sigue las instrucciones del asistente web para crear tu usuario.
 
-2. Go to the root project folder and create the `.env` file:
+### ¡Listo!
 
-    ```sh
-    cd roble-vue-tailwind && cp .env.example .env
-    ```
+Una vez creado el Superusuario, el sistema de autenticación se habilitará. Ahora puedes ir a la ruta `/login` para iniciar sesión con las credenciales que acabas de crear.
 
-3. Set values ​​for database connection environment variables:
-    - `DB_HOST=localhost`.
-    - `DB_USERNAME=postgres`.
-    - `DB_PASSWORD=your_postgres_user_password`.  
-    *You need to set the values of these variables according to your PostgreSQL installation and configurations (port, user, password, etc.)*
+## Colaboradores ✒️
 
-4. Set the credentials for **Laravel Reverb**:
+- Maikel Carballo [@profemaik](https://gitlab.com/profemaik)
 
-    ```env
-    REVERB_APP_ID=my-reverb-app-id
-    REVERB_APP_KEY=my-reverb-app-key
-    REVERB_APP_SECRET=my-reverb-app-secret
-    ```
+## Contribuya, sus ideas pueden aportar mejoras significativas 🤓
 
-    *More info here*: <https://laravel.com/docs/12.x/reverb#main-content>  
-    *To generate random numbers*: <https://www.random.org/integers>  
-    *To generate random strings*: <https://www.random.org/strings>
+Si Usted considera que esta documentación está incompleta o que pueda mejorarse:
 
-5. Install Composer dependencies:
-
-    ```sh
-    composer install --ignore-platform-reqs
-    ```
-
-6. Create the app encryption key:
-
-    ```sh
-    php artisan key:generate
-    ```
-
-7. Run database migrations and seeders:
-
-    ```sh
-    php artisan migrate:fresh --seed
-    ```
-
-8. Install Node dependencies:
-
-    ```sh
-    npm i
-    ```
-
-9. Build Node dependencies:
-
-    ```sh
-    npm run build
-    ```
-
-10. Run the app:
-
-    ```sh
-    herd open
-    ```
+1.  verifique que pueda tener acceso al repositorio,
+2.  clónelo,
+3.  cree una nueva rama,
+4.  haga las correcciones que crea pertinente a este archivo,
+5.  publique su nueva rama con `git push`,
+    O si lo prefiere puede crear un ticket en el repositorio planteando sus correcciones o mejoras.

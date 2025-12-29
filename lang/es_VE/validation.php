@@ -192,7 +192,9 @@ return [
     */
 
     'attributes' => [
-        'email' => 'Dirección de correo electrónico'
+        'email' => 'Dirección de correo electrónico',
+        'password' => 'Contraseña',
+        'password_confirmation' => 'Confirmar contraseña',
     ],
 
 ];

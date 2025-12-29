@@ -40,6 +40,7 @@ return [
             'busy_timeout' => null,
             'journal_mode' => null,
             'synchronous' => null,
+            'transaction_mode' => 'DEFERRED',
         ],
 
         'mysql' => [
@@ -114,13 +115,13 @@ return [
 
         'organization' => [
             'driver' => 'pgsql',
-            'url' => env('DB_URL_ORG'),
-            'host' => env('DB_HOST_ORG', '127.0.0.1'),
-            'port' => env('DB_PORT_ORG', '5432'),
-            'database' => env('DB_DATABASE_ORG', 'company'),
-            'username' => env('DB_USERNAME_ORG', 'root'),
-            'password' => env('DB_PASSWORD_ORG', ''),
-            'charset' => env('DB_CHARSET_ORG', 'utf8'),
+            'url' => env('DB_ORG_URL'),
+            'host' => env('DB_ORG_HOST', '127.0.0.1'),
+            'port' => env('DB_ORG_PORT', '5432'),
+            'database' => env('DB_ORG_DATABASE', 'company'),
+            'username' => env('DB_ORG_USERNAME', 'root'),
+            'password' => env('DB_ORG_PASSWORD', ''),
+            'charset' => env('DB_ORG_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
@@ -161,7 +162,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_database_'),
+            'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
             'persistent' => env('REDIS_PERSISTENT', false),
         ],
 

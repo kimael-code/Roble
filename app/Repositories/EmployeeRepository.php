@@ -3,79 +3,163 @@
 namespace App\Repositories;
 
 use App\Contracts\EmployeeRepository as EmployeeContract;
-use Illuminate\Support\Collection;
+use App\Dto\EmployeeDto;
+use Illuminate\Support\Facades\DB;
 
+/**
+ * Implementación de referencia de EmployeeRepository para conexión a base de datos externa.
+ *
+ * Esta clase demuestra cómo implementar el contrato EmployeeRepository para obtener
+ * datos de empleados activos desde una base de datos PostgreSQL externa.
+ *
+ * NOTA: Esta implementación está diseñada para un esquema de base de datos específico
+ * (tablas: nomina.personal, nomina.tipo_personal, empresa.organigrama). Si desea conectar
+ * su propia base de datos de empleados, debe:
+ *
+ * 1. Modificar esta clase para adaptar las consultas SQL a su esquema de base de datos
+ * 2. Registrar su implementación en App\Providers\AppServiceProvider:
+ *    $this->app->bind(EmployeeContract::class, EmployeeRepository::class);
+ *
+ * Por defecto, Roble utiliza JsonEmployeeRepository que lee datos de un archivo JSON
+ * ubicado en database/data/employees.json para propósitos de demostración y pruebas.
+ *
+ * @see \App\Contracts\EmployeeRepository
+ * @see \App\Repositories\JsonEmployeeRepository
+ */
 class EmployeeRepository implements EmployeeContract
 {
     /**
-     * @return Collection<int, object>
+     * Tipos de personal permitidos (códigos del sistema heredado).
      */
-    private static function getData(): Collection
-    {
-        return collect([
-            (object) [
-                'company_code' => '001',
-                'nationality' => 'V',
-                'id_card' => '12345678',
-                'rif' => 'V123456789',
-                'names' => 'John',
-                'surnames' => 'Doe',
-                'staff_type_code' => '0000001',
-                'org_unit_code' => 'OU001',
-                'position' => 'Developer',
-                'email' => 'john.doe@example.com',
-                'phone_ext' => '123',
-                'staff_type_name' => 'Empleado',
-                'org_unit_name' => 'IT Department',
-            ],
-            (object) [
-                'company_code' => '001',
-                'nationality' => 'E',
-                'id_card' => '87654321',
-                'rif' => 'E876543219',
-                'names' => 'Jane',
-                'surnames' => 'Smith',
-                'staff_type_code' => '0000002',
-                'org_unit_code' => 'OU002',
-                'position' => 'Designer',
-                'email' => 'jane.smith@example.com',
-                'phone_ext' => '456',
-                'staff_type_name' => 'Empleado Contratado',
-                'org_unit_name' => 'Design Department',
-            ],
-            (object) [
-                'company_code' => '001',
-                'nationality' => 'V',
-                'id_card' => '11223344',
-                'rif' => 'V112233445',
-                'names' => 'Peter',
-                'surnames' => 'Jones',
-                'staff_type_code' => '0000004',
-                'org_unit_code' => 'OU003',
-                'position' => 'Project Manager',
-                'email' => 'peter.jones@example.com',
-                'phone_ext' => '789',
-                'staff_type_name' => 'Obrero',
-                'org_unit_name' => 'Management',
-            ],
-        ]);
-    }
+    private const ALLOWED_STAFF_TYPES = [
+        'empleado' => '0000001',
+        'empleadoContratado' => '0000002',
+        'empleadoSuplente' => '0000003',
+        'obrero' => '0000004',
+        'obreroContratado' => '0000005',
+        'obreroSuplente' => '0000006',
+        'comisServicio' => '0000011',
+        'altoNivel' => '0000016',
+    ];
 
+    /**
+     * {@inheritDoc}
+     */
     public function all(): array
     {
-        return self::getData()->all();
+        $results = DB::connection('organization')->select(
+            $this->buildBaseQuery(),
+            self::ALLOWED_STAFF_TYPES
+        );
+
+        return array_map(fn($employee) => new EmployeeDto(
+            company_code: $employee->company_code,
+            nationality: $employee->nationality,
+            id_card: $employee->id_card,
+            rif: $employee->rif,
+            names: $employee->names,
+            surnames: $employee->surnames,
+            staff_type_code: $employee->staff_type_code,
+            org_unit_code: $employee->org_unit_code,
+            position: $employee->position,
+            email: $employee->email,
+            phone_ext: $employee->phone_ext,
+            staff_type_name: $employee->staff_type_name,
+            org_unit_name: $employee->org_unit_name,
+        ), $results);
     }
 
-    public function find($idCard): array
+    /**
+     * {@inheritDoc}
+     */
+    public function find(string $idCard): ?EmployeeDto
     {
-        if (empty($idCard))
+        $results = DB::connection('organization')->select(
+            $this->buildBaseQuery() . ' WHERE nomina.personal.cedula = :idCard',
+            array_merge(self::ALLOWED_STAFF_TYPES, ['idCard' => $idCard])
+        );
+
+        if (empty($results))
         {
-            return [];
+            return null;
         }
 
-        return self::getData()->filter(function ($employee) use ($idCard)
-        {
-            return str_contains(mb_strtolower($employee->id_card), mb_strtolower($idCard));
-        })->values()->all();
+        $employee = $results[0];
+
+        return new EmployeeDto(
+            company_code: $employee->company_code,
+            nationality: $employee->nationality,
+            id_card: $employee->id_card,
+            rif: $employee->rif,
+            names: $employee->names,
+            surnames: $employee->surnames,
+            staff_type_code: $employee->staff_type_code,
+            org_unit_code: $employee->org_unit_code,
+            position: $employee->position,
+            email: $employee->email,
+            phone_ext: $employee->phone_ext,
+            staff_type_name: $employee->staff_type_name,
+            org_unit_name: $employee->org_unit_name,
+        );
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public function findByPartialIdCard(string $partialIdCard): array
+    {
+        $results = DB::connection('organization')->select(
+            $this->buildBaseQuery() . ' WHERE nomina.personal.cedula ILIKE :partialIdCard',
+            array_merge(self::ALLOWED_STAFF_TYPES, ['partialIdCard' => "$partialIdCard%"])
+        );
+
+        return array_map(fn($employee) => new EmployeeDto(
+            company_code: $employee->company_code,
+            nationality: $employee->nationality,
+            id_card: $employee->id_card,
+            rif: $employee->rif,
+            names: $employee->names,
+            surnames: $employee->surnames,
+            staff_type_code: $employee->staff_type_code,
+            org_unit_code: $employee->org_unit_code,
+            position: $employee->position,
+            email: $employee->email,
+            phone_ext: $employee->phone_ext,
+            staff_type_name: $employee->staff_type_name,
+            org_unit_name: $employee->org_unit_name,
+        ), $results);
+    }
+
+    /**
+     * Construye la consulta base para empleados.
+     */
+    private function buildBaseQuery(): string
+    {
+        return 'SELECT
+                nomina.personal.empresa_id AS "company_code",
+                nomina.personal.nacionalidad AS "nationality",
+                nomina.personal.cedula AS "id_card",
+                nomina.personal.rif AS "rif",
+                nomina.personal.nombres AS "names",
+                nomina.personal.apellidos AS "surnames",
+                nomina.personal.tipo_personal_id AS "staff_type_code",
+                nomina.personal.unidad_administrativa_id AS "org_unit_code",
+                nomina.personal.cargo AS "position",
+                nomina.personal.correo AS "email",
+                nomina.personal.telefono AS "phone_ext",
+                nomina.tipo_personal.denominacion AS "staff_type_name",
+                empresa.organigrama.nombre_unidad AS "org_unit_name"
+            FROM
+                nomina.personal
+            INNER JOIN nomina.tipo_personal ON
+                nomina.personal.id = nomina.tipo_personal.id
+                AND nomina.personal.id IN (
+                    :empleado, :empleadoContratado, :empleadoSuplente,
+                    :obrero, :obreroContratado, :obreroSuplente,
+                    :comisServicio, :altoNivel
+                )
+            INNER JOIN empresa.organigrama ON
+                empresa.organigrama.unidad_administrativa_id = nomina.personal.unidad_administrativa_id
+        ';
     }
 }

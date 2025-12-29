@@ -22,7 +22,7 @@ class SoleSystemAdministrator implements ValidationRule
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        $sysAdminRole = __('Systems Administrator');
+        $sysAdminRole = 'Administrador de Sistemas';
         $sysadminsCount = User::with('roles')->get()->filter(
             fn ($user) => $user->roles->where('name', $sysAdminRole)->toArray()
         )->count();
@@ -33,7 +33,7 @@ class SoleSystemAdministrator implements ValidationRule
             && !in_array($sysAdminRole, $value, true)
         )
         {
-            $fail('This is the only user with Systems Administrator permissions.')->translate();
+            $fail('Único usuario con permisos de Administrador de Sistemas');
         }
     }
 }

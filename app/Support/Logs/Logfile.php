@@ -98,13 +98,13 @@ class Logfile
 
         if (Storage::disk('logs')->size($file) > 52428800)
         {
-            $log['text'] = __('File size is more than 50MB, please download it.');
+            $log['text'] = 'El tamaño del archivo es más de 50 MB, por favor, descárguelo.';
 
             return $log;
         }
         if (!Storage::disk('logs')->get($file))
         {
-            $log['text'] = __('Log file is not readable.');
+            $log['text'] = 'El archivo de registro no es legible.';
 
             return $log;
         }
@@ -196,7 +196,7 @@ class Logfile
             }
             else
             {
-                $logSizes[][] = [__('not readable.')];
+                $logSizes[][] = ['no legible.'];
             }
         }
 

@@ -25,7 +25,7 @@ class DeactivatableOrganization implements ValidationRule
 
         if ($value === true && $otherActiveOrganizations->isEmpty())
         {
-            $fail('There must be at least one active Organization.')->translate();
+            $fail('Debe haber al menos una organización activa.');
         }
     }
 }
