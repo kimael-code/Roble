@@ -2,19 +2,26 @@
 
 namespace App\Actions\Security;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Models\Organization\OrganizationalUnit;
 use App\Models\Person;
 use App\Models\Security\Permission;
 use App\Models\Security\Role;
 use App\Models\User;
 use App\Notifications\ActionHandledOnModel;
+use App\Support\ActivityLogger;
 use Illuminate\Support\Facades\DB;
 
 class UpdateUser
 {
-    protected static $notify = false;
+    protected bool $notify = false;
 
-    public static function handle(User $user, array $inputs): User
+    public function __construct(
+        private ActivityLogger $logger
+    ) {
+    }
+
+    public function __invoke(User $user, array $inputs): User
     {
         DB::transaction(function () use ($inputs, &$user)
         {
@@ -26,42 +33,26 @@ class UpdateUser
 
             if ($user->wasChanged())
             {
-                self::$notify = true;
+                $this->notify = true;
 
-                activity(__('Security/Users'))
-                ->causedBy(auth()->user())
-                ->performedOn($user)
-                ->event('updated')
-                ->withProperties([
-                    'attributes' => $user->getChanges(),
-                    'old' => $user->getPrevious(),
-                    'request' => [
-                        'ip_address' => request()->ip(),
-                        'user_agent' => request()->header('user-agent'),
-                        'user_agent_lang' => request()->header('accept-language'),
-                        'referer' => request()->header('referer'),
-                        'http_method' => request()->method(),
-                        'request_url' => request()->fullUrl(),
-                    ],
-                    'causer' => User::with('person')->find(auth()->user()->id)->toArray(),
-                ])
-                ->log(__('updated user [:modelName] [:modelEmail]', [
-                    'modelName' => $user->name,
-                    'modelEmail' => $user->email,
-                ]));
+                $this->logger->logUpdated(
+                    ActivityLog::LOG_NAMES['users'],
+                    $user,
+                    'actualizó usuario [:subject.name] [:subject.email]'
+                );
             }
 
-            self::removeRoles($user, $inputs['roles']);
-            self::assignRoles($user, $inputs['roles']);
-            self::revokePermissions($user, $inputs['permissions']);
-            self::givePermissions($user, $inputs['permissions']);
-            self::setPerson($user, $inputs);
+            $this->removeRoles($user, $inputs['roles']);
+            $this->assignRoles($user, $inputs['roles']);
+            $this->revokePermissions($user, $inputs['permissions']);
+            $this->givePermissions($user, $inputs['permissions']);
+            $this->setPerson($user, $inputs);
 
-            if (self::$notify)
+            if ($this->notify)
             {
                 session()->flash('message', [
-                    'message' => "{$user->name}",
-                    'title' => __('SAVED!'),
+                    'content' => "{$user->name}",
+                    'title' => '¡GUARDADO!',
                     'type' => 'success',
                 ]);
 
@@ -75,7 +66,7 @@ class UpdateUser
                         auth()->user(),
                         [
                             'id' => $user->id,
-                            'type' => __('user'),
+                            'type' => 'usuario',
                             'name' => "({$user->name})",
                             'timestamp' => $user->updated_at,
                         ],
@@ -89,47 +80,28 @@ class UpdateUser
         return $user;
     }
 
-    private static function removeRoles(User $user, array $roleNames): void
+    private function removeRoles(User $user, array $roleNames): void
     {
-        $authUser = auth()->user();
-
         foreach ($user->roles as $role)
         {
             if (!in_array($role->name, $roleNames, true))
             {
                 $user->removeRole($role->id);
 
-                activity(__('Security/Users'))
-                    ->causedBy($authUser)
-                    ->performedOn($user)
-                    ->event('deleted')
-                    ->withProperties([
-                        __('unassigned_role') => $role,
-                        __('to_user') => $user,
-                        'causer' => User::with('person')->find($authUser->id)->toArray(),
-                        'request' => [
-                            'ip_address' => request()->ip(),
-                            'user_agent' => request()->header('user-agent'),
-                            'user_agent_lang' => request()->header('accept-language'),
-                            'referer' => request()->header('referer'),
-                            'http_method' => request()->method(),
-                            'request_url' => request()->fullUrl(),
-                        ]
-                    ])
-                    ->log(__('unassigned role [:role] to user [:user]', [
-                        'role' => $role->name,
-                        'user' => $user->name,
-                    ]));
+                $this->logger->logAuthorized(
+                    ActivityLog::LOG_NAMES['users'],
+                    $user,
+                    "desasignó rol [{$role->name}] a usuario [:subject.name]",
+                    ['rol_desasignado' => $role, 'al_usuario' => $user]
+                );
 
-                self::$notify = true;
+                $this->notify = true;
             }
         }
     }
 
-    private static function assignRoles(User $user, array $roleNames): void
+    private function assignRoles(User $user, array $roleNames): void
     {
-        $authUser = auth()->user();
-
         foreach ($roleNames as $roleName)
         {
             $role = Role::findByName($roleName);
@@ -138,74 +110,40 @@ class UpdateUser
             {
                 $user->assignRole($role);
 
-                activity(__('Security/Users'))
-                    ->causedBy($authUser)
-                    ->performedOn($user)
-                    ->event('created')
-                    ->withProperties([
-                        __('assigned_role') => $role,
-                        __('to_user') => $user,
-                        'causer' => User::with('person')->find($authUser->id)->toArray(),
-                        'request' => [
-                            'ip_address' => request()->ip(),
-                            'user_agent' => request()->header('user-agent'),
-                            'user_agent_lang' => request()->header('accept-language'),
-                            'referer' => request()->header('referer'),
-                            'http_method' => request()->method(),
-                            'request_url' => request()->fullUrl(),
-                        ]
-                    ])
-                    ->log(__('assigned role [:role] to user [:user]', [
-                        'role' => $role->name,
-                        'user' => $user->name,
-                    ]));
+                $this->logger->logAuthorized(
+                    ActivityLog::LOG_NAMES['users'],
+                    $user,
+                    "asignó rol [{$role->name}] a usuario [:subject.name]",
+                    ['rol_asignado' => $role, 'al_usuario' => $user]
+                );
 
-                self::$notify = true;
+                $this->notify = true;
             }
         }
     }
 
-    public static function revokePermissions(User $user, array $permissionDescriptions): void
+    public function revokePermissions(User $user, array $permissionDescriptions): void
     {
-        $authUser = auth()->user();
-
         foreach ($user->permissions as $permission)
         {
             if (!in_array($permission->description, $permissionDescriptions, true))
             {
                 $user->revokePermissionTo($permission);
 
-                activity(__('Security/Users'))
-                    ->causedBy($authUser)
-                    ->performedOn($user)
-                    ->event('deleted')
-                    ->withProperties([
-                        __('revoked_permission') => $permission,
-                        __('to_user') => $user,
-                        'causer' => User::with('person')->find($authUser->id)->toArray(),
-                        'request' => [
-                            'ip_address' => request()->ip(),
-                            'user_agent' => request()->header('user-agent'),
-                            'user_agent_lang' => request()->header('accept-language'),
-                            'referer' => request()->header('referer'),
-                            'http_method' => request()->method(),
-                            'request_url' => request()->fullUrl(),
-                        ]
-                    ])
-                    ->log(__('revoked permission [:permission] to user [:user]', [
-                        'permission' => $permission->description,
-                        'user' => $user->name,
-                    ]));
+                $this->logger->logAuthorized(
+                    ActivityLog::LOG_NAMES['users'],
+                    $user,
+                    "revocó permiso [{$permission->description}] a usuario [:subject.name]",
+                    ['permiso_revocado' => $permission, 'al_usuario' => $user]
+                );
 
-                self::$notify = true;
+                $this->notify = true;
             }
         }
     }
 
-    private static function givePermissions(User $user, array $permissionDescriptions): void
+    private function givePermissions(User $user, array $permissionDescriptions): void
     {
-        $authUser = auth()->user();
-
         foreach ($permissionDescriptions as $permissionDescription)
         {
             $permission = Permission::where('description', $permissionDescription)->first();
@@ -214,37 +152,20 @@ class UpdateUser
             {
                 $user->givePermissionTo($permission);
 
-                activity(__('Security/Users'))
-                    ->causedBy($authUser)
-                    ->performedOn($user)
-                    ->event('created')
-                    ->withProperties([
-                        __('granted_permission') => $permission,
-                        __('to_user') => $user,
-                        'causer' => User::with('person')->find($authUser->id)->toArray(),
-                        'request' => [
-                            'ip_address' => request()->ip(),
-                            'user_agent' => request()->header('user-agent'),
-                            'user_agent_lang' => request()->header('accept-language'),
-                            'referer' => request()->header('referer'),
-                            'http_method' => request()->method(),
-                            'request_url' => request()->fullUrl(),
-                        ]
-                    ])
-                    ->log(__('granted permission [:permission] to user [:user]', [
-                        'permission' => $permission->description,
-                        'user' => $user->name,
-                    ]));
+                $this->logger->logAuthorized(
+                    ActivityLog::LOG_NAMES['users'],
+                    $user,
+                    "otorgó permiso [{$permission->description}] a usuario [:subject.name]",
+                    ['permiso_otorgado' => $permission, 'al_usuario' => $user]
+                );
 
-                self::$notify = true;
+                $this->notify = true;
             }
         }
     }
 
-    private static function setPerson(User $user, array $inputs): void
+    private function setPerson(User $user, array $inputs): void
     {
-        $authUser = auth()->user();
-
         if ($inputs['is_external'])
         {
             // el usuario pasó de ser interno (corporativo) a externo (persona ajena a la organización)
@@ -253,29 +174,18 @@ class UpdateUser
             foreach ($user->organizationalUnits as $ou)
             {
                 $user->organizationalUnits()->detach($ou->id);
-                activity(__('Security/Users'))
-                    ->causedBy($authUser)
-                    ->performedOn($user)
-                    ->event('deleted')
-                    ->withProperties([
-                        __('disassociated_user') => $user,
-                        __('from_administrative_unit') => $ou,
-                        'causer' => User::with('person')->find($authUser->id)->toArray(),
-                        'request' => [
-                            'ip_address' => request()->ip(),
-                            'user_agent' => request()->header('user-agent'),
-                            'user_agent_lang' => request()->header('accept-language'),
-                            'referer' => request()->header('referer'),
-                            'http_method' => request()->method(),
-                            'request_url' => request()->fullUrl(),
-                        ]
-                    ])
-                    ->log(__('disassociated user [:user] from administrative unit [:ou]', [
-                        'user' => $user->name,
-                        'ou' => $ou->name,
-                    ]));
 
-                self::$notify = true;
+                $this->logger->logDeleted(
+                    ActivityLog::LOG_NAMES['users'],
+                    $user,
+                    "desasoció usuario [:subject.name] de unidad administrativa [{$ou->name}]",
+                    [
+                        'usuario_desasociado' => $user,
+                        'de_la_unidad_administrativa' => $ou,
+                    ]
+                );
+
+                $this->notify = true;
             }
         }
         else
@@ -291,29 +201,17 @@ class UpdateUser
                         'disabled_at' => now(),
                     ]);
 
-                    activity(__('Security/Users'))
-                        ->causedBy($authUser)
-                        ->performedOn($user)
-                        ->event('updated')
-                        ->withProperties([
-                            __('disabled_user') => $user,
-                            __('in_administrative_unit') => $ou,
-                            'causer' => User::with('person')->find($authUser->id)->toArray(),
-                            'request' => [
-                                'ip_address' => request()->ip(),
-                                'user_agent' => request()->header('user-agent'),
-                                'user_agent_lang' => request()->header('accept-language'),
-                                'referer' => request()->header('referer'),
-                                'http_method' => request()->method(),
-                                'request_url' => request()->fullUrl(),
-                            ]
-                        ])
-                        ->log(__('disabled user [:user] in administrative unit [:ou]', [
-                            'user' => $user->name,
-                            'ou' => $ou->name,
-                        ]));
+                    $this->logger->logDisabled(
+                        ActivityLog::LOG_NAMES['users'],
+                        $user,
+                        "desactivó usuario [:subject.name] en unidad administrativa [{$ou->name}]",
+                        [
+                            'usuario_desactivado' => $user,
+                            'en_la_unidad_administrativa' => $ou,
+                        ]
+                    );
 
-                    self::$notify = true;
+                    $this->notify = true;
                 }
             }
             // y ahora se deben registrar las nuevas asociaciones del usuario
@@ -325,56 +223,34 @@ class UpdateUser
                 if (!in_array($ouName, $user->organizationalUnits->pluck('name')->all(), true))
                 {
                     $user->organizationalUnits()->attach($ou->id);
-                    activity(__('Security/Users'))
-                        ->causedBy($authUser)
-                        ->performedOn($user)
-                        ->event('created')
-                        ->withProperties([
-                            __('associated_user') => $user,
-                            __('with_administrative_unit') => $ou,
-                            'causer' => User::with('person')->find($authUser->id)->toArray(),
-                            'request' => [
-                                'ip_address' => request()->ip(),
-                                'user_agent' => request()->header('user-agent'),
-                                'user_agent_lang' => request()->header('accept-language'),
-                                'referer' => request()->header('referer'),
-                                'http_method' => request()->method(),
-                                'request_url' => request()->fullUrl(),
-                            ]
-                        ])
-                        ->log(__('associated user [:user] with administrative unit [:ou]', [
-                            'user' => $user->name,
-                            'ou' => $ou->name,
-                        ]));
 
-                    self::$notify = true;
+                    $this->logger->logCreated(
+                        ActivityLog::LOG_NAMES['users'],
+                        $user,
+                        "asoció usuario [:subject.name] con unidad administrativa [{$ou->name}]",
+                        [
+                            'usuario_asociado' => $user,
+                            'con_la_unidad_administrativa' => $ou,
+                        ]
+                    );
+
+                    $this->notify = true;
                 }
                 else
                 {
                     $user->organizationalUnits()->updateExistingPivot($ou->id, ['disabled_at' => null]);
-                    activity(__('Security/Users'))
-                        ->causedBy($authUser)
-                        ->performedOn($user)
-                        ->event('updated')
-                        ->withProperties([
-                            __('enabled_user') => $user,
-                            __('in_administrative_unit') => $ou,
-                            'causer' => User::with('person')->find($authUser->id)->toArray(),
-                            'request' => [
-                                'ip_address' => request()->ip(),
-                                'user_agent' => request()->header('user-agent'),
-                                'user_agent_lang' => request()->header('accept-language'),
-                                'referer' => request()->header('referer'),
-                                'http_method' => request()->method(),
-                                'request_url' => request()->fullUrl(),
-                            ]
-                        ])
-                        ->log(__('enabled user [:user] in administrative unit [:ou]', [
-                            'user' => $user->name,
-                            'ou' => $ou->name,
-                        ]));
 
-                    self::$notify = true;
+                    $this->logger->logEnabled(
+                        ActivityLog::LOG_NAMES['users'],
+                        $user,
+                        "activó usuario [:subject.name] en unidad administrativa [{$ou->name}]",
+                        [
+                            'usuario_activado' => $user,
+                            'en_la_unidad_administrativa' => $ou,
+                        ]
+                    );
+
+                    $this->notify = true;
                 }
             }
         }
@@ -382,7 +258,7 @@ class UpdateUser
         if (array_key_exists('id_card', $inputs) && empty($inputs['id_card']))
         {
             $user->person()->delete();
-            self::$notify = true;
+            $this->notify = true;
         }
         elseif (isset($inputs["id_card"]) && isset($inputs["names"]) && isset($inputs["surnames"]))
         {
@@ -397,7 +273,7 @@ class UpdateUser
 
             if ($person->isDirty())
             {
-                self::$notify = true;
+                $this->notify = true;
             }
 
             $person->save();

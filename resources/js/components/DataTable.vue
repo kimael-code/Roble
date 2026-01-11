@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import { Can, PaginatedCollection } from '@/types';
+import { RouteDefinition } from '@/wayfinder';
 import { router, useForm } from '@inertiajs/vue3';
-import { ColumnDef, FlexRender, Table as TanstackTable } from '@tanstack/vue-table';
+import {
+  ColumnDef,
+  FlexRender,
+  Table as TanstackTable,
+} from '@tanstack/vue-table';
 import { watchDebounced } from '@vueuse/core';
 import {
   BinocularsIcon,
@@ -33,10 +38,35 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { Input } from './ui/input';
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationNext, PaginationPrevious } from './ui/pagination';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from './ui/pagination';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from './ui/table';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from './ui/tooltip';
 
 interface Props {
   can?: Can;
@@ -44,26 +74,28 @@ interface Props {
   data: PaginatedCollection<any>;
   filters: { [key: string]: any };
   searchOnly: Array<string>;
-  searchRoute: string;
+  searchRoute: RouteDefinition<'get'>;
   searchRouteData?: { [key: string]: any };
   table: TanstackTable<any>;
   hasNewButton?: boolean;
-  hasBatchActionsButton?: boolean;
+  hasAdvancedSearch?: boolean;
   isLoadingNew?: boolean;
   isLoadingDropdown?: boolean;
   isAdvancedSearch?: boolean;
+  perPageName?: string;
 }
 const props = withDefaults(defineProps<Props>(), {
   hasNewButton: true,
-  hasBatchActionsButton: true,
+  hasAdvancedSearch: true,
   isLoadingNew: false,
   isLoadingDropdown: false,
   isAdvancedSearch: false,
+  perPageName: 'per_page',
 });
 
 const emit = defineEmits([
-  'batchActivate',
-  'batchDeactivate',
+  'batchEnable',
+  'batchDisable',
   'batchDestroy',
   'export',
   'exportRow',
@@ -74,9 +106,13 @@ const emit = defineEmits([
   'destroy',
   'forceDestroy',
   'restore',
-  'activate',
-  'deactivate',
+  'enable',
+  'disable',
   'advancedSearch',
+  'resetPassword',
+  'resendActivation',
+  'manuallyActivate',
+  'send',
 ]);
 
 const menuIsOpen = ref(false);
@@ -91,12 +127,20 @@ form.defaults({
 
 watchDebounced(
   () => form.search,
-  (s) => {
+  (s: string | undefined) => {
     if (s === '') form.reset('search');
 
+    // Incluir el perPage actual para mantener el tamaño de página seleccionado
+    const currentPerPage = props.table.getState().pagination.pageSize;
+    const searchData = {
+      ...form.data(),
+      [props.perPageName!]: currentPerPage,
+    };
+
     router.reload({
-      data: form.data(),
+      data: searchData,
       only: props.searchOnly,
+      preserveUrl: true,
       onSuccess: () => emit('search', s),
     });
   },
@@ -113,8 +157,9 @@ function handlePerPage(perPageValue: number) {
   props.table.setPageSize(perPage);
 
   router.reload({
-    data: { per_page: perPage },
+    data: { [props.perPageName!]: perPage },
     only: props.searchOnly,
+    preserveUrl: true,
   });
 }
 </script>
@@ -124,7 +169,13 @@ function handlePerPage(perPageValue: number) {
     <div class="flex items-center justify-start px-2 py-4">
       <div class="flex max-w-max flex-1 items-center space-x-2">
         <div class="relative w-full max-w-sm items-center">
-          <Input id="search" type="text" class="flex w-full pr-10" placeholder="Buscar rápido..." v-model:model-value="form.search" />
+          <Input
+            id="search"
+            type="text"
+            class="flex w-full pr-10"
+            placeholder="Buscar rápido..."
+            v-model:model-value="form.search"
+          />
           <span
             v-if="form.search"
             class="absolute inset-y-0 right-0 flex items-center justify-center px-2 opacity-100 transition-opacity duration-750 starting:opacity-0"
@@ -138,7 +189,13 @@ function handlePerPage(perPageValue: number) {
             <Button
               variant="ghost"
               class="inline-flex items-center justify-center gap-2"
-              @click="router.visit(searchRoute, { only: searchOnly, preserveScroll: false, preserveState: false })"
+              @click="
+                router.visit(searchRoute, {
+                  only: searchOnly,
+                  preserveScroll: false,
+                  preserveState: false,
+                })
+              "
             >
               Reiniciar
               <EraserIcon class="h-4 w-4" />
@@ -148,105 +205,139 @@ function handlePerPage(perPageValue: number) {
             <p>Remover todos los filtros/ordenamientos</p>
           </TooltipContent>
         </Tooltip>
-        <Badge v-if="isAdvancedSearch"> Filtros de búsqueda avanzada aplicados </Badge>
+        <Badge v-if="isAdvancedSearch">
+          Filtros de búsqueda avanzada aplicados
+        </Badge>
       </div>
-      <DropdownMenu v-if="can && (can.delete || can.export)" v-model:open="menuIsOpen">
-        <DropdownMenuTrigger as-child>
-          <Tooltip>
-            <TooltipTrigger as-child>
-              <Button variant="outline" class="ml-auto" @click="menuIsOpen = true">
-                <LoaderCircleIcon v-if="isLoadingDropdown" class="animate-spin" />
-                <EllipsisIcon v-else />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Búsqueda avanzada, exportación de datos y otras acciones por lote</p>
-            </TooltipContent>
-          </Tooltip>
-        </DropdownMenuTrigger>
+      <div class="ml-auto flex items-center gap-x-2">
+        <DropdownMenu
+          v-if="can?.delete || can?.export_collection || hasAdvancedSearch"
+          v-model:open="menuIsOpen"
+        >
+          <DropdownMenuTrigger as-child>
+            <Tooltip>
+              <TooltipTrigger as-child>
+                <Button variant="outline" @click="menuIsOpen = true">
+                  <LoaderCircleIcon
+                    v-if="isLoadingDropdown"
+                    class="animate-spin"
+                  />
+                  <EllipsisIcon v-else />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>
+                  Otras acciones (búsqueda avanzada, exportación de datos...)
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Otras acciones</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem @click="$emit('advancedSearch')">
-              <BinocularsIcon />
-              <span>Buscar avanzado</span>
-            </DropdownMenuItem>
-            <DropdownMenuSub v-if="can.export">
-              <DropdownMenuSubTrigger inset>
-                <FileDownIcon class="mr-2 h-4 w-4" />
-                Exportar a
-              </DropdownMenuSubTrigger>
-              <DropdownMenuPortal>
-                <DropdownMenuSubContent>
-                  <DropdownMenuItem @click="$emit('export', 'pdf')">
-                    <span>PDF</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem @click="$emit('export', 'excel')" disabled>
-                    <span>Excel</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem @click="$emit('export', 'json')" disabled>
-                    <span>JSON</span>
-                  </DropdownMenuItem>
-                </DropdownMenuSubContent>
-              </DropdownMenuPortal>
-            </DropdownMenuSub>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator v-if="can.delete || can.activate || can.deactivate" />
-          <DropdownMenuGroup>
-            <DropdownMenuItem
-              v-if="can.activate"
-              class="text-amber-600 transition-colors focus:bg-accent focus:text-accent-foreground"
-              :disabled="table.getFilteredSelectedRowModel().rows.length < 1"
-              @click="$emit('batchActivate')"
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Otras acciones</DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                v-if="hasAdvancedSearch"
+                @click="$emit('advancedSearch')"
+              >
+                <BinocularsIcon />
+                <span>Buscar avanzado</span>
+              </DropdownMenuItem>
+              <DropdownMenuSub v-if="can?.export_collection">
+                <DropdownMenuSubTrigger inset>
+                  <FileDownIcon class="mr-2 h-4 w-4 text-muted-foreground" />
+                  Exportar a
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem @click="$emit('export', 'pdf')">
+                      <span>PDF</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem @click="$emit('export', 'excel')">
+                      <span>Excel</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem @click="$emit('export', 'json')">
+                      <span>JSON</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator
+              v-if="can?.delete || can?.enable || can?.disable"
+            />
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                v-if="can?.enable"
+                class="text-green-600 transition-colors focus:bg-accent focus:text-accent-foreground"
+                :disabled="table.getFilteredSelectedRowModel().rows.length < 1"
+                @click="$emit('batchEnable')"
+              >
+                <ToggleRightIcon class="text-green-600" />
+                <span>Activar/Restaurar selección</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                v-if="can?.disable"
+                class="text-amber-600 transition-colors focus:bg-accent focus:text-accent-foreground"
+                :disabled="table.getFilteredSelectedRowModel().rows.length < 1"
+                @click="$emit('batchDisable')"
+              >
+                <ToggleLeftIcon class="text-amber-600" />
+                <span>Desactivar selección</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                v-if="can?.delete"
+                class="text-red-600 transition-colors focus:bg-accent focus:text-accent-foreground"
+                :disabled="table.getFilteredSelectedRowModel().rows.length < 1"
+                @click="$emit('batchDestroy')"
+              >
+                <Trash2Icon class="text-red-600" />
+                <span>Eliminar selección</span>
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger as-child>
+            <Button
+              v-if="can && can.create"
+              :disabled="isLoadingNew"
+              @click="$emit('new')"
             >
-              <ToggleRightIcon class="text-amber-600" />
-              <span>Activar selección</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              v-if="can.deactivate"
-              class="text-amber-600 transition-colors focus:bg-accent focus:text-accent-foreground"
-              :disabled="table.getFilteredSelectedRowModel().rows.length < 1"
-              @click="$emit('batchDeactivate')"
-            >
-              <ToggleLeftIcon class="text-amber-600" />
-              <span>Desactivar selección</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              v-if="can.delete"
-              class="text-red-600 transition-colors focus:bg-accent focus:text-accent-foreground"
-              :disabled="table.getFilteredSelectedRowModel().rows.length < 1"
-              @click="$emit('batchDestroy')"
-            >
-              <Trash2Icon class="text-red-600" />
-              <span>Eliminar selección</span>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-      <Tooltip>
-        <TooltipTrigger as-child>
-          <Button v-if="can && can.create" class="ml-3" :disabled="isLoadingNew" @click="$emit('new')">
-            <LoaderCircleIcon v-if="isLoadingNew" class="h-4 w-4 animate-spin" />
-            <PlusIcon v-else class="mr-2 h-4 w-4" />
-            Nuevo
-          </Button>
-        </TooltipTrigger>
-        <TooltipPortal>
-          <TooltipContent>
-            <p>Crear nuevo registro</p>
-          </TooltipContent>
-        </TooltipPortal>
-      </Tooltip>
+              <LoaderCircleIcon
+                v-if="isLoadingNew"
+                class="h-4 w-4 animate-spin"
+              />
+              <PlusIcon v-else class="mr-2 h-4 w-4" />
+              Nuevo
+            </Button>
+          </TooltipTrigger>
+          <TooltipPortal>
+            <TooltipContent>
+              <p>Crear nuevo registro</p>
+            </TooltipContent>
+          </TooltipPortal>
+        </Tooltip>
+      </div>
     </div>
     <div class="rounded-md border">
       <Table>
         <TableHeader>
-          <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+          <TableRow
+            v-for="headerGroup in table.getHeaderGroups()"
+            :key="headerGroup.id"
+          >
             <!-- @vue-expect-error extender columDef para añadir la propiedad class al objeto meta -->
-            <TableHead v-for="header in headerGroup.headers" :key="header.id" :class="header.column.columnDef.meta?.class">
-              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header" :props="header.getContext()" />
+            <TableHead
+              v-for="header in headerGroup.headers"
+              :key="header.id"
+              :class="header.column.columnDef.meta?.class"
+            >
+              <FlexRender
+                v-if="!header.isPlaceholder"
+                :render="header.column.columnDef.header"
+                :props="header.getContext()"
+              />
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -255,7 +346,11 @@ function handlePerPage(perPageValue: number) {
             <template v-for="row in table.getRowModel().rows" :key="row.id">
               <TableRow :data-state="row.getIsSelected() && 'selected'">
                 <!-- @vue-expect-error extender columDef para añadir la propiedad class al objeto meta -->
-                <TableCell v-for="cell in row.getVisibleCells()" :key="cell.id" :class="cell.column.columnDef.meta?.class">
+                <TableCell
+                  v-for="cell in row.getVisibleCells()"
+                  :key="cell.id"
+                  :class="cell.column.columnDef.meta?.class"
+                >
                   <FlexRender
                     :render="cell.column.columnDef.cell"
                     :props="cell.getContext()"
@@ -265,8 +360,16 @@ function handlePerPage(perPageValue: number) {
                     @force-destroy="(row: any) => $emit('forceDestroy', row)"
                     @restore="(row: any) => $emit('restore', row)"
                     @export="(row: any) => $emit('exportRow', row)"
-                    @activate="(row: any) => $emit('activate', row)"
-                    @deactivate="(row: any) => $emit('deactivate', row)"
+                    @enable="(row: any) => $emit('enable', row)"
+                    @disable="(row: any) => $emit('disable', row)"
+                    @reset-password="(row: any) => $emit('resetPassword', row)"
+                    @resend-activation="
+                      (row: any) => $emit('resendActivation', row)
+                    "
+                    @manually-activate="
+                      (row: any) => $emit('manuallyActivate', row)
+                    "
+                    @send="(row: any) => $emit('send', row)"
                   />
                 </TableCell>
               </TableRow>
@@ -279,41 +382,78 @@ function handlePerPage(perPageValue: number) {
           </template>
 
           <TableRow v-else>
-            <TableCell :colspan="columns.length" class="h-24 text-center"> No hay registros. </TableCell>
+            <TableCell :colspan="columns.length" class="h-24 text-center">
+              No hay registros.
+            </TableCell>
           </TableRow>
         </TableBody>
       </Table>
     </div>
 
     <div class="flex items-center justify-end space-x-2 py-4">
-      <div v-if="table.getFilteredSelectedRowModel().rows.length" class="flex-1 text-sm text-muted-foreground">
-        {{ table.getFilteredSelectedRowModel().rows.length }} de {{ data.meta.total }}
-        {{ table.getFilteredRowModel().rows.length > 1 ? 'registros seleccionados' : 'registro seleccionado' }}.
+      <div
+        v-if="table.getFilteredSelectedRowModel().rows.length"
+        class="flex-1 text-sm text-muted-foreground"
+      >
+        {{ table.getFilteredSelectedRowModel().rows.length }} de
+        {{ data.meta.total }}
+        {{
+          table.getFilteredRowModel().rows.length > 1
+            ? 'registros seleccionados'
+            : 'registro seleccionado'
+        }}.
       </div>
       <div v-else class="flex-1 text-sm text-muted-foreground">
-        {{ data.meta.from }} a {{ data.meta.to }} de {{ data.meta.total }} {{ data.meta.total > 1 ? 'registros' : 'registro' }}
+        {{ data.meta.from ?? 0 }} a {{ data.meta.to ?? 0 }} de
+        {{ data.meta.total }}
+        {{
+          data.meta.total > 1 || data.meta.total === 0
+            ? 'registros'
+            : 'registro'
+        }}
       </div>
       <div class="flex items-center space-x-2">
         <p class="text-xs font-medium">Registros por página</p>
         <!-- @vue-expect-error -->
-        <Select :model-value="table.getState().pagination.pageSize" @update:model-value="handlePerPage">
+        <Select
+          :model-value="table.getState().pagination.pageSize"
+          @update:model-value="handlePerPage"
+        >
           <SelectTrigger class="h-8 w-[70px]">
-            <SelectValue :placeholder="`${table.getState().pagination.pageSize}`" />
+            <SelectValue
+              :placeholder="`${table.getState().pagination.pageSize}`"
+            />
           </SelectTrigger>
           <SelectContent side="top">
-            <SelectItem v-for="pageSize in [10, 20, 30, 40, 50]" :key="pageSize" :value="pageSize">
+            <SelectItem
+              v-for="pageSize in [10, 20, 30, 40, 50]"
+              :key="pageSize"
+              :value="pageSize"
+            >
               {{ pageSize }}
             </SelectItem>
           </SelectContent>
         </Select>
       </div>
       <div class="space-x-2">
-        <Pagination :page="data.meta.current_page" :items-per-page="data.meta.per_page" :total="data.meta.total">
+        <Pagination
+          :page="data.meta.current_page"
+          :items-per-page="data.meta.per_page"
+          :total="data.meta.total"
+        >
           <PaginationContent>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger as-child>
-                  <PaginationPrevious @click="router.visit(data.links.prev, { preserveScroll: true, preserveState: true })" />
+                  <PaginationPrevious
+                    @click="
+                      router.visit(data.links.prev, {
+                        preserveScroll: true,
+                        preserveState: true,
+                        preserveUrl: true,
+                      })
+                    "
+                  />
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Página anterior</p>
@@ -326,7 +466,13 @@ function handlePerPage(perPageValue: number) {
                     <PaginationItem
                       :value="parseInt(item.label)"
                       :is-active="item.active"
-                      @click="router.visit(item.url, { preserveScroll: true, preserveState: true })"
+                      @click="
+                        router.visit(item.url, {
+                          preserveScroll: true,
+                          preserveState: true,
+                          preserveUrl: true,
+                        })
+                      "
                     />
                   </TooltipTrigger>
                   <TooltipContent>
@@ -338,7 +484,15 @@ function handlePerPage(perPageValue: number) {
 
               <Tooltip>
                 <TooltipTrigger as-child>
-                  <PaginationNext @click="router.visit(data.links.next, { preserveScroll: true, preserveState: true })" />
+                  <PaginationNext
+                    @click="
+                      router.visit(data.links.next, {
+                        preserveScroll: true,
+                        preserveState: true,
+                        preserveUrl: true,
+                      })
+                    "
+                  />
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>Página siguiente</p>

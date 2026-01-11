@@ -1,30 +1,20 @@
 <x-mail::message>
-# @lang('Greetings'), {{ $firstName }}:
+# Saludos, {{ $firstName }}:
 
-@lang('You are receiving this email because we received a password reset request for your account.')
+Recibimos una solicitud para restablecer la contraseña de tu cuenta de usuario.
 
-@lang('Click the button below to set a new password:')
+Haz clic en el siguiente botón para que establezcas una nueva contraseña:
 
 <x-mail::button :url="$url">
-{{ $actionText }}
+Restablecer Contraseña
 </x-mail::button>
 
-@lang(
-    "This password reset link will expire in \":count\" minutes.",
-    [
-        'count' => config('auth.passwords.'.config('auth.defaults.passwords').'.expire')
-    ]
-)
+Este enlace para restablecer tu contraseña caducará en 60 minutos.
 
-@lang('If you did not request a password reset, no further action is required.')
+Si no solicitaste un restablecimiento de contraseña, no es necesario realizar ninguna otra acción.
 
 <x-slot:subcopy>
-@lang(
-    "If you're having trouble clicking the \":actionText\" button, copy and paste the URL below\n".
-    'into your web browser:',
-    [
-        'actionText' => $actionText,
-    ]
-) <span class="break-all">[{{ $url }}]({{ $url }})</span>
+Si tienes algún problema para hacer clic en el botón "Restablecer Contraseña", copia y pega la siguiente URL
+en una nueva pestaña del navegador: <span class="break-all">[{{ $url }}]({{ $url }})</span>
 </x-slot:subcopy>
 </x-mail::message>

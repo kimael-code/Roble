@@ -14,22 +14,30 @@ class PermissionObserver
     public function created(Permission $permission): void
     {
         session()->flash('message', [
-            'message' => "{$permission->name} ({$permission->description})",
-            'title' => __('SAVED!'),
-            'type'  => 'success',
+            'content' => "{$permission->name} ({$permission->description})",
+            'title' => '¡GUARDADO!',
+            'type' => 'success',
         ]);
 
-        $users = User::permission('create new permissions')->get()->filter(
-            fn (User $user) => $user->id != auth()->user()->id
-        )->all();
-
-        foreach ($users as $user)
+        $usersToNotify = User::where(function ($query)
         {
-            $user->notify(new ActionHandledOnModel(
+            $query->permission('create new permissions')
+                ->orWhereHas('roles', function ($q)
+                {
+                    $q->where('name', 'Superusuario');
+                });
+        })
+            ->where('id', '!=', auth()->id())
+            ->whereNull('disabled_at')
+            ->get();
+
+        foreach ($usersToNotify as $userToNotify)
+        {
+            $userToNotify->notify(new ActionHandledOnModel(
                 auth()->user(),
                 [
                     'id' => $permission->id,
-                    'type' => __('permission'),
+                    'type' => 'permiso',
                     'name' => "{$permission->name} ({$permission->description})",
                     'timestamp' => $permission->created_at,
                 ],
@@ -45,22 +53,30 @@ class PermissionObserver
     public function updated(Permission $permission): void
     {
         session()->flash('message', [
-            'message' => "{$permission->name} ({$permission->description})",
-            'title' => __('SAVED!'),
-            'type'  => 'success',
+            'content' => "{$permission->name} ({$permission->description})",
+            'title' => '¡GUARDADO!',
+            'type' => 'success',
         ]);
 
-        $users = User::permission('update permissions')->get()->filter(
-            fn (User $user) => $user->id != auth()->user()->id
-        )->all();
-
-        foreach ($users as $user)
+        $usersToNotify = User::where(function ($query)
         {
-            $user->notify(new ActionHandledOnModel(
+            $query->permission('update permissions')
+                ->orWhereHas('roles', function ($q)
+                {
+                    $q->where('name', 'Superusuario');
+                });
+        })
+            ->where('id', '!=', auth()->id())
+            ->whereNull('disabled_at')
+            ->get();
+
+        foreach ($usersToNotify as $userToNotify)
+        {
+            $userToNotify->notify(new ActionHandledOnModel(
                 auth()->user(),
                 [
                     'id' => $permission->id,
-                    'type' => __('permission'),
+                    'type' => 'permiso',
                     'name' => "{$permission->name} ({$permission->description})",
                     'timestamp' => $permission->updated_at,
                 ],
@@ -76,21 +92,29 @@ class PermissionObserver
     public function deleted(Permission $permission): void
     {
         session()->flash('message', [
-            'message' => "{$permission->name} ({$permission->description})",
-            'title' => __('DELETED!'),
-            'type'  => 'danger',
+            'content' => "{$permission->name} ({$permission->description})",
+            'title' => '¡ELIMINADO!',
+            'type' => 'danger',
         ]);
 
-        $users = User::permission('delete permissions')->get()->filter(
-            fn (User $user) => $user->id != auth()->user()->id
-        )->all();
-
-        foreach ($users as $user)
+        $usersToNotify = User::where(function ($query)
         {
-            $user->notify(new ActionHandledOnModel(
+            $query->permission('delete permissions')
+                ->orWhereHas('roles', function ($q)
+                {
+                    $q->where('name', 'Superusuario');
+                });
+        })
+            ->where('id', '!=', auth()->id())
+            ->whereNull('disabled_at')
+            ->get();
+
+        foreach ($usersToNotify as $userToNotify)
+        {
+            $userToNotify->notify(new ActionHandledOnModel(
                 auth()->user(),
                 [
-                    'type' => __('permission'),
+                    'type' => 'permiso',
                     'name' => "{$permission->name} ({$permission->description})",
                     'timestamp' => now(),
                 ],

@@ -2,6 +2,7 @@
 
 namespace App\Models\Security;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Observers\Security\RoleObserver;
 use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -25,13 +26,13 @@ class Role extends SpatieRole
      * Nombre usado para trazar el tipo de objeto.
      * @var string
      */
-    protected $traceModelType = 'role';
+    protected $traceModelType = 'rol';
 
     /**
      * Nombre usado para trazar el nombre del log.
      * @var string
      */
-    protected $traceLogName = 'Security/Roles';
+    protected $traceLogName = 'Seguridad/Roles';
 
     /**
      * The storage format of the model's date columns.
@@ -90,8 +91,13 @@ class Role extends SpatieRole
     public function getActivityLogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->logAll()
-            ->useLogName(__($this->traceLogName))
+            ->logOnly([
+                'name',
+                'description',
+                'guard_name',
+            ])
+            ->logOnlyDirty()
+            ->useLogName('Seguridad/Roles')
             ->setDescriptionForEvent(fn(string $eventName) => __(':event :model [:modelName] [:modelDescription]', [
                 'event' => __($eventName),
                 'model' => __($this->traceModelType),
@@ -100,24 +106,39 @@ class Role extends SpatieRole
             ]));
     }
 
-    public function tapActivity(Activity $activity): void
+    /**
+     * Tap into the activity log to add request and causer metadata.
+     * This ensures HTTP request data is captured in activity logs.
+     */
+    public function tapActivity(Activity $activity, string $eventName): void
     {
+        switch ($eventName)
+        {
+            case 'created':
+                $activity->event = ActivityLog::EVENT_NAMES['created'];
+                break;
+            case 'updated':
+                $activity->event = ActivityLog::EVENT_NAMES['updated'];
+                break;
+            case 'deleted':
+                $activity->event = ActivityLog::EVENT_NAMES['deleted'];
+                break;
+            case 'restored':
+                $activity->event = ActivityLog::EVENT_NAMES['restored'];
+                break;
+            default:
+                break;
+        }
+
         $activity->properties = $activity->properties
-            ->put('request', [
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->header('user-agent'),
-                'user_agent_lang' => request()->header('accept-language'),
-                'referer' => request()->header('referer'),
-                'http_method' => request()->method(),
-                'request_url' => request()->fullUrl(),
-            ])
-            ->put('causer', \App\Models\User::with('person')->find(auth()->user()->id)->toArray());
+            ->put('causer', \App\Support\UserMetadata::capture())
+            ->put('request', \App\Support\RequestMetadata::capture());
     }
 
     #[Scope]
     protected function superuser(Builder $query): void
     {
-        $query->when(!auth()->user()->hasRole(__('Superuser')), function (Builder $query)
+        $query->when(!auth()->user()->hasRole('Superusuario'), function (Builder $query)
         {
             $query->where('id', '<>', 1);
         });
@@ -127,7 +148,7 @@ class Role extends SpatieRole
     protected function filter(Builder $query, array $filters): void
     {
         $query
-            ->when(empty($filters) ?? null, function (Builder $query)
+            ->when(empty($filters['sort_by'] ?? []), function (Builder $query)
             {
                 $query->latest();
             })
@@ -157,9 +178,9 @@ class Role extends SpatieRole
                     }
                 }
             })
-            ->when($filters['permissions'] ?? null, function (Builder $query, array $permissionDescriptions)
+            ->when($filters['permissions'] ?? null, function (Builder $query, array $names)
             {
-                $permissions = Permission::whereIn('description', $permissionDescriptions)->get();
+                $permissions = Permission::whereIn('name', $names)->get();
 
                 $query->whereAttachedTo($permissions);
             });

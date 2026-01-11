@@ -23,8 +23,8 @@ class MaintenanceController extends Controller
             Artisan::call('up');
 
             return back()->with('message', [
-                'message' => __('Maintenance mode disabled'),
-                'title' => __('PROCESSED!'),
+                'content' => 'Modo mantenimiento desactivado',
+                'title' => '¡PROCESADO!',
                 'type' => 'success',
             ]);
         }
@@ -34,8 +34,8 @@ class MaintenanceController extends Controller
         ]);
 
         return back()->with('message', [
-            'message' => __('Maintenance mode enabled'),
-            'title' => __('PROCESSED!'),
+            'content' => 'Modo mantenimiento activado',
+            'title' => '¡PROCESADO!',
             'type' => 'success',
         ]);
     }

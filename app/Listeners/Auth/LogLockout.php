@@ -2,7 +2,9 @@
 
 namespace App\Listeners\Auth;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Models\User;
+use App\Support\UserMetadata;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -24,19 +26,22 @@ class LogLockout
     {
         $causer = $event->request->user();
 
-        activity(__('Authentication'))
-            ->event('authenticated')
+        activity(ActivityLog::LOG_NAMES['auth'])
+            ->event(ActivityLog::EVENT_NAMES['locked'])
             ->causedBy($causer)
-            ->withProperty('request', [
-                'ip_address' => $event->request->ip(),
-                'user_agent' => $event->request->header('user-agent'),
-                'user_agent_lang' => $event->request->header('accept-language'),
-                'referer' => $event->request->header('referer'),
-                'http_method' => $event->request->method(),
-                'request_url' => $event->request->fullUrl(),
-                'credentials' => $event->request->all(),
+            ->withProperties([
+                // @phpstan-ignore-next-line argument.type (User implementa Authenticatable)
+                'causer' => UserMetadata::capture($causer),
+                'request' => [
+                    'ip_address' => $event->request->ip(),
+                    'user_agent' => $event->request->header('user-agent'),
+                    'user_agent_lang' => $event->request->header('accept-language'),
+                    'referer' => $event->request->header('referer'),
+                    'http_method' => $event->request->method(),
+                    'request_url' => $event->request->fullUrl(),
+                    'credentials' => $event->request->all(),
+                ],
             ])
-            ->withProperty('causer', User::with('person')->find($causer->id)->toArray() ?? '')
-            ->log(__('locked out'));
+            ->log('bloqueado');
     }
 }

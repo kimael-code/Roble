@@ -1,29 +1,52 @@
 <script setup lang="ts">
+import MultiSelectCombobox from '@/components/MultiSelectCombobox.vue';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Permission } from '@/types';
 import { router } from '@inertiajs/vue3';
-import { Ref, ref } from 'vue';
-import ComboboxPermissions from './ComboboxPermissions.vue';
+import { computed, ref } from 'vue';
 
-defineProps<{
+const props = defineProps<{
   show: boolean;
-  permissions?: Array<Permission>;
+  permissions?: Permission[];
 }>();
 
 const emit = defineEmits(['close', 'advancedSearch']);
 
-const form: Ref<{ [key: string]: any }> = ref({});
+const selectedPermissions = ref<string[]>([]);
 
-function submitSearch() {
-  router.visit(route('roles.index'), {
-    data: form.value,
+// Mapeo de props a formato {label, value} requerido por el componente MultiSelectCombobox
+const permissionOptions = computed(() =>
+  (props.permissions ?? []).map((p) => ({
+    value: p.name,
+    label: p.description,
+  })),
+);
+
+function clearFilters() {
+  selectedPermissions.value = [];
+}
+
+function handleSubmit() {
+  const form = {
+    permissions: selectedPermissions.value.length
+      ? selectedPermissions.value
+      : undefined,
+  };
+  router.reload({
+    data: form,
     only: ['roles'],
-    preserveScroll: true,
-    preserveState: true,
-    preserveUrl: false,
-    onSuccess: () => emit('advancedSearch', form.value),
+    preserveUrl: true,
+    onSuccess: () => emit('advancedSearch', form),
   });
 }
 </script>
@@ -31,22 +54,37 @@ function submitSearch() {
 <template>
   <div class="grid grid-cols-2 gap-2">
     <Sheet :open="show" @update:open="$emit('close')">
-      <SheetContent side="top">
+      <SheetContent side="top" class="overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Roles: Filtros de Búsqueda Avanzados</SheetTitle>
-          <SheetDescription>Parametrice la consulta de registros haciendo uso de los siguientes controles.</SheetDescription>
+          <SheetDescription
+            >Parametrice la consulta de registros haciendo uso de los siguientes
+            controles.</SheetDescription
+          >
         </SheetHeader>
-        <Tabs default-value="permissions" class="pr-4 pl-4" :unmount-on-hide="false">
-          <TabsList class="grid w-full grid-cols-3">
+        <Tabs
+          default-value="permissions"
+          class="pr-4 pl-4"
+          :unmount-on-hide="false"
+        >
+          <TabsList class="grid w-full grid-cols-1">
             <TabsTrigger value="permissions">Permisos</TabsTrigger>
           </TabsList>
           <TabsContent value="permissions">
-            <ComboboxPermissions :permissions @selected="(p) => (form.permissions = p)" />
+            <MultiSelectCombobox
+              id="permissions"
+              v-model="selectedPermissions"
+              :options="permissionOptions"
+              placeholder="Seleccione uno o más permisos"
+            />
           </TabsContent>
         </Tabs>
         <SheetFooter>
+          <Button type="button" @click="handleSubmit"> Filtrar </Button>
           <SheetClose as-child>
-            <Button type="button" @click="submitSearch"> Aplicar Filtros </Button>
+            <Button type="button" variant="outline" @click="clearFilters">
+              Cerrar
+            </Button>
           </SheetClose>
         </SheetFooter>
       </SheetContent>

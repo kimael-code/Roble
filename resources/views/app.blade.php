@@ -22,11 +22,33 @@
         {{-- Inline style to set the HTML background color based on our theme in app.css --}}
         <style>
             html {
-                background-color: oklch(1 0 0);
+                /* Fondo de respaldo en modo claro */
+                background-color: oklch(0.93 0.045 165);
+
+                /* MODO CLARO: Degradado verde esmeralda claro hacia blanco grisáceo */
+                background-image: linear-gradient(to bottom,
+                    oklch(0.93 0.045 165) 0%,   /* Verde esmeralda muy claro */
+                    oklch(0.98 0.008 165) 100%   /* Blanco grisáceo neutro en la base */
+                );
+
+                background-attachment: fixed;
+                background-size: cover;
+                background-repeat: no-repeat;
             }
 
             html.dark {
-                background-color: oklch(0.145 0 0);
+                /* Fondo de respaldo en modo oscuro */
+                background-color: oklch(0.11 0.035 165);
+
+                /* MODO OSCURO: Efecto radial con verde esmeralda profundo */
+                background-image: radial-gradient(circle at 50% 0%,
+                    oklch(0.30 0.08 165) 0%,   /* Luz verde esmeralda suave en el centro superior */
+                    oklch(0.11 0.035 165) 100% /* Verde esmeralda muy oscuro hacia los bordes */
+                );
+
+                background-attachment: fixed;
+                background-size: cover;
+                background-repeat: no-repeat;
             }
         </style>
 
@@ -39,7 +61,6 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
 
-        @routes
         @vite(['resources/js/app.ts', "resources/js/pages/{$page['component']}.vue"])
         @inertiaHead
     </head>

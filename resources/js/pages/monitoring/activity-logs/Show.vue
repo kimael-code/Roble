@@ -1,8 +1,14 @@
 <script setup lang="ts">
+import ActivityLogController from '@/actions/App/Http/Controllers/Monitoring/ActivityLogController';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useRequestActions } from '@/composables';
 import AppLayout from '@/layouts/AppLayout.vue';
 import ContentLayout from '@/layouts/ContentLayout.vue';
@@ -25,17 +31,21 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
   {
     title: 'Ver',
-    href: '',
   },
 ];
 
-const { requestState, requestAction } = useRequestActions('activity-logs');
+const { requestState, requestAction } = useRequestActions(
+  ActivityLogController,
+);
 </script>
 
 <template>
   <AppLayout :breadcrumbs>
     <Head title="Trazas: Ver" />
-    <ContentLayout :title="log.description" :description="`Tipo de evento: ${log.event}`">
+    <ContentLayout
+      :title="log.description"
+      :description="`Tipo de evento: ${log.event}`"
+    >
       <template #icon>
         <LogsIcon />
       </template>
@@ -43,23 +53,33 @@ const { requestState, requestAction } = useRequestActions('activity-logs');
         <div class="col-span-3 md:col-span-1">
           <Card class="container">
             <CardHeader>
-              <CardTitle>Detalles de la Petición</CardTitle>
+              <CardTitle>Detalles de la Solicitud</CardTitle>
             </CardHeader>
             <CardContent>
               <p class="text-sm font-medium">Marca de tiempo</p>
-              <p class="text-sm text-muted-foreground">{{ log.created_at_human ?? '-' }}</p>
+              <p class="text-sm text-muted-foreground">
+                {{ log.created_at_human ?? '-' }}
+              </p>
               <br />
               <p class="text-sm font-medium">Dirección IP</p>
-              <p class="font-mono text-sm text-muted-foreground">{{ log.properties.request.ip_address }}</p>
+              <p class="font-mono text-sm text-muted-foreground">
+                {{ log.properties.request.ip_address }}
+              </p>
               <br />
               <p class="text- text-sm font-medium">Ruta HTTP Solicitada</p>
-              <p class="text-sm text-muted-foreground">{{ log.properties.request.request_url }}</p>
+              <p class="text-sm text-muted-foreground">
+                {{ log.properties.request.request_url }}
+              </p>
               <br />
-              <p class="text- text-sm font-medium">Origen</p>
-              <p class="text-sm text-muted-foreground">{{ log.properties.request.referer }}</p>
+              <p class="text- text-sm font-medium">Ruta HTTP Origen</p>
+              <p class="text-sm text-muted-foreground">
+                {{ log.properties.request.referer }}
+              </p>
               <br />
               <p class="text-sm font-medium">Método HTTP Ejecutado</p>
-              <p class="text-sm text-muted-foreground">{{ log.properties.request.http_method }}</p>
+              <p class="text-sm text-muted-foreground">
+                {{ log.properties.request.http_method }}
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -68,8 +88,15 @@ const { requestState, requestAction } = useRequestActions('activity-logs');
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger as-child>
-                  <Button variant="secondary" @click="requestAction({ operation: 'read_all' })" :disabled="requestState.readAll">
-                    <LoaderCircleIcon v-if="requestState.readAll" class="h-4 w-4 animate-spin" />
+                  <Button
+                    variant="secondary"
+                    @click="requestAction({ operation: 'read_all' })"
+                    :disabled="requestState.readAll"
+                  >
+                    <LoaderCircleIcon
+                      v-if="requestState.readAll"
+                      class="h-4 w-4 animate-spin"
+                    />
                     <ArrowLeftIcon v-else class="mr-2 h-4 w-4" />
                     Regresar
                   </Button>
@@ -80,11 +107,14 @@ const { requestState, requestAction } = useRequestActions('activity-logs');
           </div>
           <Tabs default-value="user" class="w-auto">
             <TabsList class="grid w-full grid-cols-2">
-              <TabsTrigger value="user">DATOS DEL CAUSANTE</TabsTrigger>
+              <TabsTrigger value="user">REALIZADO POR</TabsTrigger>
               <TabsTrigger value="ous">DATOS DEL EVENTO</TabsTrigger>
             </TabsList>
             <TabsContent value="user">
-              <CardUserDetails :causer="log.causer ?? log.properties.causer" :user-agent="userAgent" />
+              <CardUserDetails
+                :causer="log.causer ?? log.properties.causer"
+                :user-agent="userAgent"
+              />
             </TabsContent>
             <TabsContent value="ous">
               <CardActivityDetails :log />

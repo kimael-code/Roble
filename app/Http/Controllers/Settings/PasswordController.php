@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Models\Monitoring\ActivityLog;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -32,14 +32,15 @@ class PasswordController extends Controller
         ]);
 
         $request->user()->update([
-            'password' => Hash::make($validated['password']),
+            'password' => $validated['password'],
         ]);
 
-        activity(__('Settings/Password'))
+        activity(ActivityLog::LOG_NAMES['password'])
             ->causedBy(auth()->user())
             ->performedOn($request->user())
-            ->event('updated')
+            ->event(ActivityLog::EVENT_NAMES['updated'])
             ->withProperties([
+                'causer' => User::with('person')->find(auth()->user()->id)->toArray(),
                 'request' => [
                     'ip_address' => $request->ip(),
                     'user_agent' => $request->header('user-agent'),
@@ -48,9 +49,8 @@ class PasswordController extends Controller
                     'http_method' => $request->method(),
                     'request_url' => $request->fullUrl(),
                 ],
-                'causer' => User::with('person')->find(auth()->user()->id)->toArray(),
             ])
-            ->log(__('updated their own password'));
+            ->log('actualizó su propia contraseña');
 
         return back();
     }

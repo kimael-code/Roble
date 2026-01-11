@@ -44,7 +44,7 @@ function goBack() {
 
 <template>
   <div
-    class="flex min-h-screen items-center justify-center bg-gradient-to-br from-neutral-50 to-neutral-100 p-4 dark:from-neutral-900 dark:to-neutral-800"
+    class="flex min-h-screen items-center justify-center bg-linear-to-br from-neutral-50 to-neutral-100 p-4 dark:from-neutral-900 dark:to-neutral-800"
   >
     <Card class="w-full max-w-md">
       <CardHeader class="text-center">

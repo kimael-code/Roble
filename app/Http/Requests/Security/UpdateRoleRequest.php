@@ -55,7 +55,7 @@ class UpdateRoleRequest extends FormRequest
         return [
             'name' => 'Nombre',
             'description' => 'Descripción',
-            'guard_name' => 'Autentificación',
+            'guard_name' => 'Autenticación',
             'permissions' => 'Permisos',
         ];
     }

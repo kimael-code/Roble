@@ -1,5 +1,5 @@
+import { InertiaLinkProps } from '@inertiajs/vue3';
 import type { LucideIcon } from 'lucide-vue-next';
-import type { Config } from 'ziggy-js';
 
 type OperationType =
   | 'create'
@@ -11,41 +11,68 @@ type OperationType =
   | 'restore'
   | 'enable'
   | 'disable'
-  | 'batch_activate'
-  | 'batch_deactivate'
+  | 'batch_enable'
+  | 'batch_disable'
   | 'batch_destroy'
+  | 'send'
+  | 'resend_activation'
   | null;
+
+export type NotificationFlashMessage = {
+  content: string;
+  title: string;
+  type: 'success' | 'danger' | 'warning' | 'info';
+};
+
+export type PasswordResetFlashMessage = {
+  expiresAt: string;
+  route: string;
+};
 
 export interface Auth {
   user: User;
-  menu: Array<string>;
+  roles: string[];
+  menuPermissions: string[];
 }
 
 export interface BreadcrumbItem {
   title: string;
-  href: string;
+  href?: string;
 }
 
 export interface NavItem {
   title: string;
-  href: string;
+  href: NonNullable<InertiaLinkProps['href']>;
   icon?: LucideIcon;
   isActive?: boolean;
   hasPermission?: boolean;
+  items?: Array<NavItem>;
+  badge?: number; // Para mostrar contador (ej: notificaciones)
+  onClick?: () => void; // Para acciones custom sin navegación
 }
 
-export type AppPageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
+export type AppPageProps<
+  T extends Record<string, unknown> = Record<string, unknown>,
+> = T & {
   name: string;
   quote: { message: string; author: string };
   auth: Auth;
-  flash: { message: { message: string; title: string; type: string } };
+  flash: {
+    message:
+      | string
+      | number
+      | boolean
+      | null
+      | NotificationFlashMessage
+      | PasswordResetFlashMessage
+      | undefined;
+  };
   unreadNotifications: Array<Notification>;
-  ziggy: Config & { location: string };
   sidebarOpen: boolean;
 };
 
 export interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
   avatar?: string;
@@ -53,8 +80,8 @@ export interface User {
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
-  is_password_set: boolean;
   is_external: boolean;
+  is_active: boolean;
   disabled_at: string;
   created_at_human?: string | null;
   updated_at_human?: string | null;
@@ -63,18 +90,18 @@ export interface User {
   person?: Person;
   active_organizational_units?: Array<OrganizationalUnit>;
   organizational_units?: Array<OrganizationalUnit>;
-  roles?: Array<Role>;
-  permissions?: Array<Permission>;
+  roles: Array<Role>;
+  permissions: Array<Permission>;
 }
 
 export interface Person {
-  id: string;
+  id: number;
   user_id: number;
   id_card: string;
   names: string;
   surnames: string;
-  phones: Array<string> | null;
-  emails: Array<string> | null;
+  phones: Record | null;
+  emails: Record | null;
   position: string;
   staff_type: string;
   created_at: string;
@@ -84,20 +111,18 @@ export interface Person {
 export type BreadcrumbItemType = BreadcrumbItem;
 
 export interface Role {
-  id: string;
+  id: number;
   name: string;
   guard_name: string;
   created_at: string;
   updated_at: string;
+  description: string;
   created_at_human?: string;
   updated_at_human?: string;
-  deleted_at?: string | null;
-  description: string;
 }
 
 export interface Permission extends Role {
   set_menu: boolean;
-  db_operation: string;
   pivot?: { [index: string]: string | number };
 }
 
@@ -111,20 +136,37 @@ export interface Employee {
   staff_type_code: string;
   org_unit_code: string;
   position: string;
+  email: string;
+  phone_ext: string;
   staff_type_name: string;
   org_unit_name: string;
 }
 
 export interface Can {
+  // === CRUD Básico ===
   create: boolean;
   read?: boolean;
   update: boolean;
   delete: boolean;
-  f_delete?: boolean;
+
+  // === Eliminación Avanzada ===
+  delete_force?: boolean;
   restore?: boolean;
-  activate?: boolean;
-  deactivate?: boolean;
-  export?: boolean;
+
+  // === Gestión de Estado ===
+  enable?: boolean;
+  disable?: boolean;
+
+  // === Comunicación ===
+  send?: boolean;
+  resend_activation?: boolean;
+
+  // === Seguridad ===
+  reset_password?: boolean;
+
+  // === Exportación Granular ===
+  export_collection?: boolean; // Exportar tabla completa (DataTable)
+  export_record?: boolean; // Exportar registro individual (DataTableActions)
 }
 
 export interface PaginatedLink {
@@ -178,7 +220,7 @@ export interface SearchFilter {
 }
 
 export interface Organization {
-  id: string;
+  id: number;
   rif: string;
   name: string;
   logo_path: string | null;
@@ -197,9 +239,9 @@ export interface Organization {
 }
 
 export interface OrganizationalUnit {
-  id: string;
-  organization_id: string;
-  organizational_unit_id: string;
+  id: number;
+  organization_id: number;
+  organizational_unit_id: number;
   code: string;
   name: string;
   acronym: string;
@@ -217,14 +259,32 @@ export interface OrganizationalUnit {
 }
 
 export interface DashboardDataSysadmin {
-  activeUsers: Array<{ user: User; ip_address: string; last_active: string }>;
-  logSizes: Array<{ [index: string]: { logName: string; sizeHuman: string; sizeRaw: number } }>;
+  activeUsers: Array<{
+    user: {
+      id: number;
+      name: string;
+      email: string;
+      avatar?: string;
+      created_at_human?: string;
+    };
+    ip_address: string;
+    last_active: string;
+  }>;
+  logFiles: {
+    logs: Array<{
+      logName: string;
+      sizeHuman: string;
+      sizeRaw: number;
+    }>;
+    totalSize: number;
+    totalSizeHuman: string;
+  };
   roles: { count: number; series: Array<number>; labels: Array<string> };
-  users: { count: number; series: Array<number>; labels: Array<string> };
+  users: { total: number; series: Array<number>; labels: Array<string> };
 }
 
 export interface ActivityLog {
-  id: string;
+  id: number;
   log_name: string;
   description: string;
   subject_type: string | null;

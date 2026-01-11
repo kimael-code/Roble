@@ -6,7 +6,12 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/resources/js/actions
+/resources/js/routes
+/resources/js/wayfinder
 /vendor
+/tests/Browser/Screenshots
+.DS_Store
 .env
 .env.backup
 .env.production
@@ -22,6 +27,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+/.agent
 
 #-------------------------
 # Operating Specific Junk Files
@@ -60,3 +66,8 @@ $RECYCLE.BIN/
 
 # Linux trash folder which might appear on any partition or disk
 .Trash-*
+
+# Temporary commit scripts
+auto-commit.sh
+commit-changes.sh
+

@@ -4,7 +4,11 @@ import AppShell from '@/components/AppShell.vue';
 import AppSidebar from '@/components/AppSidebar.vue';
 import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
 import useStringUtils from '@/composables/useStringUtils';
-import type { BreadcrumbItemType, NotificationData } from '@/types';
+import type {
+  BreadcrumbItemType,
+  NotificationData,
+  NotificationFlashMessage,
+} from '@/types';
 import { router, usePage } from '@inertiajs/vue3';
 import { useEchoModel } from '@laravel/echo-vue';
 import { watchImmediate } from '@vueuse/core';
@@ -23,7 +27,7 @@ withDefaults(defineProps<Props>(), {
 const page = usePage();
 const { channel } = useEchoModel('App.Models.User', page.props.auth.user.id);
 const { removeEndDot } = useStringUtils();
-const flashMessage = page.props.flash.message;
+const flashMessage = page.props?.flash?.message;
 
 channel().notification((n: NotificationData) => {
   toast.info(n.causer, {
@@ -35,43 +39,65 @@ watchImmediate(
   () => {
     if (!flashMessage) return;
 
-    switch (flashMessage.type) {
-      case 'success':
-        toast.success(flashMessage.title, {
-          description: flashMessage.message,
-          onAutoClose: () => router.reload({ only: ['flash'] }),
-          onDismiss: () => router.reload({ only: ['flash'] }),
-        });
-        break;
-      case 'info':
-        toast.info(flashMessage.title, {
-          description: flashMessage.message,
-          onAutoClose: () => router.reload({ only: ['flash'] }),
-          onDismiss: () => router.reload({ only: ['flash'] }),
-        });
-        break;
-      case 'warning':
-        toast.warning(flashMessage.title, {
-          description: flashMessage.message,
-          onAutoClose: () => router.reload({ only: ['flash'] }),
-          onDismiss: () => router.reload({ only: ['flash'] }),
-        });
-        break;
-      case 'danger':
-        toast.error(flashMessage.title, {
-          description: flashMessage.message,
-          onAutoClose: () => router.reload({ only: ['flash'] }),
-          onDismiss: () => router.reload({ only: ['flash'] }),
-        });
-        break;
+    // Si es un string simple, mostrarlo como mensaje info genérico
+    if (typeof flashMessage === 'string') {
+      toast.info(flashMessage, {
+        onAutoClose: () => router.reload({ only: ['flash'] }),
+        onDismiss: () => router.reload({ only: ['flash'] }),
+      });
+      return;
+    }
 
-      default:
-        toast(flashMessage.title, {
-          description: flashMessage.message,
-          onAutoClose: () => router.reload({ only: ['flash'] }),
-          onDismiss: () => router.reload({ only: ['flash'] }),
-        });
-        break;
+    // Si no es un objeto, no tiene sentido seguir
+    if (typeof flashMessage !== 'object') return;
+
+    // Verifica que tenga las propiedades esperadas de NotificationFlashMessage
+    const hasTitleAndMessage =
+      'title' in flashMessage &&
+      'content' in flashMessage &&
+      'type' in flashMessage;
+
+    if (hasTitleAndMessage) {
+      const { title, content, type } = flashMessage as NotificationFlashMessage;
+
+      switch (type) {
+        case 'success':
+          toast.success(title, {
+            description: content,
+            onAutoClose: () => router.reload({ only: ['flash'] }),
+            onDismiss: () => router.reload({ only: ['flash'] }),
+          });
+          break;
+        case 'info':
+          toast.info(title, {
+            description: content,
+            onAutoClose: () => router.reload({ only: ['flash'] }),
+            onDismiss: () => router.reload({ only: ['flash'] }),
+          });
+          break;
+        case 'warning':
+          toast.warning(title, {
+            description: content,
+            onAutoClose: () => router.reload({ only: ['flash'] }),
+            onDismiss: () => router.reload({ only: ['flash'] }),
+          });
+          break;
+        case 'danger':
+          toast.error(title, {
+            description: content,
+            onAutoClose: () => router.reload({ only: ['flash'] }),
+            onDismiss: () => router.reload({ only: ['flash'] }),
+          });
+          break;
+
+        default:
+          toast(title, {
+            description: content,
+            onAutoClose: () => router.reload({ only: ['flash'] }),
+            onDismiss: () => router.reload({ only: ['flash'] }),
+          });
+          break;
+      }
     }
   },
 );
@@ -80,7 +106,10 @@ watchImmediate(
 <template>
   <AppShell variant="sidebar">
     <AppSidebar />
-    <AppContent variant="sidebar">
+    <AppContent
+      variant="sidebar"
+      class="h-[calc(100vh-1rem)] overflow-x-hidden"
+    >
       <AppSidebarHeader :breadcrumbs="breadcrumbs" />
       <slot />
     </AppContent>

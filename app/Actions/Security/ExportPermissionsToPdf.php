@@ -28,10 +28,10 @@ class ExportPermissionsToPdf extends BasePdf
 
         $filters = $this->getFilters();
 
+        // Sección 1: Filtros con degradado
+        $this->drawSectionHeader('1. FILTROS APLICADOS');
+
         $this->setFont(family: 'helvetica', style: 'B', size: 10);
-        $this->setFillColor(0, 53, 41);
-        $this->setTextColor(255, 255, 255);
-        $this->Cell(w: 0, txt: '1. FILTROS APLICADOS', border: 0, ln: 1, fill: true);
         $this->setTextColor(0, 0, 0);
         $this->MultiCell(w: 40, h: 0, align: 'L', ln: 0, txt: 'Buscar');
         $this->setFont(family: 'iosevkafixedss12', size: 10);
@@ -44,10 +44,6 @@ class ExportPermissionsToPdf extends BasePdf
         $this->MultiCell(w: 40, h: 0, align: 'L', border: 'T', ln: 0, txt: 'Rol(es)');
         $this->setFont(family: 'iosevkafixedss12', size: 10);
         $this->MultiCell(w: 0, h: 0, align: 'L', border: 'T', ln: 1, txt: $filters['roles'] ?: 'Todos');
-        $this->setFont(family: 'helvetica', style: 'B', size: 10);
-        $this->MultiCell(w: 40, h: 0, align: 'L', border: 'T', ln: 0, txt: 'Operación');
-        $this->setFont(family: 'iosevkafixedss12', size: 10);
-        $this->MultiCell(w: 0, h: 0, align: 'L', border: 'T', ln: 1, txt: $filters['operations'] ?: 'Todas');
 
         $this->setLineStyle([
             'width' => 0.75 / $this->k,
@@ -56,46 +52,47 @@ class ExportPermissionsToPdf extends BasePdf
             'dash' => 0,
             'color' => [0, 0, 0],
         ]);
-        $this->setFont(family: 'helvetica', style: 'B', size: 10);
-        $this->setFillColor(0, 53, 41);
-        $this->setTextColor(255, 255, 255);
-        $this->Cell(w: 0, txt: '2. DETALLE DE LOS PERMISOS REGISTRADOS', border: 0, ln: 1, fill: true);
-        $this->setTextColor(0, 0, 0);
 
-        $this->setFont(family: 'dejavusans', style: 'B', size: 9);
-        $this->MultiCell(w: 10, h: 5, align: 'L', ln: 0, txt: '#');
-        $this->MultiCell(w: 46, h: 5, align: 'L', ln: 0, txt: $this->getString('Nombre', 'name'));
-        $this->MultiCell(w: 46, h: 5, align: 'L', ln: 0, txt: $this->getString('Descripción', 'description'));
-        $this->MultiCell(w: 30, h: 5, align: 'L', ln: 0, txt: $this->getString('Fecha Creado', 'created_at_human'));
-        $this->MultiCell(w: 25.7, h: 5, align: 'L', ln: 0, txt: 'Operación BD');
-        $this->MultiCell(w: 45.5, h: 5, align: 'L', ln: 0, txt: 'Rol/es');
-        $this->MultiCell(w: 45.5, h: 5, align: 'L', ln: 1, txt: 'Usuario/s');
+        // Sección 2: Detalle con degradado
+        $this->drawSectionHeader('2. DETALLE DE LOS PERMISOS REGISTRADOS');
+
+        // Encabezados de tabla con estilo institucional
+        $this->setTableHeaderStyle();
+        $this->MultiCell(w: 10, h: 5, align: 'L', ln: 0, txt: '#', fill: true);
+        $this->MultiCell(w: 46, h: 5, align: 'L', ln: 0, txt: $this->getString('Nombre', 'name'), fill: true);
+        $this->MultiCell(w: 71.7, h: 5, align: 'L', ln: 0, txt: $this->getString('Descripción', 'description'), fill: true);
+        $this->MultiCell(w: 30, h: 5, align: 'L', ln: 0, txt: $this->getString('Fecha Creado', 'created_at_human'), fill: true);
+        $this->MultiCell(w: 45.5, h: 5, align: 'L', ln: 0, txt: 'Rol/es', fill: true);
+        $this->MultiCell(w: 45.5, h: 5, align: 'L', ln: 1, txt: 'Usuario/s', fill: true);
+
+        $this->setTableContentStyle();
 
         // establece el margen superior a la altura ocupada por el header
         $this->tMargin = $this->GetY();
         $this->SetAutoPageBreak(TRUE, PDF_MARGIN_BOTTOM);
     }
 
-    public function make(): string
+    public function make(string $destination = 'I'): string
     {
         // metadatos del archivo
         $this->setTitle('REPORTE: PERMISOS');
         $this->setSubject('Reporte de Permisos registrados');
         $this->setKeywords('reporte, PDF, permiso, permisos');
 
-        $organizationLogo = Organization::active()->first()->logo_path ?? '';
+        $organizationLogo = Organization::active()->first()?->logo_path;
+        $imgFile = $organizationLogo ? storage_path("app/public/{$organizationLogo}") : resource_path('images/logo.png');
 
         $this->setHeaderData(
-            ln: storage_path("app/public/{$organizationLogo}"),
+            ln: $imgFile,
             lw: 60,
             ht: 'REPORTE: PERMISOS',
             hs: now()->isoFormat('L LTS'),
-            tc: [0, 30, 15],
-            lc: [0, 128, 100],
+            tc: [29, 38, 53],
+            lc: [3, 91, 165],
         );
         $this->setFooterData(
-            tc: [0, 30, 15],
-            lc: [0, 128, 100],
+            tc: [29, 38, 53],
+            lc: [3, 91, 165],
         );
 
         $this->setFooterFont(['helvetica', '', 8]);
@@ -122,7 +119,7 @@ class ExportPermissionsToPdf extends BasePdf
 
         $this->writeHTML($html);
 
-        return $this->Output('REPORTE: PERMISOS');
+        return $this->Output('REPORTE_PERMISOS.pdf', $destination);
     }
 
     private function getFilters(): array
@@ -130,8 +127,6 @@ class ExportPermissionsToPdf extends BasePdf
         $filters = [
             'roles' => '',
             'users' => '',
-            'operations' => '',
-            'set_menu' => '',
             'search' => '',
         ];
 
@@ -143,11 +138,6 @@ class ExportPermissionsToPdf extends BasePdf
         if (isset($this->filters['users']))
         {
             $filters['users'] .= Arr::join($this->filters['users'], ', ');
-        }
-
-        if (isset($this->filters['operations']))
-        {
-            $filters['operations'] .= Arr::join($this->filters['operations'], ', ');
         }
 
         if (isset($this->filters['search']))
@@ -174,9 +164,13 @@ class ExportPermissionsToPdf extends BasePdf
     {
         if ($col === 'created_at_human')
         {
-            if (!isset($this->filters['sort_by']))
+            if (!isset($this->filters['sort_by']) && empty($this->filters))
             {
                 return "↓ {$txt}";
+            }
+            elseif (!isset($this->filters['sort_by']) && !empty($this->filters))
+            {
+                return "↑ {$txt}";
             }
             elseif (isset($this->filters['sort_by']['created_at']))
             {

@@ -35,10 +35,22 @@ export function useStringUtils() {
     return value.endsWith('.');
   };
 
+  /**
+   * Capitaliza la primera letra de una cadena y convierte el resto a minúsculas
+   * @param text - Texto a procesar (puede ser ref, getter o string plano)
+   * @returns Texto con primera letra en mayúscula y el resto en minúscula
+   */
+  const capitalizeFirstLetter = (text: MaybeRefOrGetter<string>): string => {
+    const value = toValue(text);
+    if (!value) return '';
+    return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+  };
+
   return {
     removeEndDot,
     removeEndDotAndReplace,
     endsWithDot,
+    capitalizeFirstLetter,
   };
 }
 

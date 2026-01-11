@@ -12,8 +12,21 @@
 */
 
 pest()->extend(Tests\TestCase::class)
- // ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature');
+
+// Seed permissions without observers for Unit/Actions tests
+uses()->beforeEach(function ()
+{
+    // Disable all model events/observers
+    \Illuminate\Support\Facades\Event::fake();
+
+    // Seed permissions
+    $this->seed(\Database\Seeders\TestPermissionsSeeder::class);
+
+    // Re-enable events for the actual test
+    \Illuminate\Support\Facades\Event::clearResolvedInstances();
+})->in('Unit/Actions');
 
 /*
 |--------------------------------------------------------------------------
@@ -26,7 +39,8 @@ pest()->extend(Tests\TestCase::class)
 |
 */
 
-expect()->extend('toBeOne', function () {
+expect()->extend('toBeOne', function ()
+{
     return $this->toBe(1);
 });
 
@@ -41,7 +55,25 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Crea un usuario Superusuario para tests que requieren el sistema "listo".
+ * 
+ * Usar en tests de autenticación que esperan que las rutas estén habilitadas.
+ */
+function seedSuperuser(): \App\Models\User
 {
-    // ..
+    // Crear rol sin disparar observers
+    \App\Models\Security\Role::withoutEvents(function ()
+    {
+        \App\Models\Security\Role::firstOrCreate(
+            ['name' => 'Superusuario', 'guard_name' => 'web'],
+            ['description' => 'Superusuario para tests']
+        );
+    });
+
+    // Crear usuario sin disparar observers
+    $user = \App\Models\User::factory()->create();
+    $user->assignRole('Superusuario');
+
+    return $user;
 }

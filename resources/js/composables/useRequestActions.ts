@@ -1,14 +1,52 @@
 import { OperationType } from '@/types';
 import { router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+
+// Tipos base para las rutas
+interface BaseRouteDefinition {
+  definition: {
+    methods: string[];
+    url: string;
+  };
+  url: (...args: any[]) => string;
+}
+
+interface RouteWithoutParams extends BaseRouteDefinition {
+  (options?: any): any;
+}
+
+interface RouteWithParams extends BaseRouteDefinition {
+  (args: any, options?: any): any;
+}
+
+// Tipo para el controlador de rutas completo
+export interface RouteController {
+  batchDestroy?: RouteWithoutParams;
+  index?: RouteWithoutParams;
+  create?: RouteWithoutParams;
+  store?: RouteWithoutParams;
+  show?: RouteWithParams;
+  edit?: RouteWithParams;
+  update?: RouteWithParams;
+  destroy?: RouteWithParams;
+  // Rutas adicionales que podrían existir
+  forceDestroy?: RouteWithParams;
+  restore?: RouteWithParams;
+  enable?: RouteWithParams;
+  disable?: RouteWithParams;
+  batchEnable?: RouteWithoutParams;
+  batchDisable?: RouteWithoutParams;
+  send?: RouteWithParams;
+  resendActivation?: RouteWithParams;
+}
 
 /**
  * A Vue composable for handling common CRUD operations with Inertia.js
  *
- * @param {string} resourceName - The base name of the resource (used for route generation)
+ * @param {RouteController} routes - The routes object (like OrganizationController)
  * @returns {Object} An object containing request methods and state
  */
-export function useRequestActions(resourceName: string) {
+export function useRequestActions(routes: RouteController) {
   /**
    * Opciones disponibles para la petición.
    * @see https://inertiajs.com/manual-visits
@@ -54,9 +92,11 @@ export function useRequestActions(resourceName: string) {
     restore: false,
     enable: false,
     disable: false,
-    batchActivate: false,
-    batchDeactivate: false,
+    batchEnable: false,
+    batchDisable: false,
     batchDestroy: false,
+    send: false,
+    resendActivation: false,
   });
 
   function requestAction({ operation, data, options }: RequestActionParams) {
@@ -92,14 +132,20 @@ export function useRequestActions(resourceName: string) {
       case 'disable':
         requestDisable(data?.id, options);
         break;
-      case 'batch_activate':
-        requestBatchActivate((data as { [x: string]: boolean }) ?? {}, options);
+      case 'batch_enable':
+        requestBatchEnable((data as { [x: string]: boolean }) ?? {}, options);
         break;
-      case 'batch_deactivate':
-        requestBatchDeactivate((data as { [x: string]: boolean }) ?? {}, options);
+      case 'batch_disable':
+        requestBatchDisable((data as { [x: string]: boolean }) ?? {}, options);
         break;
       case 'batch_destroy':
         requestBatchDestroy((data as { [x: string]: boolean }) ?? {}, options);
+        break;
+      case 'send':
+        requestSend(data?.id, options);
+        break;
+      case 'resend_activation':
+        requestResendActivation(data?.id, options);
         break;
 
       default:
@@ -111,7 +157,12 @@ export function useRequestActions(resourceName: string) {
   function requestCreate(options?: RequestOptions) {
     requestState.value.create = false;
 
-    router.visit(route(`${resourceName}.create`), {
+    if (!routes.create) {
+      console.error('Create route not available in routes object');
+      return;
+    }
+
+    router.visit(routes.create.url(), {
       ...options,
       onStart: () => (requestState.value.create = true),
       onFinish: () => {
@@ -126,7 +177,12 @@ export function useRequestActions(resourceName: string) {
     requestState.value.read = false;
     resourceID.value = id;
 
-    router.visit(route(`${resourceName}.show`, id), {
+    if (!routes.show) {
+      console.error('Show route not available in routes object');
+      return;
+    }
+
+    router.visit(routes.show.url(id), {
       ...options,
       onStart: () => (requestState.value.read = true),
       onFinish: () => {
@@ -141,7 +197,12 @@ export function useRequestActions(resourceName: string) {
     requestState.value.readAll = false;
     resourceID.value = null;
 
-    router.visit(route(`${resourceName}.index`), {
+    if (!routes.index) {
+      console.error('Index route not available in routes object');
+      return;
+    }
+
+    router.visit(routes.index.url(), {
       ...options,
       onStart: () => (requestState.value.readAll = true),
       onFinish: () => {
@@ -156,7 +217,12 @@ export function useRequestActions(resourceName: string) {
     requestState.value.edit = false;
     resourceID.value = id;
 
-    router.visit(route(`${resourceName}.edit`, id), {
+    if (!routes.edit) {
+      console.error('Edit route not available in routes object');
+      return;
+    }
+
+    router.visit(routes.edit.url(id), {
       ...options,
       onStart: () => (requestState.value.edit = true),
       onFinish: () => {
@@ -171,7 +237,12 @@ export function useRequestActions(resourceName: string) {
     requestState.value.destroy = false;
     resourceID.value = id;
 
-    router.visit(route(`${resourceName}.destroy`, id), {
+    if (!routes.destroy) {
+      console.error('Destroy route not available in routes object');
+      return;
+    }
+
+    router.visit(routes.destroy.url(id), {
       ...options,
       method: 'delete',
       onStart: () => (requestState.value.destroy = true),
@@ -187,7 +258,12 @@ export function useRequestActions(resourceName: string) {
     requestState.value.forceDestroy = false;
     resourceID.value = id;
 
-    router.visit(route(`${resourceName}.force-destroy`, id), {
+    if (!routes.forceDestroy) {
+      console.error('ForceDestroy route not available in routes object');
+      return;
+    }
+
+    router.visit(routes.forceDestroy?.url(id), {
       ...options,
       method: 'delete',
       onStart: () => (requestState.value.forceDestroy = true),
@@ -199,47 +275,81 @@ export function useRequestActions(resourceName: string) {
     });
   }
 
-  function requestBatchActivate(selectedRows: { [x: string]: boolean }, options?: RequestOptions) {
-    requestState.value.batchActivate = false;
+  function requestBatchEnable(
+    selectedRows: { [x: string]: boolean },
+    options?: RequestOptions,
+  ) {
+    requestState.value.batchEnable = false;
     resourceID.value = null;
 
-    router.visit(route('batch-activation', { resource: resourceName }), {
+    if (!routes.batchEnable && !routes.batchDestroy) {
+      console.error(
+        'BatchEnable or BatchDestroy route not available in routes object',
+      );
+      return;
+    }
+
+    // Usar batchEnable si existe, sino usar batchDestroy como fallback
+    const route = routes.batchEnable || routes.batchDestroy;
+
+    router.visit(route!.url(), {
       ...options,
       method: 'post',
       data: selectedRows,
-      onStart: () => (requestState.value.batchActivate = true),
+      onStart: () => (requestState.value.batchEnable = true),
       onFinish: () => {
-        requestState.value.batchActivate = false;
+        requestState.value.batchEnable = false;
         action.value = null;
         resourceID.value = null;
       },
     });
   }
 
-  function requestBatchDeactivate(selectedRows: { [x: string]: boolean }, options?: RequestOptions) {
-    requestState.value.batchDeactivate = false;
+  function requestBatchDisable(
+    selectedRows: { [x: string]: boolean },
+    options?: RequestOptions,
+  ) {
+    requestState.value.batchDisable = false;
     resourceID.value = null;
 
-    router.visit(route('batch-deactivation', { resource: resourceName }), {
+    if (!routes.batchDisable && !routes.batchDestroy) {
+      console.error(
+        'BatchDisable or BatchDestroy route not available in routes object',
+      );
+      return;
+    }
+
+    // Usar batchDisable si existe, sino usar batchDestroy como fallback
+    const route = routes.batchDisable || routes.batchDestroy;
+
+    router.visit(route!.url(), {
       ...options,
       method: 'post',
       data: selectedRows,
-      onStart: () => (requestState.value.batchDeactivate = true),
+      onStart: () => (requestState.value.batchDisable = true),
       onFinish: () => {
-        requestState.value.batchDeactivate = false;
+        requestState.value.batchDisable = false;
         action.value = null;
         resourceID.value = null;
       },
     });
   }
 
-  function requestBatchDestroy(selectedRows: { [x: string]: boolean }, options?: RequestOptions) {
+  function requestBatchDestroy(
+    selectedRows: { [x: string]: boolean },
+    options?: RequestOptions,
+  ) {
     requestState.value.batchDestroy = false;
     resourceID.value = null;
 
-    router.visit(route('batch-deletion', { resource: resourceName }), {
+    if (!routes.batchDestroy) {
+      console.error('BatchDestroy route not available in routes object');
+      return;
+    }
+
+    router.visit(routes.batchDestroy.url(), {
       ...options,
-      method: 'post',
+      method: 'delete',
       data: selectedRows,
       onStart: () => (requestState.value.batchDestroy = true),
       onFinish: () => {
@@ -254,7 +364,12 @@ export function useRequestActions(resourceName: string) {
     requestState.value.restore = false;
     resourceID.value = id;
 
-    router.visit(route(`${resourceName}.restore`, id), {
+    if (!routes.restore) {
+      console.error('Restore route not available in routes object');
+      return;
+    }
+
+    router.visit(routes.restore.url(id), {
       ...options,
       method: 'put',
       onStart: () => (requestState.value.restore = true),
@@ -270,7 +385,12 @@ export function useRequestActions(resourceName: string) {
     requestState.value.enable = false;
     resourceID.value = id;
 
-    router.visit(route(`${resourceName}.enable`, id), {
+    if (!routes.enable) {
+      console.error('Enable route not available in routes object');
+      return;
+    }
+
+    router.visit(routes.enable.url(id), {
       ...options,
       method: 'put',
       onStart: () => (requestState.value.enable = true),
@@ -286,7 +406,12 @@ export function useRequestActions(resourceName: string) {
     requestState.value.disable = false;
     resourceID.value = id;
 
-    router.visit(route(`${resourceName}.disable`, id), {
+    if (!routes.disable) {
+      console.error('Disable route not available in routes object');
+      return;
+    }
+
+    router.visit(routes.disable.url(id), {
       ...options,
       method: 'put',
       onStart: () => (requestState.value.disable = true),
@@ -298,10 +423,74 @@ export function useRequestActions(resourceName: string) {
     });
   }
 
+  function requestSend(id: number | string, options?: RequestOptions) {
+    requestState.value.send = false;
+    resourceID.value = id;
+
+    if (!routes.send) {
+      console.error('Send route not available in routes object');
+      return;
+    }
+
+    router.visit(routes.send.url(id), {
+      ...options,
+      method: 'post',
+      onStart: () => (requestState.value.send = true),
+      onFinish: () => {
+        requestState.value.send = false;
+        action.value = null;
+        resourceID.value = null;
+      },
+    });
+  }
+
+  function requestResendActivation(
+    id: number | string,
+    options?: RequestOptions,
+  ) {
+    requestState.value.resendActivation = false;
+    resourceID.value = id;
+
+    if (!routes.resendActivation) {
+      console.error('ResendActivation route not available in routes object');
+      return;
+    }
+
+    router.visit(routes.resendActivation.url(id), {
+      ...options,
+      method: 'post',
+      onStart: () => (requestState.value.resendActivation = true),
+      onFinish: () => {
+        requestState.value.resendActivation = false;
+        action.value = null;
+        resourceID.value = null;
+      },
+    });
+  }
+
+  /**
+   * Computed que indica si hay alguna acción en progreso
+   */
+  const isProcessing = computed(() => {
+    return Object.values(requestState.value).some((state) => state === true);
+  });
+
+  /**
+   * Verifica si un recurso específico está siendo procesado
+   *
+   * @param id - ID del recurso a verificar
+   * @returns true si el recurso está siendo procesado
+   */
+  const isResourceProcessing = (id: number | string) => {
+    return resourceID.value === id && isProcessing.value;
+  };
+
   return {
     action,
     resourceID,
     requestState,
     requestAction,
+    isProcessing,
+    isResourceProcessing,
   };
 }

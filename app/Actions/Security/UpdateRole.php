@@ -2,17 +2,23 @@
 
 namespace App\Actions\Security;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Models\Security\Permission;
 use App\Models\Security\Role;
-use App\Models\User;
+use App\Support\ActivityLogger;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class UpdateRole
 {
-    private static bool $permissionsChanged = false;
+    private bool $permissionsChanged = false;
 
-    public static function handle(Role $role, array $inputs): void
+    public function __construct(
+        private ActivityLogger $logger
+    ) {
+    }
+
+    public function __invoke(Role $role, array $inputs): Role
     {
         DB::transaction(function () use ($inputs, $role)
         {
@@ -23,88 +29,64 @@ class UpdateRole
 
             $assignedPermissions = Permission::whereIn('description', $inputs['permissions'])->get();
 
-            self::revokePermissions($role, $assignedPermissions);
-            self::givePermissions($role, $assignedPermissions);
+            $this->revokePermissions($role, $assignedPermissions);
+            $this->givePermissions($role, $assignedPermissions);
         });
 
-        if (self::$permissionsChanged)
+        if ($this->permissionsChanged)
         {
             session()->flash('message', [
-                'message' => "{$role->name} ({$role->description})",
-                'title' => __('SAVED!'),
-                'type'  => 'success',
+                'content' => "{$role->name} ({$role->description})",
+                'title' => '¡GUARDADO!',
+                'type' => 'success',
             ]);
         }
+
+        return $role;
     }
 
-    public static function revokePermissions(Role $role, Collection $assignedPermissions): void
+    private function revokePermissions(Role $role, Collection $assignedPermissions): void
     {
-        $authUser = auth()->user();
-
         foreach ($role->permissions as $permission)
         {
             if ($assignedPermissions->doesntContain($permission))
             {
                 $role->revokePermissionTo($permission);
 
-                activity(__('Security/Roles'))
-                    ->causedBy($authUser)
-                    ->performedOn($role)
-                    ->event('authorized')
-                    ->withProperties([
-                        __('revoked_permission') => $permission,
-                        __('to_role') => $role,
-                        'causer' => User::with('person')->find($authUser->id)->toArray(),
-                        'request' => [
-                            'ip_address' => request()->ip(),
-                            'user_agent' => request()->header('user-agent'),
-                            'user_agent_lang' => request()->header('accept-language'),
-                            'referer' => request()->header('referer'),
-                            'http_method' => request()->method(),
-                            'request_url' => request()->fullUrl(),
-                        ]
-                    ])
-                    ->log(__('revoked permission [:permission] to role [:role]', [
-                        'permission' => $permission->description,
-                        'role' => $role->name,
-                    ]));
-                self::$permissionsChanged = true;
+                $this->logger->logAuthorized(
+                    ActivityLog::LOG_NAMES['roles'],
+                    $role,
+                    "revocó permiso [{$permission->description}] a rol [:subject.name]",
+                    [
+                        'permiso_revocado' => $permission,
+                        'al_rol' => $role,
+                    ]
+                );
+
+                $this->permissionsChanged = true;
             }
         }
     }
 
-    public static function givePermissions(Role $role, Collection $assignedPermissions): void
+    private function givePermissions(Role $role, Collection $assignedPermissions): void
     {
-        $authUser = auth()->user();
-
         foreach ($assignedPermissions as $assignedPermission)
         {
             if ($role->permissions->doesntContain($assignedPermission))
             {
                 $role->givePermissionTo($assignedPermission);
 
-                activity(__('Security/Roles'))
-                    ->causedBy($authUser)
-                    ->performedOn($role)
-                    ->event('authorized')
-                    ->withProperties([
-                        __('granted_permission') => $assignedPermission,
-                        __('to_role') => $role,
-                        'causer' => User::with('person')->find($authUser->id)->toArray(),
-                        'request' => [
-                            'ip_address' => request()->ip(),
-                            'user_agent' => request()->header('user-agent'),
-                            'user_agent_lang' => request()->header('accept-language'),
-                            'referer' => request()->header('referer'),
-                            'http_method' => request()->method(),
-                            'request_url' => request()->fullUrl(),
-                        ]
-                    ])
-                    ->log(__('granted permission [:permission] to role [:role]', [
-                        'permission' => $assignedPermission->description,
-                        'role' => $role->name,
-                    ]));
-                self::$permissionsChanged = true;
+                $this->logger->logAuthorized(
+                    ActivityLog::LOG_NAMES['roles'],
+                    $role,
+                    "otorgó permiso [{$assignedPermission->description}] a rol [:subject.name]",
+                    [
+                        'permiso_otorgado' => $assignedPermission,
+                        'al_rol' => $role,
+                    ]
+                );
+
+                $this->permissionsChanged = true;
             }
         }
     }

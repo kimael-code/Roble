@@ -14,24 +14,31 @@ class BatchDeletionController extends Controller
     /**
      * Handle the incoming request.
      */
-    public function __invoke(Request $request, string $resource)
-    {
+    public function __invoke(
+        Request $request,
+        string $resource,
+        BatchDeletePermission $batchDeletePermission,
+        BatchDeleteRole $batchDeleteRole,
+        BatchDeleteUser $batchDeleteUser,
+        BatchDeleteOrganization $batchDeleteOrganization,
+        BatchDeleteOrganizationalUnit $batchDeleteOrganizationalUnit
+    ) {
         switch ($resource)
         {
             case 'permissions':
-                $result = BatchDeletePermission::execute($request->all());
+                $result = $batchDeletePermission($request->all());
                 return redirect(route('permissions.index'))->with('message', $result);
             case 'organizations':
-                $result = BatchDeleteOrganization::execute($request->all());
+                $result = $batchDeleteOrganization($request->all());
                 return redirect(route('organizations.index'))->with('message', $result);
             case 'organizational-units':
-                $result = BatchDeleteOrganizationalUnit::execute($request->all());
+                $result = $batchDeleteOrganizationalUnit($request->all());
                 return redirect(route('organizational-units.index'))->with('message', $result);
             case 'roles':
-                $result = BatchDeleteRole::execute($request->all());
+                $result = $batchDeleteRole($request->all());
                 return redirect(route('roles.index'))->with('message', $result);
             case 'users':
-                $result = BatchDeleteUser::execute($request->all());
+                $result = $batchDeleteUser($request->all());
                 return redirect(route('users.index'))->with('message', $result);
 
             default:

@@ -24,13 +24,13 @@ class OrganizationalUnit extends BaseModel
      * Nombre usado para trazar el tipo de objeto.
      * @var string
      */
-    protected $traceModelType = 'administrative unit';
+    protected $traceModelType = 'unidad administrativa';
 
     /**
      * Nombre usado para trazar el nombre del log.
      * @var string
      */
-    protected $traceLogName = 'Organization/Administrative Units';
+    protected $traceLogName = 'Ente/Unidades Administrativas';
 
     /**
      * The attributes that are mass assignable.
@@ -68,6 +68,20 @@ class OrganizationalUnit extends BaseModel
         return Attribute::make(
             get: fn(mixed $value, array $attributes) => isset($attributes['disabled_at']) ? 'INACTIVO' : 'ACTIVO'
         );
+    }
+
+    public function getActivityLogOptions(): \Spatie\Activitylog\LogOptions
+    {
+        return parent::getActivityLogOptions()
+            ->logOnly([
+                'name',
+                'acronym',
+                'floor',
+                'code',
+                'organization_id',
+                'organizational_unit_id',
+                'disabled_at',
+            ]);
     }
 
     public function organization(): BelongsTo
@@ -111,6 +125,10 @@ class OrganizationalUnit extends BaseModel
     protected function filter(Builder $query, array $filters): void
     {
         $query
+            ->when(empty($filters['sort_by'] ?? []), function (Builder $query)
+            {
+                $query->latest();
+            })
             ->when($filters['search'] ?? null, function (Builder $query, string $term)
             {
                 $query->where(function (Builder $query) use ($term)
@@ -139,10 +157,6 @@ class OrganizationalUnit extends BaseModel
                             break;
                     }
                 }
-            })
-            ->when(empty($filters) ?? null, function (Builder $query)
-            {
-                $query->latest();
             });
     }
 }

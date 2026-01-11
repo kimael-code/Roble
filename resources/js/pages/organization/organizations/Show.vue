@@ -1,17 +1,10 @@
 <script setup lang="ts">
+import routes from '@/actions/App/Http/Controllers/Organization/OrganizationController';
+import ActionAlertDialog from '@/components/ActionAlertDialog.vue';
 import ActivityLogs from '@/components/activity-logs/ActivityLogs.vue';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   DropdownMenu,
@@ -22,15 +15,37 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Spinner } from '@/components/ui/spinner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useConfirmAction, useRequestActions } from '@/composables';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { useActionAlerts, useRequestActions } from '@/composables';
 import AppLayout from '@/layouts/AppLayout.vue';
 import ContentLayout from '@/layouts/ContentLayout.vue';
-import { ActivityLog, BreadcrumbItem, Can, Organization, OrganizationalUnit, PaginatedCollection, SearchFilter } from '@/types';
+import {
+  ActivityLog,
+  BreadcrumbItem,
+  Can,
+  Organization,
+  OrganizationalUnit,
+  PaginatedCollection,
+  SearchFilter,
+} from '@/types';
 import { Head } from '@inertiajs/vue3';
-import { ArrowLeftIcon, Building, EllipsisIcon, LoaderCircleIcon, PencilIcon, PlusIcon, Trash2Icon } from 'lucide-vue-next';
-import { watch } from 'vue';
+import { breakpointsTailwind, useBreakpoints } from '@vueuse/core';
+import {
+  ArrowLeftIcon,
+  Building,
+  EllipsisIcon,
+  PencilIcon,
+  PlusIcon,
+  Trash2Icon,
+} from 'lucide-vue-next';
+import { computed } from 'vue';
 import OrganizationalUnits from './partials/OrganizationalUnits.vue';
 
 const props = defineProps<{
@@ -52,23 +67,18 @@ const breadcrumbs: BreadcrumbItem[] = [
   },
 ];
 
-const { action, requestState, requestAction, resourceID } = useRequestActions('organizations');
-const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription } = useConfirmAction();
+const { action, requestState, requestAction, resourceID, isProcessing } =
+  useRequestActions(routes);
 
-watch(action, () => {
-  switch (action.value) {
-    case 'destroy':
-      alertAction.value = 'Eliminar permanentemente';
-      alertActionCss.value = 'bg-destructive text-destructive-foreground hover:bg-destructive/90';
-      alertTitle.value = `¿Eliminar ente «${props.organization.name}» permanentemente?`;
-      alertDescription.value = `Esta acción no podrá revertirse. Los datos de «${props.organization.name}» se perderán permanentemente.`;
-      alertOpen.value = true;
-      break;
+const breakpoints = useBreakpoints(breakpointsTailwind);
+const isSmallScreen = breakpoints.smaller('lg');
 
-    default:
-      break;
-  }
-});
+const resourceName = computed(() => props.organization.name || '');
+
+const { alertOpen, alertAction, alertActionCss, alertTitle, alertDescription } =
+  useActionAlerts(action, resourceName);
+
+// ¡14 líneas de watch eliminadas! Ahora usa useActionAlerts
 </script>
 
 <template>
@@ -87,24 +97,42 @@ watch(action, () => {
             <CardContent>
               <div class="w-full overflow-hidden rounded-xs shadow-sm">
                 <AspectRatio :ratio="31 / 8">
-                  <img class="h-full w-full object-cover" :src="organization.logo_url" alt="Logo empresarial" />
+                  <img
+                    class="h-full w-full object-cover"
+                    :src="organization.logo_url"
+                    alt="Logo empresarial"
+                  />
                 </AspectRatio>
               </div>
               <br />
               <p class="text-sm font-medium">Acrónimo</p>
-              <p class="text-sm text-muted-foreground">{{ organization.acronym }}</p>
+              <p class="text-sm text-muted-foreground">
+                {{ organization.acronym }}
+              </p>
               <br />
               <p class="text-sm font-medium">Dirección</p>
-              <p class="text-sm text-muted-foreground">{{ organization.address }}</p>
+              <p class="text-sm text-muted-foreground">
+                {{ organization.address }}
+              </p>
               <br />
               <p class="text- text-sm font-medium">Creado</p>
-              <p class="text-sm text-muted-foreground">{{ organization.created_at_human }}</p>
+              <p class="text-sm text-muted-foreground">
+                {{ organization.created_at_human }}
+              </p>
               <br />
               <p class="text-sm font-medium">Modificado</p>
-              <p class="text-sm text-muted-foreground">{{ organization.updated_at_human }}</p>
+              <p class="text-sm text-muted-foreground">
+                {{ organization.updated_at_human }}
+              </p>
               <br />
               <p class="text- text-sm font-medium">Estatus</p>
-              <p class="text-sm" :class="{ 'text-green-500': !organization.disabled_at, 'text-red-500': organization.disabled_at }">
+              <p
+                class="text-sm"
+                :class="{
+                  'text-green-500': !organization.disabled_at,
+                  'text-red-500': organization.disabled_at,
+                }"
+              >
                 {{ organization.status }}
               </p>
             </CardContent>
@@ -115,8 +143,12 @@ watch(action, () => {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger as-child>
-                  <Button variant="secondary" @click="requestAction({ operation: 'read_all' })" :disabled="requestState.readAll">
-                    <LoaderCircleIcon v-if="requestState.readAll" class="h-4 w-4 animate-spin" />
+                  <Button
+                    variant="secondary"
+                    @click="requestAction({ operation: 'read_all' })"
+                    :disabled="requestState.readAll"
+                  >
+                    <Spinner v-if="requestState.readAll" class="mr-2" />
                     <ArrowLeftIcon v-else class="mr-2 h-4 w-4" />
                     Regresar
                   </Button>
@@ -125,18 +157,21 @@ watch(action, () => {
               </Tooltip>
             </TooltipProvider>
             <div class="flex items-center">
-              <DropdownMenu>
+              <!-- Mobile View: Dropdown Menu -->
+              <DropdownMenu v-if="isSmallScreen">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger as-child>
                       <DropdownMenuTrigger as-child>
-                        <Button variant="outline" :disabled="resourceID !== null">
+                        <Button variant="outline" :disabled="isProcessing">
                           <EllipsisIcon v-if="resourceID === null" />
-                          <LoaderCircleIcon v-else class="animate-spin" />
+                          <Spinner v-else />
                         </Button>
                       </DropdownMenuTrigger>
                     </TooltipTrigger>
-                    <TooltipContent> Editar, exportar y otras acciones </TooltipContent>
+                    <TooltipContent>
+                      Editar, exportar y otras acciones
+                    </TooltipContent>
                     <DropdownMenuContent>
                       <DropdownMenuLabel>Acciones</DropdownMenuLabel>
                       <DropdownMenuSeparator />
@@ -144,7 +179,13 @@ watch(action, () => {
                         <DropdownMenuItem
                           v-if="can.update"
                           class="flex items-center gap-2"
-                          @click="requestAction({ operation: 'edit', data: { id: organization.id }, options: { preserveState: false } })"
+                          @click="
+                            requestAction({
+                              operation: 'edit',
+                              data: { id: organization.id },
+                              options: { preserveState: false },
+                            })
+                          "
                         >
                           <PencilIcon />
                           <span>Editar</span>
@@ -162,11 +203,47 @@ watch(action, () => {
                   </Tooltip>
                 </TooltipProvider>
               </DropdownMenu>
+
+              <!-- Desktop View: Button Group -->
+              <ButtonGroup v-else>
+                <Button
+                  v-if="can.update"
+                  variant="outline"
+                  :disabled="isProcessing"
+                  @click="
+                    requestAction({
+                      operation: 'edit',
+                      data: { id: organization.id },
+                      options: { preserveState: false },
+                    })
+                  "
+                >
+                  <Spinner v-if="resourceID !== null" class="mr-2" />
+                  <PencilIcon v-else class="mr-2" />
+                  <span>Editar</span>
+                </Button>
+                <Button
+                  v-if="can.delete"
+                  variant="outline"
+                  :disabled="isProcessing"
+                  class="text-red-600 transition-colors focus:bg-accent focus:text-accent-foreground"
+                  @click="action = 'destroy'"
+                >
+                  <Spinner v-if="resourceID !== null" class="mr-2" />
+                  <Trash2Icon v-else class="mr-2 text-red-600" />
+                  <span>Eliminar</span>
+                </Button>
+              </ButtonGroup>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger as-child>
-                    <Button v-if="can.create" class="ml-3" @click="requestAction({ operation: 'create' })" :disabled="requestState.create">
-                      <LoaderCircleIcon v-if="requestState.create" class="h-4 w-4 animate-spin" />
+                    <Button
+                      v-if="can.create"
+                      class="ml-3"
+                      @click="requestAction({ operation: 'create' })"
+                      :disabled="requestState.create"
+                    >
+                      <Spinner v-if="requestState.create" class="mr-2" />
                       <PlusIcon v-else class="mr-2 h-4 w-4" />
                       Nuevo
                     </Button>
@@ -184,29 +261,38 @@ watch(action, () => {
               <TabsTrigger value="logs">Actividad</TabsTrigger>
             </TabsList>
             <TabsContent value="ous">
-              <OrganizationalUnits :filters :resource-id="organization.id" :ous />
+              <OrganizationalUnits
+                :filters
+                :resource-id="organization.id"
+                :ous
+              />
             </TabsContent>
             <TabsContent value="logs">
-              <ActivityLogs :filters :logs page-route-name="organizations.show" :resource-id="organization.id" />
+              <ActivityLogs
+                :filters
+                :logs
+                :route="routes.show(organization.id)"
+              />
             </TabsContent>
           </Tabs>
         </div>
       </section>
 
-      <AlertDialog v-model:open="alertOpen">
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{{ alertTitle }}</AlertDialogTitle>
-            <AlertDialogDescription>{{ alertDescription }}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel @click="action = null">Cancelar</AlertDialogCancel>
-            <AlertDialogAction :class="alertActionCss" @click="requestAction({ data: { id: organization.id }, options: { preserveState: false } })">
-              {{ alertAction }}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ActionAlertDialog
+        :open="alertOpen"
+        :title="alertTitle"
+        :description="alertDescription"
+        :action-text="alertAction"
+        :action-css="alertActionCss"
+        :is-processing="isProcessing"
+        @cancel="action = null"
+        @confirm="
+          requestAction({
+            data: { id: organization.id },
+            options: { preserveState: false },
+          })
+        "
+      />
     </ContentLayout>
   </AppLayout>
 </template>

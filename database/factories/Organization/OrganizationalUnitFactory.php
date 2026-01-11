@@ -20,7 +20,7 @@ class OrganizationalUnitFactory extends Factory
     {
         return [
             'organization_id' => Organization::factory(),
-            'organizational_unit_id' => OrganizationalUnit::factory(),
+            'organizational_unit_id' => null, // No parent by default to avoid recursion
             'code' => fake()->shuffleString('1234567890'),
             'name' => fake('en_US')->catchPhrase(),
             'acronym' => fake()->randomAscii(),

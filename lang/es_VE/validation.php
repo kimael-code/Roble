@@ -33,7 +33,7 @@ return [
     ],
     'boolean' => 'El campo :attribute debe ser verdadero o falso.',
     'can' => 'El campo :attribute contiene un valor no autorizado.',
-    'confirmed' => 'El campo de confirmación :attribute no coincide.',
+    'confirmed' => 'El campo Confirmar :attribute no coincide.',
     'contains' => 'Al campo :attribute le falta un valor requerido.',
     'current_password' => 'La contraseña es incorrecta.',
     'date' => 'El campo :attribute debe ser una fecha válida.',
@@ -72,7 +72,7 @@ return [
     'image' => 'El campo :attribute debe ser una imagen.',
     'in' => 'EL campo seleccionado :attribute no es válido.',
     'in_array' => 'El campo :attribute debe estar en :other.',
-    'integer' => 'El campo :attribute debe ser an entero.',
+    'integer' => 'El campo :attribute debe ser un entero.',
     'ip' => 'El campo :attribute debe ser una dirección IP válida.',
     'ipv4' => 'El campo :attribute debe ser una dirección IPv4 válida.',
     'ipv6' => 'El campo :attribute debe ser una dirección IPv6 válida.',
@@ -192,7 +192,9 @@ return [
     */
 
     'attributes' => [
-        'email' => 'Dirección de correo electrónico'
+        'email' => 'Dirección de correo electrónico',
+        'password' => 'Contraseña',
+        'password_confirmation' => 'Confirmar contraseña',
     ],
 
 ];

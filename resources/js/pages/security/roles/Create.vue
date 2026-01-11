@@ -1,14 +1,35 @@
 <script lang="ts" setup>
+import RoleController from '@/actions/App/Http/Controllers/Security/RoleController';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { TagsInput, TagsInputInput, TagsInputItem, TagsInputItemDelete, TagsInputItemText } from '@/components/ui/tags-input';
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import {
+  TagsInput,
+  TagsInputInput,
+  TagsInputItem,
+  TagsInputItemDelete,
+  TagsInputItemText,
+} from '@/components/ui/tags-input';
 import AppLayout from '@/layouts/AppLayout.vue';
 import ContentLayout from '@/layouts/ContentLayout.vue';
 import { BreadcrumbItem, Pagination, Permission } from '@/types';
@@ -46,7 +67,7 @@ type formRole = {
   permissions: string[];
 };
 
-const form = useForm('post', route('roles.store'), <formRole>{
+const form = useForm('post', RoleController.store().url, <formRole>{
   name: '',
   description: '',
   guard_name: 'web',
@@ -68,7 +89,7 @@ function submit() {
 }
 
 function index() {
-  router.visit(route('roles.index'), {
+  router.visit(RoleController.index(), {
     onStart: () => (buttonCancel.value = true),
     onFinish: () => (buttonCancel.value = false),
   });
@@ -79,7 +100,7 @@ watchDebounced(
   (s) => {
     if (s === '') search.value = undefined;
 
-    router.visit(route('roles.create'), {
+    router.visit(RoleController.create(), {
       data: { search: s },
       preserveScroll: true,
       preserveState: true,
@@ -91,7 +112,10 @@ watchDebounced(
 watch(openSheet, (isOpen) => {
   if (!isOpen) {
     search.value = undefined;
-    router.visit(route('roles.create'), { preserveScroll: true, preserveState: true });
+    router.visit(RoleController.create(), {
+      preserveScroll: true,
+      preserveState: true,
+    });
   }
 });
 
@@ -99,7 +123,10 @@ function handlePermissionSelecction(permission: Permission) {
   if (!form.permissions.includes(permission.description)) {
     form.permissions.push(permission.description);
   } else {
-    form.permissions.splice(form.permissions.indexOf(permission.description), 1);
+    form.permissions.splice(
+      form.permissions.indexOf(permission.description),
+      1,
+    );
   }
 }
 </script>
@@ -114,10 +141,16 @@ function handlePermissionSelecction(permission: Permission) {
       <section class="mx-auto w-full">
         <Card class="container">
           <CardHeader>
-            <CardDescription>Los campos con asterisco rojo son requeridos.</CardDescription>
+            <CardDescription
+              >Los campos con asterisco rojo son requeridos.</CardDescription
+            >
           </CardHeader>
           <CardContent>
-            <form @submit.prevent="submit" @keyup.enter.prevent="submit" @keyup.esc="index">
+            <form
+              @submit.prevent="submit"
+              @keyup.enter.prevent="submit"
+              @keyup.esc="index"
+            >
               <div class="grid w-full items-center gap-4">
                 <div class="flex flex-col space-y-1.5">
                   <Label class="is-required" for="name">Nombre</Label>
@@ -135,7 +168,9 @@ function handlePermissionSelecction(permission: Permission) {
                   <InputError :message="form.errors.name" />
                 </div>
                 <div class="flex flex-col space-y-1.5">
-                  <Label class="is-required" for="description">Descripción</Label>
+                  <Label class="is-required" for="description"
+                    >Descripción</Label
+                  >
                   <Input
                     id="description"
                     v-model="form.description"
@@ -149,7 +184,9 @@ function handlePermissionSelecction(permission: Permission) {
                   <InputError :message="form.errors.description" />
                 </div>
                 <div class="flex flex-col space-y-1.5">
-                  <Label class="is-required" for="guard_name">Autentificación</Label>
+                  <Label class="is-required" for="guard_name"
+                    >Autenticación</Label
+                  >
                   <Input
                     id="guard_name"
                     v-model="form.guard_name"
@@ -164,11 +201,19 @@ function handlePermissionSelecction(permission: Permission) {
                 <div class="5 flex flex-col space-y-1">
                   <Label for="permissions">Permisos</Label>
                   <TagsInput id="permissions" v-model="form.permissions">
-                    <TagsInputItem v-for="permission in form.permissions" :key="permission" :value="permission">
+                    <TagsInputItem
+                      v-for="permission in form.permissions"
+                      :key="permission"
+                      :value="permission"
+                    >
                       <TagsInputItemText />
                       <TagsInputItemDelete />
                     </TagsInputItem>
-                    <TagsInputInput placeholder="Permisos seleccionados..." @click="openSheet = true" @keyup.enter.prevent="submit" />
+                    <TagsInputInput
+                      placeholder="Permisos seleccionados..."
+                      @click="openSheet = true"
+                      @keyup.enter.prevent="submit"
+                    />
                   </TagsInput>
                   <InputError :message="permissionsError" />
                 </div>
@@ -176,12 +221,29 @@ function handlePermissionSelecction(permission: Permission) {
             </form>
           </CardContent>
           <CardFooter class="flex justify-between px-6 pb-6">
-            <Button variant="outline" :disabled="buttonCancel" @click="index" @keyup.esc="index" @keyup.enter="index">
-              <LoaderCircleIcon v-if="buttonCancel" class="h-4 w-4 animate-spin" />
+            <Button
+              variant="outline"
+              :disabled="buttonCancel"
+              @click="index"
+              @keyup.esc="index"
+              @keyup.enter="index"
+            >
+              <LoaderCircleIcon
+                v-if="buttonCancel"
+                class="h-4 w-4 animate-spin"
+              />
               Cancelar
             </Button>
-            <Button :disabled="buttonCancel || form.processing" @click="submit" @keyup.esc="index" @keyup.enter="submit">
-              <LoaderCircleIcon v-if="form.processing" class="h-4 w-4 animate-spin" />
+            <Button
+              :disabled="buttonCancel || form.processing"
+              @click="submit"
+              @keyup.esc="index"
+              @keyup.enter="submit"
+            >
+              <LoaderCircleIcon
+                v-if="form.processing"
+                class="h-4 w-4 animate-spin"
+              />
               Guardar
             </Button>
           </CardFooter>
@@ -192,23 +254,39 @@ function handlePermissionSelecction(permission: Permission) {
             <SheetHeader>
               <SheetTitle>Seleccionar Permisos</SheetTitle>
               <SheetDescription>
-                Haga clic en los permisos que necesiten ser asignados al Rol. Haga clic en Seleccionar cuando haya terminado.
+                Haga clic en los permisos que necesiten ser asignados al rol.
+                Cuando haya finalizado cierre este cuadro de diálogo.
               </SheetDescription>
             </SheetHeader>
             <div class="relative w-full max-w-sm items-center p-4">
-              <Input id="search" type="text" placeholder="Buscar..." class="pl-10" v-model="search" />
-              <span class="absolute inset-y-0 start-0 flex items-center justify-center px-5">
+              <Input
+                id="search"
+                type="text"
+                placeholder="Buscar..."
+                class="pl-10"
+                v-model="search"
+              />
+              <span
+                class="absolute inset-y-0 start-0 flex items-center justify-center px-5"
+              >
                 <Search class="size-6 text-muted-foreground" />
               </span>
             </div>
             <ScrollArea class="m-3 h-75 rounded-md border">
               <div class="p-4">
                 <div v-for="(permission, i) in permissions" :key="i">
-                  <Label :for="permission.description" class="flex items-center space-x-3">
+                  <Label
+                    :for="permission.description"
+                    class="flex items-center space-x-3"
+                  >
                     <Checkbox
                       :id="permission.description"
-                      :model-value="form.permissions.includes(permission.description)"
-                      @update:model-value="handlePermissionSelecction(permission)"
+                      :model-value="
+                        form.permissions.includes(permission.description)
+                      "
+                      @update:model-value="
+                        handlePermissionSelecction(permission)
+                      "
                     />
                     <span>{{ permission.description }}</span>
                   </Label>

@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use App\Support\Inspiring;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
-use Tighten\Ziggy\Ziggy;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -39,28 +38,39 @@ class HandleInertiaRequests extends Middleware
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
+        $authData = [
+            'user' => null,
+            'roles' => [],
+            'menuPermissions' => [],
+        ];
+
+        if ($user = $request->user())
+        {
+            $authData['user'] = $user->only([
+                'id', 'name', 'email', 'avatar', 'is_active',
+                'created_at_human', 'updated_at_human'
+            ]);
+
+            $authData['roles'] = $user->getRoleNames()->toArray();
+
+            $authData['menuPermissions'] = $user->getAllPermissions()
+                ->where('set_menu', true)
+                ->pluck('name')
+                ->all();
+        }
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'version' => config('app.version'),
             'quote' => ['message' => trim($message), 'author' => trim($author)],
-            'auth' => [
-                'user' => $request->user(),
-                'menu' => $request->user()
-                    ?->getAllPermissions()
-                    ->sortBy('name')
-                    ->where('set_menu', true)
-                    ->pluck('name')
-                    ->all() ?? [],
-            ],
+            'auth' => $authData,
             'flash' => [
                 'message' => fn() => $request->session()->get('message'),
+                'manualActivation' => fn() => $request->session()->get('manualActivation'),
             ],
             'unreadNotifications' => fn() => $request->user()?->unreadNotifications()->latest()->lazy(5)->all(),
-            'ziggy' => [
-                ...(new Ziggy)->toArray(),
-                'location' => $request->url(),
-            ],
-            'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'sidebarOpen' => !$request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }
 }

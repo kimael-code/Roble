@@ -1,18 +1,19 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { DashboardDataSysadmin, type BreadcrumbItem } from '@/types';
+import { dashboard } from '@/routes';
 import { Head } from '@inertiajs/vue3';
 import SysAdminDashboard from './dashboards/SysAdminDashboard.vue';
 
 defineProps<{
   can: { [index: string]: boolean };
-  sysadminData: DashboardDataSysadmin;
+  sysadminData?: DashboardDataSysadmin;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
   {
     title: 'Tablero',
-    href: '/dashboard',
+    href: dashboard().url,
   },
 ];
 </script>

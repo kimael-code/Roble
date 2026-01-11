@@ -5,13 +5,18 @@ namespace App\Http\Controllers\Security;
 use App\Actions\Security\CreateUser;
 use App\Actions\Security\DisableUser;
 use App\Actions\Security\EnableUser;
+use App\Actions\Security\ManuallyActivateUser;
+use App\Actions\Security\ResendActivation;
+use App\Actions\Security\ResetPassword;
 use App\Actions\Security\UpdateUser;
 use App\Http\Controllers\Controller;
-use App\Http\Props\Security\UserProps;
+use App\InertiaProps\Security\UserIndexProps;
+use App\InertiaProps\Security\UserShowProps;
+use App\InertiaProps\Security\UserCreateProps;
+use App\InertiaProps\Security\UserEditProps;
 use App\Http\Requests\Security\StoreUserRequest;
 use App\Http\Requests\Security\UpdateUserRequest;
 use App\Models\User;
-use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 
@@ -20,29 +25,29 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(UserIndexProps $props)
     {
         Gate::authorize('viewAny', User::class);
 
-        return Inertia::render('security/users/Index', UserProps::index());
+        return Inertia::render('security/users/Index', $props->toArray());
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(UserCreateProps $props)
     {
         Gate::authorize('create', User::class);
 
-        return Inertia::render('security/users/Create', UserProps::create());
+        return Inertia::render('security/users/Create', $props->toArray());
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreUserRequest $request)
+    public function store(StoreUserRequest $request, CreateUser $createUser)
     {
-        event(new Registered(CreateUser::handle($request->validated())));
+        $createUser($request->validated());
 
         return redirect(route('users.index'));
     }
@@ -50,29 +55,29 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(User $user)
+    public function show(User $user, UserShowProps $props)
     {
         Gate::authorize('view', $user);
 
-        return Inertia::render('security/users/Show', UserProps::show($user));
+        return Inertia::render('security/users/Show', $props->toArray($user));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(User $user)
+    public function edit(User $user, UserEditProps $props)
     {
         Gate::authorize('update', $user);
 
-        return Inertia::render('security/users/Edit', UserProps::edit($user));
+        return Inertia::render('security/users/Edit', $props->toArray($user));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateUserRequest $request, User $user)
+    public function update(UpdateUserRequest $request, User $user, UpdateUser $updateUser)
     {
-        UpdateUser::handle($user, $request->validated());
+        $updateUser($user, $request->validated());
 
         return redirect(route('users.index'));
     }
@@ -107,21 +112,46 @@ class UserController extends Controller
         return redirect()->back();
     }
 
-    public function enable(User $user)
+    public function enable(User $user, EnableUser $enableUser)
     {
         Gate::authorize('enable', $user);
 
-        EnableUser::handle($user);
+        $enableUser($user);
 
         return redirect()->back();
     }
 
-    public function disable(User $user)
+    public function disable(User $user, DisableUser $disableUser)
     {
         Gate::authorize('disable', $user);
 
-        DisableUser::handle($user);
+        $disableUser($user);
 
         return redirect()->back();
+    }
+
+    public function resetPassword(User $user, ResetPassword $resetPassword)
+    {
+        Gate::authorize('resetPassword', $user);
+
+        return redirect()->back()->with('message', $resetPassword($user));
+    }
+
+    public function resendActivation(User $user, ResendActivation $resendActivation)
+    {
+        Gate::authorize('resendActivation', $user);
+
+        $resendActivation($user);
+
+        return redirect()->back();
+    }
+
+    public function manuallyActivate(User $user, ManuallyActivateUser $manuallyActivate)
+    {
+        Gate::authorize('manuallyActivate', $user);
+
+        $result = $manuallyActivate($user);
+
+        return redirect()->back()->with('manualActivation', $result);
     }
 }

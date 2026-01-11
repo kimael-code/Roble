@@ -2,7 +2,9 @@
 
 namespace App\Listeners\Auth;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Models\User;
+use App\Support\UserMetadata;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
@@ -22,20 +24,23 @@ class LogFailed
      */
     public function handle(Failed $event): void
     {
-        activity(__('Authentication'))
-            ->event('authenticated')
+        activity(ActivityLog::LOG_NAMES['auth'])
+            ->event(ActivityLog::EVENT_NAMES['failed_login'])
             ->causedBy($event->user)
-            ->withProperty('request', [
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->header('user-agent'),
-                'user_agent_lang' => request()->header('accept-language'),
-                'referer' => request()->header('referer'),
-                'http_method' => request()->method(),
-                'request_url' => request()->fullUrl(),
-                'guard_name' => $event->guard,
-                'credentials' => $event->credentials,
+            ->withProperties([
+                // @phpstan-ignore-next-line argument.type (User implementa Authenticatable)
+                'causer' => UserMetadata::capture($event->user) ?? $event->credentials['name'],
+                'request' => [
+                    'ip_address' => request()->ip(),
+                    'user_agent' => request()->header('user-agent'),
+                    'user_agent_lang' => request()->header('accept-language'),
+                    'referer' => request()->header('referer'),
+                    'http_method' => request()->method(),
+                    'request_url' => request()->fullUrl(),
+                    'guard_name' => $event->guard,
+                    'credentials' => $event->credentials,
+                ],
             ])
-            ->withProperty('causer', User::with('person')->find($event->user?->id)?->toArray() ?? $event->credentials['name'])
-            ->log(__('failed login'));
+            ->log('falló en iniciar sesión');
     }
 }

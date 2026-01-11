@@ -1,176 +1,238 @@
-# ROBLE Vue-Tailwind
+# ROBLE
 
-Starter kit for developing monolithic web applications based on Laravel, Inertia.js, Vue.js, and Tailwind CSS (with PostgreSQL as the database).
+A starter kit for developing monolithic web applications based on Laravel, Inertia.js, Vue.js, and Tailwind CSS.
 
-## Made with
+## Language Notice
 
-- Laravel
-- Vue (shadcn-vue)
-- Inertia
-- Tailwind CSS
-- PostgreSQL
+**Documentation**: English (for international audience)  
+**User Interface**: Spanish (Venezuelan) - The UI is in Spanish as this project was originally developed for Venezuelan users and organizations. We welcome contributions to add multi-language support.
 
-## Users
+## Built With 🛠️
 
-Default users are created depending on the value of the `APP_ENV` variable.
+- [Laravel](https://laravel.com/docs)
+- [Vue](https://vuejs.org)
+- [shadcn-vue](https://www.shadcn-vue.com)
+- [Inertia](https://inertiajs.com)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [PostgreSQL](https://www.postgresql.org)
 
-- For local environment only:
-  - `root.dev`:
-    - password `12345678`
-    - role `Superuser`
-  - `admin.dev`:
-    - password `12345678`
-    - role `Systems Administrator`
-- for any other environment:
-  - `root`:
-    - password `root`
-    - role `Superuser`
+## Users and Roles 👥
 
-The `root.dev` and `root` users are read-only; they cannot be updated or deleted. These users act like the root user on Unix/Unix-like operating systems: they have full access to any route, but they are not allowed to bypass the system's defined policies.
+In Roble, no users are created when the database is first seeded. Only the minimum necessary profiles (roles) are created, which are:
 
-## Getting started in Local Environment (`localhost`) using Docker & Laravel Sail
+1. **Superuser**: Has access to any system route and can execute any action that does not violate system stability. It is a protected, read-only profile.
+2. **System Administrator**: Manages basic data, security, and system monitoring. It is an editable and even deletable profile.
 
-### Requirements
+_The deletion of roles and permissions is irreversible_. Once deleted, roles or permissions cannot be recovered; they must be registered again.
 
-- Docker Engine v28.1 or higher
-- Docker Compose v2.35 or higher
-- Internet connection
-- Shell alias configured to use Laravel Sail (<https://laravel.com/docs/12.x/sail#configuring-a-shell-alias>)
+From the created superuser, you can create new roles and users, as well as manage any system process.
 
-1. Clone this repo:
+It should be noted that users can also be created in a self-managed way by the institution's own active employees. However, they will be created without associated profiles, so they will only have access to the user's own menu in the system.
 
-    ```sh
-    git clone https://github.com/kimael-code/roble-vue-tailwind.git
-    ```
+## Features 🤩
 
-2. Go to the root project folder and create the `.env` file:
+_Note_: If you prefer, understand the word 'management' as `CRUD` (create, read, update, and delete records or data). However, exporting data to files is also part of data management in ROBLE.
 
-    ```sh
-    cd roble-vue-tailwind && cp .env.example .env
-    ```
+- Basic dashboard with summary charts of users, roles, and other basic data.
+- Management of:
+  - Basic organization data, as well as its respective administrative units
+  - Permissions
+  - Roles (user profiles)
+  - Users
+  - System maintenance mode
+- Query and export of user activity traces.
+- Query, clearing/deletion, and export of system debug logs.
+- Real-time notifications of actions performed by users.
 
-3. Set the credentials for **Laravel Reverb**:
+## Local Environment Installation 🚀
 
-    ```env
-    REVERB_APP_ID=my-reverb-app-id
-    REVERB_APP_KEY=my-reverb-app-key
-    REVERB_APP_SECRET=my-reverb-app-secret
-    ```
+This guide covers installation using **Laravel Herd** (recommended for macOS and Windows) and **Laravel Sail** (Docker-based, for any operating system).
 
-    *More info here*: <https://laravel.com/docs/12.x/reverb#main-content>  
-    *To generate random numbers*: <https://www.random.org/integers>  
-    *To generate random strings*: <https://www.random.org/strings>
+### Prerequisites
 
-4. Install Composer dependencies:
+Make sure you have the software corresponding to your chosen environment installed:
 
-    ```sh
-    docker run --rm --interactive --tty \
-    --volume $PWD:/app \
-    --user $(id -u):$(id -g) \
-    composer install --ignore-platform-reqs
-    ```
+| Software              | Herd Environment | Sail Environment |
+| --------------------- | :--------------: | :--------------: |
+| **Laravel Herd**      |        ✅        |                  |
+| **PostgreSQL Server** |        ✅        |                  |
+| **Node.js and npm**   |        ✅        |        ✅        |
+| **Composer**          |        ✅        |                  |
+| **Docker Engine**     |                  |        ✅        |
 
-5. Start the containers (*it's necessary to configure a shell alias*):
+> **Note for Herd**: It is recommended to use [DBngin](https://dbngin.com/) to easily manage your PostgreSQL server.
 
-    ```sh
-    sail up -d
-    ```
+### Step 1: Clone the Repository
 
-6. Create the app encryption key:
+```sh
+git clone REPOSITORY_URL
+cd roble
+```
 
-    ```sh
-    sail artisan key:generate
-    ```
+> **Note for Herd**: If you use Laravel Herd, clone the repository inside the folder that Herd is monitoring (normally `~/Herd`).
 
-7. Run database migrations and seeders:
+### Step 2: Configure Environment Variables (.env)
 
-    ```sh
-    sail artisan migrate:fresh --seed
-    ```
+This project requires credentials for two databases and for the WebSocket server (Laravel Reverb).
 
-8. Install Node dependencies:
+**For Local Development (Herd or Sail):**
 
-    ```sh
-    sail npm i
-    ```
+Simply copy the example environment file and edit it:
 
-9. Build Node dependencies:
+```sh
+cp .env.example .env
+```
 
-    ```sh
-    sail npm run build
-    ```
+Then edit the `.env` file to configure at least the `DB_*`, `DB_ORG_*`, and `REVERB_*` variables according to your local environment.
 
-10. Open your favorite web browser and go to <http://localhost>.
+**For Production/Staging/QA Deployments:**
 
-## Getting started in Local Environment (`localhost`) using Laravel Herd
+Use the interactive installation script:
 
-### Requirements
+```sh
+./install.sh
+```
 
-- Laravel Herd
-- PostgreSQL with pgAdmin or any other universal database tool
+This script will guide you through configuring all necessary variables for production environments.
 
-1. Clone this repo inside Herd folder:
+### Step 3: Install Dependencies
 
-    ```sh
-    git clone https://github.com/kimael-code/roble-vue-tailwind.git
-    ```
+**For Herd Environment:**
 
-2. Go to the root project folder and create the `.env` file:
+Run the following commands in your terminal:
 
-    ```sh
-    cd roble-vue-tailwind && cp .env.example .env
-    ```
+```sh
+composer install
+npm install
+```
 
-3. Set values ​​for database connection environment variables:
-    - `DB_HOST=localhost`.
-    - `DB_USERNAME=postgres`.
-    - `DB_PASSWORD=your_postgres_user_password`.  
-    *You need to set the values of these variables according to your PostgreSQL installation and configurations (port, user, password, etc.)*
+**For Sail Environment:**
 
-4. Set the credentials for **Laravel Reverb**:
+1. First, start the Sail containers. The first time may take several minutes while Docker images are downloaded.
+   ```sh
+   sail up -d
+   ```
+2. Once the containers are running, install the dependencies _inside_ them:
+   ```sh
+   sail composer install
+   sail npm install
+   ```
 
-    ```env
-    REVERB_APP_ID=my-reverb-app-id
-    REVERB_APP_KEY=my-reverb-app-key
-    REVERB_APP_SECRET=my-reverb-app-secret
-    ```
+### Step 4: Run the Application Installer
 
-    *More info here*: <https://laravel.com/docs/12.x/reverb#main-content>  
-    *To generate random numbers*: <https://www.random.org/integers>  
-    *To generate random strings*: <https://www.random.org/strings>
+This project includes a command to automate application preparation.
 
-5. Install Composer dependencies:
+> **⚠️ VERY IMPORTANT WARNING ⚠️**  
+> This command **will delete all data** from your main database and replace it with initial test data (`migrate:fresh --seed`). Use it only in the initial setup.
 
-    ```sh
-    composer install --ignore-platform-reqs
-    ```
+| Herd Environment          | Sail Environment           |
+| ------------------------- | -------------------------- |
+| `php artisan app:install` | `sail artisan app:install` |
 
-6. Create the app encryption key:
+This command will take care of:
 
-    ```sh
-    php artisan key:generate
-    ```
+- Generating the application key.
+- Clearing and generating configuration caches.
+- Creating the symbolic link to `storage`.
+- Running migrations and database _seeders_.
 
-7. Run database migrations and seeders:
+### Step 5: Start Background Services
 
-    ```sh
-    php artisan migrate:fresh --seed
-    ```
+For real-time notifications and queued tasks to work, you must start two processes. It is recommended to open two separate terminals in the project root to run each one.
 
-8. Install Node dependencies:
+| Service            | Command for Herd           | Command for Sail            |
+| :----------------- | :------------------------- | :-------------------------- |
+| **Laravel Reverb** | `php artisan reverb:start` | `sail artisan reverb:start` |
+| **Task Queue**     | `php artisan queue:listen` | `sail artisan queue:listen` |
 
-    ```sh
-    npm i
-    ```
+### Step 6: Create the Initial Superuser
 
-9. Build Node dependencies:
+With the environment already configured and services running, the final step is to create the first user with the `Superuser` role.
 
-    ```sh
-    npm run build
-    ```
+1. Open your web browser.
+2. Visit your project URL followed by `/su-install`.
+   - **URL with Herd:** `http://roble.test/su-install`
+   - **URL with Sail:** `http://localhost/su-install`
+3. Follow the web wizard instructions to create your user.
 
-10. Run the app:
+### Ready!
 
-    ```sh
-    herd open
-    ```
+Once the Superuser is created, the authentication system will be enabled. Now you can go to the `/login` route to log in with the credentials you just created.
+
+## CI/CD Pipeline 🚀
+
+This project uses **GitHub Actions** for continuous integration and deployment. The pipeline automatically runs tests, linters, and manages semantic versioning.
+
+### Workflows
+
+#### 1. **Tests** (`tests.yml`)
+
+- **Triggers:** Push or Pull Request to `develop` or `main`
+- **Actions:**
+  - Runs PHPUnit/Pest tests
+  - Builds frontend assets
+  - Caches dependencies for faster execution
+
+#### 2. **Linter** (`lint.yml`)
+
+- **Triggers:** Push or Pull Request to `develop` or `main`
+- **Actions:**
+  - Runs PHP Pint (code style fixer)
+  - Runs ESLint (JavaScript linter)
+  - Runs Prettier (code formatter)
+
+#### 3. **Auto-Versioning** (`version.yml`)
+
+- **Triggers:** Push to `main` branch only
+- **Actions:**
+  - Analyzes commits since last tag
+  - Calculates next semantic version
+  - Creates Git tag automatically
+  - Updates `CHANGELOG.md` and `.env.example`
+  - Creates GitHub Release
+
+### Semantic Versioning
+
+This project follows [Semantic Versioning](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/).
+
+**Commit types that increment version:**
+
+- `fix:` → PATCH (1.0.0 → 1.0.1)
+- `feat:` → MINOR (1.0.0 → 1.1.0)
+- `feat!:` or `BREAKING CHANGE:` → MAJOR (1.0.0 → 2.0.0)
+
+**Commit types that do NOT increment version:**
+
+- `docs:`, `style:`, `refactor:`, `test:`, `chore:`, `perf:`
+
+**Example commits:**
+
+```bash
+git commit -m "fix: correct login validation"
+git commit -m "feat: implement PDF export module"
+git commit -m "feat!: change database schema"
+```
+
+**Test versioning locally:**
+
+```bash
+npm run version:check  # Dry-run to see next version
+```
+
+For more details, see [docs/CONVENTIONAL_COMMITS.md](docs/CONVENTIONAL_COMMITS.md).
+
+## Contributors ✒️
+
+- Maikel Carballo - [GitHub](https://github.com/kimael-code) | [GitLab](https://gitlab.com/profemaik) | [Portfolio](https://maikel-dev.vercel.app)
+
+## Contribute - Your Ideas Can Bring Significant Improvements 🤓
+
+If you consider that this documentation is incomplete or could be improved:
+
+1. Verify that you can have access to the repository
+2. Clone it
+3. Create a new branch
+4. Make the corrections you deem pertinent to this file
+5. Publish your new branch with `git push`
+
+Or if you prefer, you can create an issue in the repository stating your corrections or improvements.

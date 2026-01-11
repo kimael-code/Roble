@@ -12,6 +12,34 @@ use Spatie\Activitylog\Models\Activity;
 
 class ActivityLog extends Activity
 {
+    public const EVENT_NAMES = [
+        'created' => 'creación',
+        'updated' => 'modificación',
+        'deleted' => 'eliminación',
+        'restored' => 'restauración',
+        'enabled' => 'activación',
+        'disabled' => 'desactivación',
+        'authorized' => 'autorización',
+        'logged_in' => 'inicio de sesión',
+        'logged_out' => 'cierre de sesión',
+        'failed_login' => 'inicio de sesión fallido',
+        'locked' => 'bloqueo',
+        'verified' => 'verificación',
+        'password' => 'cambio de contraseña',
+    ];
+
+    public const LOG_NAMES = [
+        'auth' => 'Autenticación',
+        'password' => 'Configuración/Contraseña',
+        'profile' => 'Configuración/Perfil',
+        'orgs' => 'Ente/Entes',
+        'ous' => 'Ente/Unidades Administrativas',
+        'logs' => 'Monitoreo/Depuración',
+        'permissions' => 'Seguridad/Permisos',
+        'roles' => 'Seguridad/Roles',
+        'users' => 'Seguridad/Usuarios',
+    ];
+
     /**
      * The storage format of the model's date columns.
      *
@@ -31,7 +59,7 @@ class ActivityLog extends Activity
         return Attribute::make(
             get: fn(mixed $value, array $attributes) => Carbon::createFromTimeString($attributes['created_at'])
                 ->isoFormat('L LT')
-                . ' (' . Carbon::createFromTimeString($attributes['created_at'])->diffForHumans() . ')',
+            . ' (' . Carbon::createFromTimeString($attributes['created_at'])->diffForHumans() . ')',
         );
     }
 
@@ -40,7 +68,7 @@ class ActivityLog extends Activity
         return Attribute::make(
             get: fn(mixed $value, array $attributes) => Carbon::createFromTimeString($attributes['updated_at'])
                 ->isoFormat('L LT')
-                . ' (' . Carbon::createFromTimeString($attributes['updated_at'])->diffForHumans() . ')',
+            . ' (' . Carbon::createFromTimeString($attributes['updated_at'])->diffForHumans() . ')',
         );
     }
 
@@ -84,7 +112,7 @@ class ActivityLog extends Activity
     protected function filter(Builder $query, array $filters): void
     {
         $query
-            ->when(empty($filters) ?? null, function (Builder $query)
+            ->when(empty($filters['sort_by'] ?? []), function (Builder $query)
             {
                 $query->latest();
             })
@@ -132,7 +160,7 @@ class ActivityLog extends Activity
                 $query->whereDate('created_at', '>=', $start)
                     ->whereDate('created_at', '<=', $end);
             })
-            ->when($filters['selected_users'] ?? null, function (Builder $query, array $users)
+            ->when($filters['users'] ?? null, function (Builder $query, array $users)
             {
                 foreach ($users as $user)
                 {
@@ -146,19 +174,13 @@ class ActivityLog extends Activity
                     );
                 }
             })
-            ->when($filters['selected_events'] ?? null, function (Builder $query, array $events)
+            ->when($filters['events'] ?? null, function (Builder $query, array $events)
             {
-                foreach ($events as $event)
-                {
-                    $query->where('event', $event);
-                }
+                $query->whereIn('event', $events);
             })
-            ->when($filters['selected_modules'] ?? null, function (Builder $query, array $modules)
+            ->when($filters['modules'] ?? null, function (Builder $query, array $modules)
             {
-                foreach ($modules as $module)
-                {
-                    $query->where('log_name', $module);
-                }
+                $query->whereIn('log_name', $modules);
             })
             ->when($filters['time'] ?? null, function (Builder $query, string $time)
             {
@@ -172,7 +194,7 @@ class ActivityLog extends Activity
             {
                 $query->whereTime('created_at', '<=', $timeUntil);
             })
-            ->when($filters['ip_dirs'] ?? null, function (Builder $query, array $ipAddresses)
+            ->when($filters['ips'] ?? null, function (Builder $query, array $ipAddresses)
             {
                 foreach ($ipAddresses as $ipAddress)
                 {

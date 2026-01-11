@@ -50,7 +50,9 @@ class ResetPassword extends Notification implements ShouldQueue
                     'token' => $this->token,
                     'email' => $notifiable->getEmailForPasswordReset(),
                 ]),
-                'firstName' => Str::words($notifiable?->person?->names ?? $notifiable->name, 1),
+                'firstName' => Str::of($notifiable?->person?->names ?? $notifiable->name)
+                    ->words(1, '')
+                    ->title(),
             ]);
     }
 

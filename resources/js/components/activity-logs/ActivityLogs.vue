@@ -1,20 +1,26 @@
 <script setup lang="ts">
+import routes from '@/actions/App/Http/Controllers/Monitoring/ActivityLogController';
 import DataTable from '@/components/DataTable.vue';
 import { useRequestActions } from '@/composables';
 import { ActivityLog, PaginatedCollection, SearchFilter } from '@/types';
+import { RouteDefinition } from '@/wayfinder';
 import { router } from '@inertiajs/vue3';
-import { getCoreRowModel, SortingState, TableOptions, useVueTable } from '@tanstack/vue-table';
+import {
+  getCoreRowModel,
+  SortingState,
+  TableOptions,
+  useVueTable,
+} from '@tanstack/vue-table';
 import { reactive, ref, watchEffect } from 'vue';
 import { columns, processingRowId } from './columns';
 
 const props = defineProps<{
   filters: SearchFilter;
   logs: PaginatedCollection<ActivityLog>;
-  pageRouteName: string;
-  resourceId: string | number;
+  route: RouteDefinition<'get'>;
 }>();
 
-const { resourceID, requestAction } = useRequestActions('activity-logs');
+const { resourceID, requestAction } = useRequestActions(routes);
 
 const sorting = ref<SortingState>([]);
 const globalFilter = ref('');
@@ -30,7 +36,7 @@ function handleSortingChange(item: any) {
       data[sortBy] = sortDirection;
     });
 
-    router.visit(route(props.pageRouteName, props.resourceId), {
+    router.visit(props.route, {
       data,
       only: ['logs'],
       preserveScroll: true,
@@ -56,7 +62,7 @@ const tableOptions = reactive<TableOptions<ActivityLog>>({
     };
   },
   getCoreRowModel: getCoreRowModel(),
-  getRowId: (row) => row.id,
+  getRowId: (row) => String(row.id),
   onSortingChange: handleSortingChange,
   state: {
     get sorting() {
@@ -70,7 +76,9 @@ const tableOptions = reactive<TableOptions<ActivityLog>>({
 
 const table = useVueTable(tableOptions);
 
-watchEffect(() => (resourceID.value === null ? (processingRowId.value = null) : false));
+watchEffect(() =>
+  resourceID.value === null ? (processingRowId.value = null) : false,
+);
 </script>
 
 <template>
@@ -79,9 +87,15 @@ watchEffect(() => (resourceID.value === null ? (processingRowId.value = null) : 
     :data="logs"
     :filters
     :search-only="['logs']"
-    :search-route="route(pageRouteName, resourceId)"
+    :search-route="route"
     :table
+    :has-advanced-search="false"
     @search="(s) => (globalFilter = s)"
-    @read="(row) => (requestAction({ operation: 'read', data: { id: row.id } }), (processingRowId = row.id))"
+    @read="
+      (row) => (
+        requestAction({ operation: 'read', data: { id: row.id } }),
+        (processingRowId = row.id)
+      )
+    "
   />
 </template>

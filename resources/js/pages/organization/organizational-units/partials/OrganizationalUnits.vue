@@ -1,8 +1,14 @@
 <script setup lang="ts">
+import OrganizationalUnitController from '@/actions/App/Http/Controllers/Organization/OrganizationalUnitController';
 import DataTable from '@/components/DataTable.vue';
 import { OrganizationalUnit, PaginatedCollection } from '@/types';
 import { router } from '@inertiajs/vue3';
-import { getCoreRowModel, SortingState, TableOptions, useVueTable } from '@tanstack/vue-table';
+import {
+  getCoreRowModel,
+  SortingState,
+  TableOptions,
+  useVueTable,
+} from '@tanstack/vue-table';
 import { reactive, ref } from 'vue';
 import { columns } from './columnsOrganizationalUnit';
 
@@ -27,7 +33,7 @@ function handleSortingChange(item: any) {
       data[sortBy] = sortDirection;
     });
 
-    router.visit(route('organizational-units.show', props.resourceId), {
+    router.visit(OrganizationalUnitController.show(props.resourceId), {
       data,
       only: ['organizationalUnits'],
       preserveScroll: true,
@@ -53,7 +59,7 @@ const tableOptions = reactive<TableOptions<OrganizationalUnit>>({
     };
   },
   getCoreRowModel: getCoreRowModel(),
-  getRowId: (row) => row.id,
+  getRowId: (row) => String(row.id),
   onSortingChange: handleSortingChange,
   state: {
     get sorting() {
@@ -74,8 +80,11 @@ const table = useVueTable(tableOptions);
     :data="ous"
     :filters
     :search-only="['organizationalUnits']"
-    :search-route="route('organizational-units.show', resourceId)"
+    :search-route="OrganizationalUnitController.show(resourceId)"
+    :has-advanced-search="false"
     :table
+    per-page-name="per_page_o"
     @search="(s) => (globalFilter = s)"
   />
 </template>
+

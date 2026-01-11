@@ -2,8 +2,11 @@
 
 namespace App\Observers\Security;
 
+use App\Models\Monitoring\ActivityLog;
 use App\Models\User;
 use App\Notifications\ActionHandledOnModel;
+use App\Support\RequestMetadata;
+use App\Support\UserMetadata;
 
 class UserObserver
 {
@@ -12,7 +15,50 @@ class UserObserver
      */
     public function created(User $user): void
     {
-        //
+        // Determinar si fue auto-registro o creación por admin
+        $wasCreatedByAdmin = auth()->check() && auth()->id() !== $user->id;
+
+        if ($wasCreatedByAdmin)
+        {
+            // Notificar a usuarios relevantes:
+            // 1. Usuarios con permiso 'create new users'
+            // 2. Superusuarios (tienen acceso completo al sistema)
+            // Excluir: creador, usuario creado, y usuarios inactivos
+            $usersToNotify = User::where(function ($query)
+            {
+                $query->permission('create new users')
+                    ->orWhereHas('roles', function ($q)
+                    {
+                        $q->where('name', 'Superusuario');
+                    });
+            })
+                ->where('id', '!=', auth()->id())      // Excluir al creador
+                ->where('id', '!=', $user->id)         // Excluir al usuario creado
+                ->whereNull('disabled_at')             // Solo usuarios activos
+                ->get();
+
+            foreach ($usersToNotify as $userToNotify)
+            {
+                $userToNotify->notify(new ActionHandledOnModel(
+                    auth()->user(),
+                    [
+                        'id' => $user->id,
+                        'type' => 'usuario',
+                        'name' => $user->name,
+                        'timestamp' => $user->created_at,
+                    ],
+                    'created',
+                    ['routeName' => 'users', 'routeParam' => 'user']
+                ));
+            }
+        }
+
+        // Emitir evento para actualizar estadísticas del dashboard
+        $calculator = new \App\Support\Dashboard\DashboardStatsCalculator();
+        event(new \App\Events\DashboardStatsUpdated([
+            'users' => $calculator->getUsersStats(),
+            'roles' => $calculator->getRolesStats(),
+        ]));
     }
 
     /**
@@ -20,7 +66,61 @@ class UserObserver
      */
     public function updated(User $user): void
     {
-        //
+        // Verificación defensiva: solo enviar notificaciones si hay un usuario autenticado
+        // Esto previene excepciones en casos edge donde se actualiza un usuario sin autenticación
+        if (!auth()->check())
+        {
+            return;
+        }
+
+        // Ignorar actualizaciones que solo involucran remember_token
+        // Esto ocurre típicamente durante el cierre de sesión y no debe generar notificaciones
+        $changedAttributes = array_keys($user->getChanges());
+        $ignoredAttributes = ['remember_token', 'updated_at'];
+        $relevantChanges = array_diff($changedAttributes, $ignoredAttributes);
+
+        if (empty($relevantChanges))
+        {
+            return;
+        }
+
+        // Notificar a usuarios relevantes:
+        // 1. Usuarios con permiso 'update users'
+        // 2. Superusuarios (tienen acceso completo al sistema)
+        // Excluir: usuario que realizó la acción y usuarios inactivos
+        $usersToNotify = User::where(function ($query)
+        {
+            $query->permission('update users')
+                ->orWhereHas('roles', function ($q)
+                {
+                    $q->where('name', 'Superusuario');
+                });
+        })
+            ->where('id', '!=', auth()->id())      // Excluir al que realizó la actualización
+            ->whereNull('disabled_at')             // Solo usuarios activos
+            ->get();
+
+        foreach ($usersToNotify as $userToNotify)
+        {
+            $userToNotify->notify(new ActionHandledOnModel(
+                auth()->user(),
+                [
+                    'id' => $user->id,
+                    'type' => 'usuario',
+                    'name' => $user->name,
+                    'timestamp' => $user->updated_at,
+                ],
+                'updated',
+                ['routeName' => 'users', 'routeParam' => 'user']
+            ));
+        }
+
+        // Emitir evento para actualizar estadísticas del dashboard
+        $calculator = new \App\Support\Dashboard\DashboardStatsCalculator();
+        event(new \App\Events\DashboardStatsUpdated([
+            'users' => $calculator->getUsersStats(),
+            'roles' => $calculator->getRolesStats(),
+        ]));
     }
 
     /**
@@ -28,44 +128,42 @@ class UserObserver
      */
     public function deleted(User $user): void
     {
-        activity(__('Security/Users'))
+        activity(ActivityLog::LOG_NAMES['users'])
             ->causedBy(auth()->user())
             ->performedOn($user)
-            ->event('deleted')
+            ->event(ActivityLog::EVENT_NAMES['deleted'])
             ->withProperties([
                 'old' => $user->toArray(),
-                'request' => [
-                    'ip_address' => request()->ip(),
-                    'user_agent' => request()->header('user-agent'),
-                    'user_agent_lang' => request()->header('accept-language'),
-                    'referer' => request()->header('referer'),
-                    'http_method' => request()->method(),
-                    'request_url' => request()->fullUrl(),
-                ],
-                'causer' => User::with('person')->find(auth()->user()->id)->toArray(),
+                'request' => RequestMetadata::capture(),
+                'causer' => UserMetadata::capture(),
             ])
-            ->log(__('deleted user [:modelName] [:modelEmail]', [
-                'modelName' => $user->name,
-                'modelEmail' => $user->email,
-            ]));
+            ->log('eliminó usuario [:subject.name] [:subject.email]');
 
         session()->flash('message', [
-            'message' => "({$user->name})",
-            'title' => __('DELETED!'),
-            'type'  => 'danger',
+            'content' => "{$user->name}",
+            'title' => '¡ELIMINADO!',
+            'type' => 'danger',
         ]);
 
-        $users = User::permission('delete users')->get()->filter(
-            fn (User $user) => $user->id != auth()->user()->id
-        )->all();
-
-        foreach ($users as $user)
+        $usersToNotify = User::where(function ($query)
         {
-            $user->notify(new ActionHandledOnModel(
+            $query->permission('delete users')
+                ->orWhereHas('roles', function ($q)
+                {
+                    $q->where('name', 'Superusuario');
+                });
+        })
+            ->where('id', '!=', auth()->id())
+            ->whereNull('disabled_at')
+            ->get();
+
+        foreach ($usersToNotify as $userToNotify)
+        {
+            $userToNotify->notify(new ActionHandledOnModel(
                 auth()->user(),
                 [
-                    'type' => __('user'),
-                    'name' => "({$user->name})",
+                    'type' => 'usuario',
+                    'name' => "{$user->name}",
                     'timestamp' => now(),
                 ],
                 'deleted',
@@ -79,45 +177,43 @@ class UserObserver
      */
     public function restored(User $user): void
     {
-        activity(__('Security/Users'))
+        activity(ActivityLog::LOG_NAMES['users'])
             ->causedBy(auth()->user())
             ->performedOn($user)
-            ->event('restored')
+            ->event(ActivityLog::EVENT_NAMES['restored'])
             ->withProperties([
                 'attributes' => $user->toArray(),
-                'request' => [
-                    'ip_address' => request()->ip(),
-                    'user_agent' => request()->header('user-agent'),
-                    'user_agent_lang' => request()->header('accept-language'),
-                    'referer' => request()->header('referer'),
-                    'http_method' => request()->method(),
-                    'request_url' => request()->fullUrl(),
-                ],
-                'causer' => User::with('person')->find(auth()->user()->id)->toArray(),
+                'request' => RequestMetadata::capture(),
+                'causer' => UserMetadata::capture(),
             ])
-            ->log(__('restored user [:modelName] [:modelEmail]', [
-                'modelName' => $user->name,
-                'modelEmail' => $user->email,
-            ]));
+            ->log('restauró usuario [:subject.name] [:subject.email]');
 
         session()->flash('message', [
-            'message' => "({$user->name})",
-            'title' => __('RESTORED!'),
-            'type'  => 'success',
+            'content' => "{$user->name}",
+            'title' => '¡RESTAURADO!',
+            'type' => 'success',
         ]);
 
-        $users = User::permission('restore users')->get()->filter(
-            fn (User $user) => $user->id != auth()->user()->id
-        )->all();
-
-        foreach ($users as $user)
+        $usersToNotify = User::where(function ($query)
         {
-            $user->notify(new ActionHandledOnModel(
+            $query->permission('restore users')
+                ->orWhereHas('roles', function ($q)
+                {
+                    $q->where('name', 'Superusuario');
+                });
+        })
+            ->where('id', '!=', auth()->id())
+            ->whereNull('disabled_at')
+            ->get();
+
+        foreach ($usersToNotify as $userToNotify)
+        {
+            $userToNotify->notify(new ActionHandledOnModel(
                 auth()->user(),
                 [
                     'id' => $user->id,
-                    'type' => __('user'),
-                    'name' => "({$user->name})",
+                    'type' => 'usuario',
+                    'name' => "{$user->name}",
                     'timestamp' => $user->updated_at,
                 ],
                 'restored',
@@ -131,49 +227,54 @@ class UserObserver
      */
     public function forceDeleted(User $user): void
     {
-        activity(__('Security/Users'))
+        activity(ActivityLog::LOG_NAMES['users'])
             ->causedBy(auth()->user())
             ->performedOn($user)
-            ->event('deleted')
+            ->event(ActivityLog::EVENT_NAMES['deleted'])
             ->withProperties([
                 'old' => $user->toArray(),
-                'request' => [
-                    'ip_address' => request()->ip(),
-                    'user_agent' => request()->header('user-agent'),
-                    'user_agent_lang' => request()->header('accept-language'),
-                    'referer' => request()->header('referer'),
-                    'http_method' => request()->method(),
-                    'request_url' => request()->fullUrl(),
-                ],
-                'causer' => User::with('person')->find(auth()->user()->id)->toArray(),
+                'request' => RequestMetadata::capture(),
+                'causer' => UserMetadata::capture(),
             ])
-            ->log(__('eliminó permanentemente el usuario [:modelName] [:modelEmail]', [
-                'modelName' => $user->name,
-                'modelEmail' => $user->email,
-            ]));
+            ->log('eliminó permanentemente el usuario [:subject.name] [:subject.email]');
 
         session()->flash('message', [
-            'message' => "({$user->name})",
-            'title' => __('HARD DELETED!'),
-            'type'  => 'danger',
+            'content' => "{$user->name}",
+            'title' => '¡ELIMINADO PERMANENTEMENTE!',
+            'type' => 'danger',
         ]);
 
-        $users = User::permission('delete users')->get()->filter(
-            fn (User $user) => $user->id != auth()->user()->id
-        )->all();
-
-        foreach ($users as $user)
+        $usersToNotify = User::where(function ($query)
         {
-            $user->notify(new ActionHandledOnModel(
+            $query->permission('delete users')
+                ->orWhereHas('roles', function ($q)
+                {
+                    $q->where('name', 'Superusuario');
+                });
+        })
+            ->where('id', '!=', auth()->id())
+            ->whereNull('disabled_at')
+            ->get();
+
+        foreach ($usersToNotify as $userToNotify)
+        {
+            $userToNotify->notify(new ActionHandledOnModel(
                 auth()->user(),
                 [
-                    'type' => __('user'),
-                    'name' => "({$user->name})",
+                    'type' => 'usuario',
+                    'name' => "{$user->name}",
                     'timestamp' => now(),
                 ],
                 'f_deleted',
                 ['routeName' => 'users', 'routeParam' => 'user']
             ));
         }
+
+        // Emitir evento para actualizar estadísticas del dashboard
+        $calculator = new \App\Support\Dashboard\DashboardStatsCalculator();
+        event(new \App\Events\DashboardStatsUpdated([
+            'users' => $calculator->getUsersStats(),
+            'roles' => $calculator->getRolesStats(),
+        ]));
     }
 }

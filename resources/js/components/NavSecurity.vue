@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import {
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from '@/components/ui/sidebar';
+import { urlIsActive } from '@/lib/utils';
 import { type NavItem } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
@@ -9,7 +16,9 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
-const show = computed(() => props.items.some((it) => it.hasPermission === true));
+const show = computed(() =>
+  props.items.some((it) => it.hasPermission === true),
+);
 </script>
 
 <template>
@@ -18,7 +27,10 @@ const show = computed(() => props.items.some((it) => it.hasPermission === true))
     <SidebarMenu>
       <template v-for="item in items" :key="item.title">
         <SidebarMenuItem v-if="item.hasPermission">
-          <SidebarMenuButton as-child :is-active="page.url.startsWith(item.href)">
+          <SidebarMenuButton
+            as-child
+            :is-active="urlIsActive(item.href, page.url)"
+          >
             <Link :href="item.href">
               <component :is="item.icon" />
               <span>{{ item.title }}</span>

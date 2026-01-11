@@ -2,7 +2,10 @@
 
 namespace App\Models;
 
+use App\Models\Monitoring\ActivityLog;
+use App\Support\RequestMetadata;
 use App\Support\Traits\MergesAppends;
+use App\Support\UserMetadata;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -98,21 +101,32 @@ class BaseModel extends Model
             ->setDescriptionForEvent(fn(string $eventName) => __(':event :model [:modelName]', [
                 'event' => __($eventName),
                 'model' => __($this->traceModelType),
-                'modelName' => $this?->name ?? $this?->title ?? '',
+                'modelName' => $this?->name ?? $this?->nombre ?? $this?->title ?? $this?->descripcion ?? '',
             ]));
     }
 
-    public function tapActivity(Activity $activity): void
+    public function tapActivity(Activity $activity, string $eventName): void
     {
+        switch ($eventName)
+        {
+            case 'created':
+                $activity->event = ActivityLog::EVENT_NAMES['created'];
+                break;
+            case 'updated':
+                $activity->event = ActivityLog::EVENT_NAMES['updated'];
+                break;
+            case 'deleted':
+                $activity->event = ActivityLog::EVENT_NAMES['deleted'];
+                break;
+            case 'restored':
+                $activity->event = ActivityLog::EVENT_NAMES['restored'];
+                break;
+            default:
+                break;
+        }
+
         $activity->properties = $activity->properties
-            ->put('request', [
-                'ip_address' => request()->ip(),
-                'user_agent' => request()->header('user-agent'),
-                'user_agent_lang' => request()->header('accept-language'),
-                'referer' => request()->header('referer'),
-                'http_method' => request()->method(),
-                'request_url' => request()->fullUrl(),
-            ])
-            ->put('causer', User::with('person')->find(auth()->user()->id)->toArray());
+            ->put('causer', UserMetadata::capture())
+            ->put('request', RequestMetadata::capture());
     }
 }

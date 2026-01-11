@@ -63,12 +63,13 @@ class OrganizationWithOUsSeeder extends Seeder
     private function nonLocalSeed(): void
     {
         $organizationID = DB::table('organizations')->insertGetId([
-            'rif' => 'X-99999999-9',
-            'name' => 'Claddagh Software Solutions Ltd.',
-            'acronym' => 'LAMPRE',
-            'address' => 'Unit 4B, The Grange Business Park. Dublin 12. D12 X3F8 - Ireland',
+            'rif' => 'J-00000000-0',
+            'name' => 'EMPRESA EJEMPLO S.A.',
+            'acronym' => 'EJEMPLO',
+            'address' => 'Av. Principal, Edificio Corporativo, Piso 10, Caracas, Venezuela.',
             'created_at' => 'now()',
             'updated_at' => 'now()',
+
         ]);
 
         $query = "INSERT INTO
@@ -84,7 +85,23 @@ class OrganizationWithOUsSeeder extends Seeder
                  disabled_at
              )
              VALUES
-             ($organizationID, NULL, NULL, 'BOARD OF DIRECTORS', 'BOD', 'HF', 'now()', 'now()', NULL)";
+             ($organizationID,NULL,'1000000000','DIRECCIÓN GENERAL','DG','10','now()','now()',NULL),
+             ($organizationID,1,'1100000000','GERENCIA DE RECURSOS HUMANOS','GRH','5','now()','now()',NULL),
+             ($organizationID,2,'1110000000','DEPARTAMENTO DE SELECCIÓN','DS','5','now()','now()',NULL),
+             ($organizationID,2,'1120000000','DEPARTAMENTO DE NÓMINA','DN','5','now()','now()',NULL),
+             ($organizationID,2,'1130000000','DEPARTAMENTO DE CAPACITACIÓN','DC','5','now()','now()',NULL),
+             ($organizationID,1,'1200000000','GERENCIA DE ADMINISTRACIÓN','GA','4','now()','now()',NULL),
+             ($organizationID,6,'1210000000','DEPARTAMENTO DE CONTABILIDAD','DCO','4','now()','now()',NULL),
+             ($organizationID,6,'1220000000','DEPARTAMENTO DE TESORERÍA','DT','4','now()','now()',NULL),
+             ($organizationID,6,'1230000000','DEPARTAMENTO DE COMPRAS','DCOM','4','now()','now()',NULL),
+             ($organizationID,1,'1300000000','GERENCIA DE TECNOLOGÍA','GT','8','now()','now()',NULL),
+             ($organizationID,10,'1310000000','DEPARTAMENTO DE DESARROLLO','DD','8','now()','now()',NULL),
+             ($organizationID,10,'1320000000','DEPARTAMENTO DE INFRAESTRUCTURA','DI','8','now()','now()',NULL),
+             ($organizationID,10,'1330000000','DEPARTAMENTO DE SOPORTE','DSO','8','now()','now()',NULL),
+             ($organizationID,1,'1400000000','GERENCIA DE SERVICIOS GENERALES','GSG','PB','now()','now()',NULL),
+             ($organizationID,14,'1410000000','DEPARTAMENTO DE MANTENIMIENTO','DM','PB','now()','now()',NULL),
+             ($organizationID,14,'1420000000','DEPARTAMENTO DE SEGURIDAD','DSE','PB','now()','now()',NULL);
+        ";
         DB::unprepared($query);
     }
 }

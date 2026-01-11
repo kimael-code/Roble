@@ -1,8 +1,15 @@
 <script lang="ts" setup>
+import routes from '@/actions/App/Http/Controllers/Organization/OrganizationController';
 import InputError from '@/components/InputError.vue';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -32,7 +39,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const buttonCancel = ref(false);
 const urlLogo = ref(props.organization.logo_url);
-const statusDisabled = computed(() => (props.organization.disabled_at ? true : false));
+const statusDisabled = computed(() =>
+  props.organization.disabled_at ? true : false,
+);
 
 type OrganizationForm = {
   rif: string;
@@ -43,7 +52,9 @@ type OrganizationForm = {
   disabled: boolean;
 };
 
-const form = useForm('post', route('organizations.update', props.organization.id), <OrganizationForm>{
+const form = useForm('post', routes.update(props.organization.id).url, <
+  OrganizationForm
+>{
   _method: 'put',
   rif: props.organization.rif,
   name: props.organization.name,
@@ -73,7 +84,7 @@ function submit() {
 }
 
 function index() {
-  router.visit(route('organizations.index'), {
+  router.visit(routes.index(), {
     onStart: () => (buttonCancel.value = true),
     onFinish: () => (buttonCancel.value = false),
   });
@@ -90,7 +101,9 @@ function index() {
       <section class="mx-auto w-full">
         <Card class="container">
           <CardHeader>
-            <CardDescription>Los campos con asterisco rojo son requeridos.</CardDescription>
+            <CardDescription
+              >Los campos con asterisco rojo son requeridos.</CardDescription
+            >
           </CardHeader>
           <CardContent>
             <form @submit.prevent="submit">
@@ -155,12 +168,24 @@ function index() {
                 </div>
                 <div class="flex flex-col space-y-1.5">
                   <Label class="is-required" for="logo_path">Logo</Label>
-                  <Input type="file" id="logo_path" accept="image/png" @change="handleLogoChange" />
+                  <Input
+                    type="file"
+                    id="logo_path"
+                    accept="image/png"
+                    @change="handleLogoChange"
+                  />
                   <InputError :message="form.errors.logo_path" />
                 </div>
-                <div v-if="urlLogo" class="w-full overflow-hidden rounded-xs shadow-sm sm:w-[350px]">
+                <div
+                  v-if="urlLogo"
+                  class="w-full overflow-hidden rounded-xs shadow-sm sm:w-[350px]"
+                >
                   <AspectRatio :ratio="31 / 8">
-                    <img class="h-full w-full object-cover" :src="urlLogo" alt="Logo seleccionado" />
+                    <img
+                      class="h-full w-full object-cover"
+                      :src="urlLogo"
+                      alt="Logo seleccionado"
+                    />
                   </AspectRatio>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -178,12 +203,29 @@ function index() {
             </form>
           </CardContent>
           <CardFooter class="flex justify-between px-6 pb-6">
-            <Button variant="outline" :disabled="buttonCancel" @click="index" @keyup.esc="index" @keyup.enter="index">
-              <LoaderCircleIcon v-if="buttonCancel" class="h-4 w-4 animate-spin" />
+            <Button
+              variant="outline"
+              :disabled="buttonCancel"
+              @click="index"
+              @keyup.esc="index"
+              @keyup.enter="index"
+            >
+              <LoaderCircleIcon
+                v-if="buttonCancel"
+                class="h-4 w-4 animate-spin"
+              />
               Cancelar
             </Button>
-            <Button :disabled="buttonCancel || form.processing" @click="submit" @keyup.esc="index" @keyup.enter="submit">
-              <LoaderCircleIcon v-if="form.processing" class="h-4 w-4 animate-spin" />
+            <Button
+              :disabled="buttonCancel || form.processing"
+              @click="submit"
+              @keyup.esc="index"
+              @keyup.enter="submit"
+            >
+              <LoaderCircleIcon
+                v-if="form.processing"
+                class="h-4 w-4 animate-spin"
+              />
               Guardar
             </Button>
           </CardFooter>
