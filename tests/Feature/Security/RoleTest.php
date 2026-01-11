@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Notification;
 use Spatie\Activitylog\Facades\Activity;
 
 /**
- * Tests de integración para gestión de roles.
+ * Integration tests para gestión de roles.
  *
  * Estos tests verifican la funcionalidad de gestión de roles:
  * - CRUD de roles
@@ -24,7 +24,7 @@ beforeEach(function ()
     Notification::fake();
     Activity::disableLogging();
 
-    // Desactivar observers para evitar errores en tests
+    // Desactivar observadores para evitar errores en tests
     User::unsetEventDispatcher();
     Role::unsetEventDispatcher();
     Permission::unsetEventDispatcher();
@@ -48,7 +48,7 @@ beforeEach(function ()
     $this->adminUser->assignRole($this->adminRole);
 });
 
-test('un administrador puede ver la lista de roles', function ()
+test('an administrator can view the list of roles', function ()
 {
     Role::create(['name' => 'Rol de Prueba 1', 'description' => 'descripción prueba 1', 'guard_name' => 'web']);
     Role::create(['name' => 'Rol de Prueba 2', 'description' => 'descripción prueba 2', 'guard_name' => 'web']);
@@ -58,7 +58,7 @@ test('un administrador puede ver la lista de roles', function ()
     $response->assertStatus(200);
 });
 
-test('un administrador puede crear un nuevo rol', function ()
+test('an administrator can create a new role', function ()
 {
     $permission = Permission::create(['name' => 'test permission', 'description' => 'permiso de prueba', 'guard_name' => 'web']);
 
@@ -76,7 +76,7 @@ test('un administrador puede crear un nuevo rol', function ()
     ]);
 });
 
-test('un administrador puede actualizar un rol existente', function ()
+test('an administrator can update an existing role', function ()
 {
     $role = Role::create(['name' => 'Rol Original', 'description' => 'descripción original', 'guard_name' => 'web']);
 
@@ -95,7 +95,7 @@ test('un administrador puede actualizar un rol existente', function ()
     ]);
 });
 
-test('un administrador puede eliminar un rol sin asociaciones', function ()
+test('an administrator can delete a role without associations', function ()
 {
     $role = Role::create(['name' => 'Rol a Eliminar', 'description' => 'será eliminado', 'guard_name' => 'web']);
 
@@ -105,7 +105,7 @@ test('un administrador puede eliminar un rol sin asociaciones', function ()
     $this->assertDatabaseMissing('roles', ['id' => $role->id]);
 });
 
-test('no se puede eliminar un rol que tiene usuarios asignados', function ()
+test('a role that has assigned users cannot be deleted', function ()
 {
     $role = Role::create(['name' => 'Rol con Usuarios', 'description' => 'tiene usuarios', 'guard_name' => 'web']);
 
@@ -119,7 +119,7 @@ test('no se puede eliminar un rol que tiene usuarios asignados', function ()
     $this->assertDatabaseHas('roles', ['id' => $role->id]);
 });
 
-test('no se puede eliminar un rol que tiene permisos asignados', function ()
+test('a role that has assigned permissions cannot be deleted', function ()
 {
     $permission = Permission::create(['name' => 'special permission', 'description' => 'permiso especial', 'guard_name' => 'web']);
     $role = Role::create(['name' => 'Rol con Permisos', 'description' => 'tiene permisos', 'guard_name' => 'web']);
@@ -131,7 +131,7 @@ test('no se puede eliminar un rol que tiene permisos asignados', function ()
     $this->assertDatabaseHas('roles', ['id' => $role->id]);
 });
 
-test('un administrador puede asignar permisos a un rol', function ()
+test('an administrator can assign permissions to a role', function ()
 {
     $role = Role::create(['name' => 'Rol sin Permisos', 'description' => 'sin permisos', 'guard_name' => 'web']);
     $permission = Permission::create(['name' => 'new permission', 'description' => 'nuevo permiso', 'guard_name' => 'web']);
@@ -147,7 +147,7 @@ test('un administrador puede asignar permisos a un rol', function ()
     expect($role->fresh()->hasPermissionTo($permission))->toBeTrue();
 });
 
-test('un administrador puede quitar permisos de un rol', function ()
+test('an administrator can remove permissions from a role', function ()
 {
     $permission = Permission::create(['name' => 'removable permission', 'description' => 'permiso removible', 'guard_name' => 'web']);
     $role = Role::create(['name' => 'Rol con Permiso', 'description' => 'tiene un permiso', 'guard_name' => 'web']);
@@ -164,7 +164,7 @@ test('un administrador puede quitar permisos de un rol', function ()
     expect($role->fresh()->hasPermissionTo($permission))->toBeFalse();
 });
 
-test('un usuario sin permisos no puede ver la lista de roles', function ()
+test('a user without permissions cannot view the list of roles', function ()
 {
     $regularUser = User::factory()->create();
 
@@ -173,7 +173,7 @@ test('un usuario sin permisos no puede ver la lista de roles', function ()
     $response->assertForbidden();
 });
 
-test('un usuario sin permisos no puede crear roles', function ()
+test('a user without permissions cannot create roles', function ()
 {
     $regularUser = User::factory()->create();
 
@@ -187,7 +187,7 @@ test('un usuario sin permisos no puede crear roles', function ()
     $response->assertForbidden();
 });
 
-test('un usuario sin permisos no puede actualizar roles', function ()
+test('a user without permissions cannot update roles', function ()
 {
     $regularUser = User::factory()->create();
     $role = Role::create(['name' => 'Rol de Prueba', 'description' => 'prueba', 'guard_name' => 'web']);
@@ -202,7 +202,7 @@ test('un usuario sin permisos no puede actualizar roles', function ()
     $response->assertForbidden();
 });
 
-test('un usuario sin permisos no puede eliminar roles', function ()
+test('a user without permissions cannot delete roles', function ()
 {
     $regularUser = User::factory()->create();
     $role = Role::create(['name' => 'Rol de Prueba', 'description' => 'prueba', 'guard_name' => 'web']);
@@ -213,7 +213,7 @@ test('un usuario sin permisos no puede eliminar roles', function ()
     $this->assertDatabaseHas('roles', ['id' => $role->id]);
 });
 
-test('el rol Superusuario no puede ser eliminado', function ()
+test('the Superusuario role cannot be deleted', function ()
 {
     // Crear el rol Superusuario con ID 1
     $superuserRole = Role::create(['name' => 'Superusuario', 'description' => 'superusuario del sistema', 'guard_name' => 'web']);
@@ -230,7 +230,7 @@ test('el rol Superusuario no puede ser eliminado', function ()
     $this->assertDatabaseHas('roles', ['name' => 'Superusuario']);
 });
 
-test('el rol Superusuario no puede ser modificado por usuarios no superusuarios', function ()
+test('the Superusuario role cannot be modified by non-superuser users', function ()
 {
     // Crear el rol Superusuario con ID 1
     $superuserRole = Role::create(['name' => 'Superusuario', 'description' => 'superusuario del sistema', 'guard_name' => 'web']);

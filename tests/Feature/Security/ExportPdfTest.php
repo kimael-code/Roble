@@ -39,7 +39,7 @@ beforeEach(function ()
 // Tests para ExportPermissionsToPdf
 // =============================================================================
 
-test('export permissions pdf genera archivo válido', function ()
+test('ExportPermissionsToPdf class makes a valid file', function ()
 {
     $this->actingAs($this->user);
 
@@ -52,7 +52,7 @@ test('export permissions pdf genera archivo válido', function ()
     expect($pdfContent)->toStartWith('%PDF');
 });
 
-test('export permissions pdf funciona con datos vacíos', function ()
+test('ExportPermissionsToPdf class works with empty data', function ()
 {
     $this->actingAs($this->user);
 
@@ -63,7 +63,7 @@ test('export permissions pdf funciona con datos vacíos', function ()
     expect($pdfContent)->toStartWith('%PDF');
 });
 
-test('export permissions pdf aplica filtros', function ()
+test('ExportPermissionsToPdf class applies filters', function ()
 {
     $this->actingAs($this->user);
 
@@ -82,7 +82,7 @@ test('export permissions pdf aplica filtros', function ()
 // Tests para ExportRolesToPdf
 // =============================================================================
 
-test('export roles pdf genera archivo válido', function ()
+test('ExportRolesToPdf class makes a valid file', function ()
 {
     $this->actingAs($this->user);
 
@@ -95,7 +95,7 @@ test('export roles pdf genera archivo válido', function ()
     expect($pdfContent)->toStartWith('%PDF');
 });
 
-test('export roles pdf funciona con datos vacíos', function ()
+test('ExportRolesToPdf class works with empty data', function ()
 {
     $this->actingAs($this->user);
 
@@ -110,7 +110,7 @@ test('export roles pdf funciona con datos vacíos', function ()
 // Tests para ExportUsersToPdf
 // =============================================================================
 
-test('export users pdf genera archivo válido', function ()
+test('ExportUsersToPdf class makes a valid file', function ()
 {
     $this->actingAs($this->user);
 
@@ -123,7 +123,7 @@ test('export users pdf genera archivo válido', function ()
     expect($pdfContent)->toStartWith('%PDF');
 });
 
-test('export users pdf funciona con filtros', function ()
+test('ExportUsersToPdf class applies filters', function ()
 {
     $this->actingAs($this->user);
 
@@ -139,7 +139,7 @@ test('export users pdf funciona con filtros', function ()
 // Tests para ExportActivityLogsToPdf
 // =============================================================================
 
-test('export activity logs pdf genera archivo válido', function ()
+test('ExportActivityLogsToPdf class makes a valid file', function ()
 {
     $this->actingAs($this->user);
 
@@ -150,7 +150,7 @@ test('export activity logs pdf genera archivo válido', function ()
     expect($pdfContent)->toStartWith('%PDF');
 });
 
-test('export activity logs pdf funciona con filtros', function ()
+test('ExportActivityLogsToPdf class applies filters', function ()
 {
     $this->actingAs($this->user);
 
@@ -166,7 +166,7 @@ test('export activity logs pdf funciona con filtros', function ()
 // Tests de configuración
 // =============================================================================
 
-test('configuración de versión existe', function ()
+test('version configuration exists', function ()
 {
     $version = config('app.version');
 
@@ -174,7 +174,7 @@ test('configuración de versión existe', function ()
     expect($version)->toBeString();
 });
 
-test('BasePdf tiene colores institucionales definidos', function ()
+test('BasePdf has institutional colors defined', function ()
 {
     $reflection = new \ReflectionClass(\App\Support\DataExport\BasePdf::class);
 

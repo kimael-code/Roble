@@ -8,12 +8,12 @@ use Illuminate\Support\Facades\Notification;
 use Spatie\Activitylog\Facades\Activity;
 
 /**
- * Integration tests for activity traces (Activity Logs).
+ * Tests de integración para trazas de actividad (Activity Logs).
  *
- * These tests verify:
- * - Viewing activity logs
- * - Filtering by user, event, module, date, IP
- * - Access control
+ * Estos tests verifican:
+ * - Visualización de trazas de actividad
+ * - Filtrado por usuario, evento, módulo, fecha, IP
+ * - Control de acceso
  */
 
 beforeEach(function ()
@@ -22,19 +22,19 @@ beforeEach(function ()
     Notification::fake();
     Activity::disableLogging();
 
-    // Disable observers to avoid errors in tests
+    // Desactivar observadores de modelos para evitar errores en tests
     User::unsetEventDispatcher();
 
-    // Create base permissions for activity logs
-    Permission::create(['name' => 'read any activity trace', 'description' => 'read any trace', 'guard_name' => 'web']);
-    Permission::create(['name' => 'read activity trace', 'description' => 'read trace', 'guard_name' => 'web']);
-    Permission::create(['name' => 'export activity traces', 'description' => 'export traces', 'guard_name' => 'web']);
+    // Crear permisos base para trazas de actividad
+    Permission::create(['name' => 'read any activity trace', 'description' => 'leer cualquier traza', 'guard_name' => 'web']);
+    Permission::create(['name' => 'read activity trace', 'description' => 'leer traza', 'guard_name' => 'web']);
+    Permission::create(['name' => 'export activity traces', 'description' => 'exportar trazas', 'guard_name' => 'web']);
 
     // Reset Spatie permission cache AFTER creating them
     app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-    // Create admin role
-    $this->adminRole = Role::create(['name' => 'Log Administrator', 'description' => 'log admin', 'guard_name' => 'web']);
+    // Crear rol de administrador
+    $this->adminRole = Role::create(['name' => 'Administrador de Logs', 'description' => 'admin de logs', 'guard_name' => 'web']);
     $this->adminRole->givePermissionTo(['read any activity trace', 'read activity trace', 'export activity traces']);
 
     // Create admin user
