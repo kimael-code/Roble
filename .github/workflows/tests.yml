@@ -48,6 +48,14 @@ jobs:
       - name: Copy Environment File
         run: cp .env.example .env
 
+      - name: Configure Database for Testing
+        run: |
+          # Use SQLite in-memory for CI/CD tests
+          sed -i 's/DB_CONNECTION=pgsql/DB_CONNECTION=sqlite/' .env
+          sed -i 's/DB_DATABASE=.*/DB_DATABASE=:memory:/' .env
+          sed -i 's/DB_ORG_CONNECTION=pgsql/DB_ORG_CONNECTION=sqlite/' .env
+          sed -i 's/DB_ORG_DATABASE=.*/DB_ORG_DATABASE=:memory:/' .env
+
       - name: Generate Application Key
         run: php artisan key:generate
 
