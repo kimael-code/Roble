@@ -19,13 +19,16 @@ class LogFileIndexProps
     {
         $logfile = new Logfile();
         $logFiles = array_keys($logfile->relativePaths());
-        $logs = $logfile->logs($logFiles[0] ?? null);
+
+        // Get file from request, default to first file
+        $selectedFile = request()->input('file', $logFiles[0] ?? null);
+        $logs = $logfile->logs($selectedFile);
 
         return [
             'can' => $this->getPermissions(),
-            'filters' => request()->only(['search']),
             'logFiles' => $logFiles,
             'logs' => $logs,
+            'selectedFile' => $selectedFile,
         ];
     }
 

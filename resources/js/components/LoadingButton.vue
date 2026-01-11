@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { LoaderCircleIcon } from 'lucide-vue-next';
 import type { Component } from 'vue';
 
-const props = defineProps<{
+defineProps<{
   loading?: boolean;
   icon?: Component;
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';

@@ -1,14 +1,19 @@
 <script setup lang="ts">
+import { Badge } from '@/components/ui/badge';
+import useAppVersion from '@/composables/useAppVersion';
 import StarSkyBackground from '@/components/StarSkyBackground.vue';
 import { Button } from '@/components/ui/button';
 import { dashboard, login, register } from '@/routes';
 import suInstaller from '@/routes/su-installer';
 import { Head, Link } from '@inertiajs/vue3';
+import { GitBranch } from 'lucide-vue-next';
 
 defineProps<{
   suExists: boolean;
   canRegister: boolean;
 }>();
+
+const { shortVersion } = useAppVersion();
 </script>
 
 <template>
@@ -78,8 +83,8 @@ defineProps<{
                 >
                   <span>Laravel 12x</span>
                   <svg
-                    width="{10}"
-                    height="{11}"
+                    width="10"
+                    height="11"
                     viewBox="0 0 10 11"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
@@ -114,8 +119,8 @@ defineProps<{
                 >
                   <span>Vue 3</span>
                   <svg
-                    width="{10}"
-                    height="{11}"
+                    width="10"
+                    height="11"
                     viewBox="0 0 10 11"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
@@ -150,8 +155,8 @@ defineProps<{
                 >
                   <span>Inertia 2x</span>
                   <svg
-                    width="{10}"
-                    height="{11}"
+                    width="10"
+                    height="11"
                     viewBox="0 0 10 11"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
@@ -186,8 +191,8 @@ defineProps<{
                 >
                   <span>Shadcn for Vue</span>
                   <svg
-                    width="{10}"
-                    height="{11}"
+                    width="10"
+                    height="11"
                     viewBox="0 0 10 11"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
@@ -884,6 +889,15 @@ defineProps<{
         </div>
       </main>
     </div>
+    
+    <!-- Versión centrada en la parte inferior -->
+    <div class="mt-6 flex justify-center">
+      <Badge variant="secondary" class="gap-1">
+        <GitBranch class="h-3 w-3" />
+        <span>v{{ shortVersion }}</span>
+      </Badge>
+    </div>
+    
     <div class="hidden h-14.5 lg:block"></div>
   </div>
 </template>

@@ -40,11 +40,11 @@ import {
 } from '@/components/ui/tooltip';
 import AppLayout from '@/layouts/AppLayout.vue';
 import ContentLayout from '@/layouts/ContentLayout.vue';
-import { BreadcrumbItem, Can, SearchFilter } from '@/types';
-import { Head, useForm } from '@inertiajs/vue3';
+import { BreadcrumbItem, Can } from '@/types';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import { FlexRender } from '@tanstack/vue-table';
 import { BugIcon, FileDownIcon, ShredderIcon } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 interface LogContent {
   context: string;
@@ -57,11 +57,11 @@ interface LogContent {
   stack: string;
 }
 
-defineProps<{
+const props = defineProps<{
   can: Can;
-  filters: SearchFilter;
   logFiles: Array<string>;
   logs: Array<LogContent>;
+  selectedFile: string;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -74,12 +74,31 @@ const breadcrumbs: BreadcrumbItem[] = [
 const deleteForm = useForm({});
 
 const stackTrace = ref('');
-const selectedFile = ref('');
+const fileToDelete = ref('');
 const openAlertDialog = ref(false);
 const openTraceStack = ref(false);
 
+// Computed property for responsive tabs layout
+const tabsGridClass = computed(() => {
+  const fileCount = props.logFiles.length;
+  // For mobile: flex vertical, for desktop: grid horizontal
+  return `w-full grid grid-cols-1 md:grid-cols-${Math.min(fileCount, 4)}`;
+});
+
+function handleTabChange(fileName: string) {
+  if (fileName === props.selectedFile) return;
+
+  router.visit(LogFileController.index().url, {
+    data: { file: fileName },
+    only: ['logs', 'selectedFile'],
+    preserveScroll: true,
+    preserveState: true,
+    preserveUrl: true,
+  });
+}
+
 function handleConfirm(fileName: string) {
-  selectedFile.value = fileName;
+  fileToDelete.value = fileName;
   openAlertDialog.value = true;
 }
 
@@ -94,10 +113,10 @@ function download(fileName: string) {
 }
 
 function deleteLog() {
-  deleteForm.delete(LogFileController.delete(selectedFile.value).url, {
+  deleteForm.delete(LogFileController.delete(fileToDelete.value).url, {
     preserveScroll: true,
     preserveState: true,
-    onFinish: () => (selectedFile.value = ''),
+    onFinish: () => (fileToDelete.value = ''),
   });
 }
 </script>
@@ -113,17 +132,37 @@ function deleteLog() {
         <BugIcon />
       </template>
 
-      <Tabs :default-value="logFiles[0]" class="w-auto">
-        <TabsList class="grid w-full grid-cols-2">
+      <!-- Empty State: No Log Files -->
+      <div
+        v-if="!logFiles || logFiles.length === 0"
+        class="flex flex-col items-center justify-center py-16 text-center"
+      >
+        <BugIcon class="h-16 w-16 text-muted-foreground/50 mb-4" />
+        <h3 class="text-lg font-semibold mb-2">No hay archivos de log</h3>
+        <p class="text-sm text-muted-foreground max-w-md">
+          No se han generado archivos de depuración en la aplicación. Los logs
+          aparecerán aquí cuando se registren eventos o errores.
+        </p>
+      </div>
+
+      <!-- Log Files Tabs -->
+      <Tabs
+        v-else
+        :key="props.selectedFile"
+        :model-value="props.selectedFile"
+        class="w-auto"
+      >
+        <TabsList :class="tabsGridClass">
           <TabsTrigger
             v-for="(logFile, i) in logFiles"
             :value="logFile"
             :key="i"
+            @click="handleTabChange(logFile)"
           >
             {{ logFile }}
           </TabsTrigger>
         </TabsList>
-        <TabsContent v-for="(logFile, i) in logFiles" :value="logFile" :key="i">
+        <TabsContent :value="props.selectedFile">
           <div class="flex items-center justify-between px-2 py-4">
             <div class="mr-3 text-sm text-muted-foreground">
               {{ `${logs.length || 0} entradas` }}
@@ -136,7 +175,7 @@ function deleteLog() {
                       variant="destructive"
                       v-if="can && can.delete"
                       class="ml-3"
-                      @click="handleConfirm(logFile)"
+                      @click="handleConfirm(props.selectedFile)"
                     >
                       <ShredderIcon class="mr-2 h-4 w-4" />
                       Eliminar
@@ -152,9 +191,9 @@ function deleteLog() {
                 <Tooltip>
                   <TooltipTrigger as-child>
                     <Button
-                      v-if="can && can.export"
+                      v-if="can && can.export_collection"
                       class="ml-3"
-                      @click="download(logFile)"
+                      @click="download(props.selectedFile)"
                     >
                       <FileDownIcon class="mr-2 h-4 w-4" />
                       Descargar
@@ -191,7 +230,10 @@ function deleteLog() {
                   ><FlexRender :render="row.text"
                 /></TableCell>
                 <TableCell>
-                  <Button type="button" @click="handleStackTrace(row.stack)"
+                  <Button
+                    type="button"
+                    variant="link"
+                    @click="handleStackTrace(row.stack)"
                     >Ver Traza</Button
                   >
                 </TableCell>
@@ -225,14 +267,14 @@ function deleteLog() {
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{{
-            `¿Eliminar archivo ${selectedFile}?`
+            `¿Eliminar archivo ${fileToDelete}?`
           }}</AlertDialogTitle>
           <AlertDialogDescription>
             Antes de eliminarlo asegúrese de haberlo descargado previamente.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel @click="selectedFile = ''">
+          <AlertDialogCancel @click="fileToDelete = ''">
             Cancelar
           </AlertDialogCancel>
           <AlertDialogAction

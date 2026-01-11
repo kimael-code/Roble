@@ -8,58 +8,58 @@ use Illuminate\Support\Facades\Notification;
 use Spatie\Activitylog\Facades\Activity;
 
 /**
- * Tests de integración para trazas de actividad (Activity Logs).
+ * Integration tests for activity traces (Activity Logs).
  *
- * Estos tests verifican:
- * - Visualización de logs de actividad
- * - Filtrado por usuario, evento, módulo, fecha, IP
- * - Control de acceso
+ * These tests verify:
+ * - Viewing activity logs
+ * - Filtering by user, event, module, date, IP
+ * - Access control
  */
 
 beforeEach(function ()
 {
-    // Desactivar notificaciones y logging de actividad
+    // Disable notifications and activity logging
     Notification::fake();
     Activity::disableLogging();
 
-    // Desactivar observers para evitar errores en tests
+    // Disable observers to avoid errors in tests
     User::unsetEventDispatcher();
 
-    // Crear permisos base para activity logs
-    Permission::create(['name' => 'read any activity trace', 'description' => 'leer cualquier traza', 'guard_name' => 'web']);
-    Permission::create(['name' => 'read activity trace', 'description' => 'leer traza', 'guard_name' => 'web']);
-    Permission::create(['name' => 'export activity traces', 'description' => 'exportar trazas', 'guard_name' => 'web']);
+    // Create base permissions for activity logs
+    Permission::create(['name' => 'read any activity trace', 'description' => 'read any trace', 'guard_name' => 'web']);
+    Permission::create(['name' => 'read activity trace', 'description' => 'read trace', 'guard_name' => 'web']);
+    Permission::create(['name' => 'export activity traces', 'description' => 'export traces', 'guard_name' => 'web']);
 
-    // Resetear caché de permisos de Spatie DESPUÉS de crearlos
+    // Reset Spatie permission cache AFTER creating them
     app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-    // Crear rol de administrador
-    $this->adminRole = Role::create(['name' => 'Administrador de Logs', 'description' => 'admin de logs', 'guard_name' => 'web']);
+    // Create admin role
+    $this->adminRole = Role::create(['name' => 'Log Administrator', 'description' => 'log admin', 'guard_name' => 'web']);
     $this->adminRole->givePermissionTo(['read any activity trace', 'read activity trace', 'export activity traces']);
 
-    // Crear usuario administrador
+    // Create admin user
     $this->adminUser = User::factory()->create(['is_active' => true]);
     $this->adminUser->assignRole($this->adminRole);
 });
 
 /**
- * Helper para crear un activity log de prueba.
+ * Helper to create a test activity log.
  */
 function createActivityLog(array $attributes = []): ActivityLog
 {
     return ActivityLog::create(array_merge([
-        'log_name' => 'Seguridad/Usuarios',
-        'description' => 'Evento de prueba',
+        'log_name' => 'Security/Users',
+        'description' => 'Test event',
         'subject_type' => User::class,
         'subject_id' => 1,
         'causer_type' => User::class,
         'causer_id' => 1,
-        'event' => 'creación',
+        'event' => 'creation',
         'properties' => ['request' => ['ip_address' => '127.0.0.1']],
     ], $attributes));
 }
 
-test('usuario autorizado puede ver la lista de activity logs', function ()
+test('authorized user can view activity logs list', function ()
 {
     createActivityLog(['description' => 'Log 1']);
     createActivityLog(['description' => 'Log 2']);
@@ -69,46 +69,46 @@ test('usuario autorizado puede ver la lista de activity logs', function ()
     $response->assertStatus(200);
 });
 
-test('usuario autorizado puede ver un activity log específico', function ()
+test('authorized user can view a specific activity log', function ()
 {
-    $log = createActivityLog(['description' => 'Log específico']);
+    $log = createActivityLog(['description' => 'Specific log']);
 
     $response = $this->actingAs($this->adminUser)->get(route('activity-logs.show', $log));
 
     $response->assertStatus(200);
 });
 
-test('activity logs pueden filtrarse por búsqueda', function ()
+test('activity logs can be filtered by search', function ()
 {
-    createActivityLog(['description' => 'Creó usuario admin']);
-    createActivityLog(['description' => 'Actualizó rol']);
+    createActivityLog(['description' => 'Created admin user']);
+    createActivityLog(['description' => 'Updated role']);
 
     $response = $this->actingAs($this->adminUser)->get(route('activity-logs.index', ['search' => 'admin']));
 
     $response->assertStatus(200);
 });
 
-test('activity logs pueden filtrarse por evento', function ()
+test('activity logs can be filtered by event', function ()
 {
-    createActivityLog(['event' => 'creación']);
-    createActivityLog(['event' => 'eliminación']);
+    createActivityLog(['event' => 'creation']);
+    createActivityLog(['event' => 'deletion']);
 
-    $response = $this->actingAs($this->adminUser)->get(route('activity-logs.index', ['events' => ['creación']]));
+    $response = $this->actingAs($this->adminUser)->get(route('activity-logs.index', ['events' => ['creation']]));
 
     $response->assertStatus(200);
 });
 
-test('activity logs pueden filtrarse por módulo', function ()
+test('activity logs can be filtered by module', function ()
 {
-    createActivityLog(['log_name' => 'Seguridad/Usuarios']);
-    createActivityLog(['log_name' => 'Seguridad/Roles']);
+    createActivityLog(['log_name' => 'Security/Users']);
+    createActivityLog(['log_name' => 'Security/Roles']);
 
-    $response = $this->actingAs($this->adminUser)->get(route('activity-logs.index', ['modules' => ['Seguridad/Usuarios']]));
+    $response = $this->actingAs($this->adminUser)->get(route('activity-logs.index', ['modules' => ['Security/Users']]));
 
     $response->assertStatus(200);
 });
 
-test('usuario sin permisos no puede ver activity logs', function ()
+test('user without permissions cannot view activity logs', function ()
 {
     $regularUser = User::factory()->create();
 
@@ -117,7 +117,7 @@ test('usuario sin permisos no puede ver activity logs', function ()
     $response->assertForbidden();
 });
 
-test('usuario sin permisos no puede ver un activity log específico', function ()
+test('user without permissions cannot view a specific activity log', function ()
 {
     $regularUser = User::factory()->create();
     $log = createActivityLog();
@@ -127,7 +127,7 @@ test('usuario sin permisos no puede ver un activity log específico', function (
     $response->assertForbidden();
 });
 
-test('usuario no autenticado es redirigido al login', function ()
+test('unauthenticated user is redirected to login', function ()
 {
     $response = $this->get(route('activity-logs.index'));
 

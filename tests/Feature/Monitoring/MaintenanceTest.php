@@ -8,39 +8,39 @@ use Illuminate\Support\Facades\Notification;
 use Spatie\Activitylog\Facades\Activity;
 
 /**
- * Tests de integración para modo mantenimiento.
+ * Integration tests for maintenance mode.
  *
- * Estos tests verifican:
- * - Visualización del estado del modo mantenimiento
- * - Activación/desactivación del modo
- * - Control de acceso
+ * These tests verify:
+ * - Viewing maintenance mode status
+ * - Activating/deactivating maintenance mode
+ * - Access control
  */
 
 /**
- * Helper para crear usuario administrador con permisos de mantenimiento.
+ * Helper to create admin user with maintenance permissions.
  */
 function createMaintenanceAdmin(): User
 {
-    // Desactivar observers para evitar errores en tests
+    // Disable observers to avoid errors in tests
     User::unsetEventDispatcher();
 
-    // Crear permiso para modo mantenimiento si no existe
+    // Create maintenance mode permission if it doesn't exist
     $permission = Permission::firstOrCreate(
         ['name' => 'manage maintenance mode', 'guard_name' => 'web'],
-        ['description' => 'gestionar modo mantenimiento']
+        ['description' => 'manage maintenance mode']
     );
 
-    // Resetear caché de permisos de Spatie DESPUÉS de crearlos
+    // Reset Spatie permission cache AFTER creating them
     app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-    // Crear rol de administrador
+    // Create admin role
     $adminRole = Role::firstOrCreate(
-        ['name' => 'Administrador de Sistema', 'guard_name' => 'web'],
-        ['description' => 'admin de sistema']
+        ['name' => 'System Administrator', 'guard_name' => 'web'],
+        ['description' => 'system admin']
     );
     $adminRole->givePermissionTo(['manage maintenance mode']);
 
-    // Crear usuario administrador
+    // Create admin user
     $adminUser = User::factory()->create(['is_active' => true]);
     $adminUser->assignRole($adminRole);
 
@@ -49,11 +49,11 @@ function createMaintenanceAdmin(): User
 
 beforeEach(function ()
 {
-    // Desactivar notificaciones y logging de actividad
+    // Disable notifications and activity logging
     Notification::fake();
     Activity::disableLogging();
 
-    // Asegurar que el modo mantenimiento esté desactivado
+    // Ensure maintenance mode is disabled
     if (app()->isDownForMaintenance())
     {
         Artisan::call('up');
@@ -62,14 +62,14 @@ beforeEach(function ()
 
 afterEach(function ()
 {
-    // Asegurar que el modo mantenimiento esté desactivado después de cada test
+    // Ensure maintenance mode is disabled after each test
     if (app()->isDownForMaintenance())
     {
         Artisan::call('up');
     }
 });
 
-test('usuario autorizado puede ver el estado del modo mantenimiento', function ()
+test('authorized user can view maintenance mode status', function ()
 {
     $adminUser = createMaintenanceAdmin();
 
@@ -78,7 +78,7 @@ test('usuario autorizado puede ver el estado del modo mantenimiento', function (
     $response->assertStatus(200);
 });
 
-test('usuario autorizado puede activar el modo mantenimiento', function ()
+test('authorized user can activate maintenance mode', function ()
 {
     $adminUser = createMaintenanceAdmin();
 
@@ -87,7 +87,7 @@ test('usuario autorizado puede activar el modo mantenimiento', function ()
     $response->assertRedirect();
 });
 
-test('usuario sin permisos no puede ver el modo mantenimiento', function ()
+test('user without permissions cannot view maintenance mode', function ()
 {
     User::unsetEventDispatcher();
     $user = User::factory()->create(['is_active' => true]);
@@ -97,7 +97,7 @@ test('usuario sin permisos no puede ver el modo mantenimiento', function ()
     $response->assertForbidden();
 });
 
-test('usuario sin permisos no puede gestionar el modo mantenimiento', function ()
+test('user without permissions cannot manage maintenance mode', function ()
 {
     User::unsetEventDispatcher();
     $user = User::factory()->create(['is_active' => true]);
@@ -107,7 +107,7 @@ test('usuario sin permisos no puede gestionar el modo mantenimiento', function (
     $response->assertForbidden();
 });
 
-test('usuario no autenticado es redirigido al login', function ()
+test('unauthenticated user is redirected to login', function ()
 {
     $response = $this->get(route('maintenance.index'));
 

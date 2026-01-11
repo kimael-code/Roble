@@ -6,12 +6,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
+import useAppVersion from '@/composables/useAppVersion';
 import { logout } from '@/routes';
 import { index as notificationsIndex } from '@/routes/notifications';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
 import { Link, router } from '@inertiajs/vue3';
-import { Bell, LogOut, Settings } from 'lucide-vue-next';
+import { Bell, GitBranch, LogOut, Settings } from 'lucide-vue-next';
 
 interface Props {
   user: User;
@@ -20,6 +21,8 @@ interface Props {
 const handleLogout = () => {
   router.flushAll();
 };
+
+const { fullVersion } = useAppVersion();
 
 defineProps<Props>();
 </script>
@@ -62,5 +65,12 @@ defineProps<Props>();
       <LogOut class="mr-2 h-4 w-4" />
       Salir
     </Link>
+  </DropdownMenuItem>
+  
+  <!-- Versión al final del menú -->
+  <DropdownMenuSeparator />
+  <DropdownMenuItem disabled class="cursor-default opacity-70">
+    <GitBranch class="mr-2 h-4 w-4" />
+    v{{ fullVersion }}
   </DropdownMenuItem>
 </template>

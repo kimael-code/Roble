@@ -23,6 +23,8 @@ import {
   StepperTrigger,
 } from '@/components/ui/stepper';
 import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import useAppVersion from '@/composables/useAppVersion';
 import { store } from '@/routes/su-installer';
 import { Head, router } from '@inertiajs/vue3';
 import { useForm } from 'laravel-precognition-vue-inertia';
@@ -31,8 +33,11 @@ import {
   CheckIcon,
   CircleIcon,
   DotIcon,
+  GitBranch,
 } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
+
+const { shortVersion } = useAppVersion();
 
 const props = defineProps<{
   employee?: {
@@ -135,7 +140,7 @@ function submit() {
   >
     <Head title="Instalador" />
 
-    <Card class="mx-4 w-full lg:max-w-4xl">
+    <Card class="mx-4 w-full lg:max-w-4xl relative">
       <CardHeader class="text-center">
         <CardTitle class="text-2xl font-bold">
           Asistente de Instalación de Superusuario
@@ -424,6 +429,14 @@ function submit() {
           </Stepper>
         </div>
       </CardContent>
+      
+      <!-- Versión en footer -->
+      <div class="absolute bottom-3 left-0 right-0 flex justify-center">
+        <Badge variant="secondary" class="gap-1">
+          <GitBranch class="h-3 w-3" />
+          <span>v{{ shortVersion }}</span>
+        </Badge>
+      </div>
     </Card>
   </div>
 </template>

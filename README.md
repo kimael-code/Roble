@@ -1,8 +1,13 @@
 # ROBLE
 
-Kit de inicio para desarrollar aplicaciones web monolíticas basadas en Laravel, Inertia.js, Vue.js y Tailwind CSS.
+A starter kit for developing monolithic web applications based on Laravel, Inertia.js, Vue.js, and Tailwind CSS.
 
-## Construido con 🛠️
+## Language Notice
+
+**Documentation**: English (for international audience)  
+**User Interface**: Spanish (Venezuelan) - The UI is in Spanish as this project was originally developed for Venezuelan users and organizations. We welcome contributions to add multi-language support.
+
+## Built With 🛠️
 
 - [Laravel](https://laravel.com/docs)
 - [Vue](https://vuejs.org)
@@ -11,156 +16,223 @@ Kit de inicio para desarrollar aplicaciones web monolíticas basadas en Laravel,
 - [Tailwind CSS](https://tailwindcss.com/docs)
 - [PostgreSQL](https://www.postgresql.org)
 
-## Usuarios y Roles 👥
+## Users and Roles 👥
 
-En Roble, ningún usuario es creado cuando se alimenta por primera vez la base de datos. Solamente se crean los perfiles (roles) mínimos necesarios, los cuales son:
+In Roble, no users are created when the database is first seeded. Only the minimum necessary profiles (roles) are created, which are:
 
-1- **Superusuario**: tiene acceso a cualquier ruta del sistema y puede ejecutar cualquier acción que no viole la estabilidad del sistema. Es un perfil protegido, de sólo lectura.
-2- **Administrador de Sistemas**: gestiona los datos básicos, de seguridad y de monitoreo del sistema. Es un perfil editable e incluso eliminable.
+1. **Superuser**: Has access to any system route and can execute any action that does not violate system stability. It is a protected, read-only profile.
+2. **System Administrator**: Manages basic data, security, and system monitoring. It is an editable and even deletable profile.
 
-_La eliminación de roles y permisos es irreversible_, los roles o permisos, una vez eliminados, no se pueden volver a recuperar; deberán ser registrados nuevamente.
+_The deletion of roles and permissions is irreversible_. Once deleted, roles or permissions cannot be recovered; they must be registered again.
 
-A partir del superusuario creado, se pueden crear nuevos roles y usuarios, además de gestionar cualquier proceso del sistema.
+From the created superuser, you can create new roles and users, as well as manage any system process.
 
-Hay que destacar que los usuarios también pueden ser creados de manera autogestionada por los propios empleados activos de la institución, sin embargo, se crearán sin perfiles asociados por lo que solamente tendrán acceso en el sistema al menú propio del usuario.
+It should be noted that users can also be created in a self-managed way by the institution's own active employees. However, they will be created without associated profiles, so they will only have access to the user's own menu in the system.
 
-## Características 🤩
+## Features 🤩
 
-_Nota_: si lo prefiere, entiéndase la palabra 'gestión' como `CRUD` (crear, leer, editar y eliminar registros o datos), sin embargo la exportación de datos a archivos también forma parte de la gestión de los datos en ROBLE.
+_Note_: If you prefer, understand the word 'management' as `CRUD` (create, read, update, and delete records or data). However, exporting data to files is also part of data management in ROBLE.
 
-- Tablero básico con gráficas resúmenes de usuarios, roles y otros datos básicos.
-- Gestión de:
-  - los datos básicos de la organización, así como de sus respectivas unidades administrativas,
-  - permisos,
-  - roles (perfiles de usuarios),
-  - usuarios,
-  - modo de mantenimiento del sistema.
-- Consulta y exportación de trazas de las actividades de los usuarios.
-- Consulta, vaciado/eliminación y exportación de los registros de depuración del sistema.
-- Notificaciones, en tiempo real, de las acciones realizadas por los usuarios.
+- Basic dashboard with summary charts of users, roles, and other basic data.
+- Management of:
+  - Basic organization data, as well as its respective administrative units
+  - Permissions
+  - Roles (user profiles)
+  - Users
+  - System maintenance mode
+- Query and export of user activity traces.
+- Query, clearing/deletion, and export of system debug logs.
+- Real-time notifications of actions performed by users.
 
-## Instalación en Entorno Local 🚀
+## Local Environment Installation 🚀
 
-Esta guía cubre la instalación usando **Laravel Herd** (recomendado para macOS y Windows) y **Laravel Sail** (basado en Docker, para cualquier sistema operativo).
+This guide covers installation using **Laravel Herd** (recommended for macOS and Windows) and **Laravel Sail** (Docker-based, for any operating system).
 
-### Requisitos Previos
+### Prerequisites
 
-Asegúrate de tener instalado el software correspondiente a tu entorno de elección:
+Make sure you have the software corresponding to your chosen environment installed:
 
-| Software                | Entorno Herd | Entorno Sail |
-| ----------------------- | :----------: | :----------: |
-| **Laravel Herd**        |      ✅      |              |
-| **Servidor PostgreSQL** |      ✅      |              |
-| **Node.js y npm**       |      ✅      |              |
-| **Composer**            |      ✅      |              |
-| **Docker Engine**       |              |      ✅      |
+| Software              | Herd Environment | Sail Environment |
+| --------------------- | :--------------: | :--------------: |
+| **Laravel Herd**      |        ✅        |                  |
+| **PostgreSQL Server** |        ✅        |                  |
+| **Node.js and npm**   |        ✅        |        ✅        |
+| **Composer**          |        ✅        |                  |
+| **Docker Engine**     |                  |        ✅        |
 
-> **Nota para Herd**: Se recomienda usar [DBngin](https://dbngin.com/) para gestionar fácilmente tu servidor de PostgreSQL.
+> **Note for Herd**: It is recommended to use [DBngin](https://dbngin.com/) to easily manage your PostgreSQL server.
 
-### Paso 1: Clonar el Repositorio
+### Step 1: Clone the Repository
 
 ```sh
-git clone URL_DEL_REPOSITORIO
+git clone REPOSITORY_URL
 cd roble
 ```
 
-> **Nota para Herd**: Si usas Laravel Herd, clona el repositorio dentro de la carpeta que Herd esté monitorizando (normalmente `~/Herd`).
+> **Note for Herd**: If you use Laravel Herd, clone the repository inside the folder that Herd is monitoring (normally `~/Herd`).
 
-### Paso 2: Configurar Variables de Entorno (.env)
+### Step 2: Configure Environment Variables (.env)
 
-Este proyecto requiere credenciales para dos bases de datos y para el servidor de WebSockets (Laravel Reverb).
+This project requires credentials for two databases and for the WebSocket server (Laravel Reverb).
 
-La forma más sencilla de configurar todo es usando el asistente interactivo:
+**For Local Development (Herd or Sail):**
 
-```sh
-./install.sh
-```
-
-Este script te guiará para configurar todas las variables necesarias.
-
-Si prefieres hacerlo manualmente, copia el archivo de ejemplo y edítalo:
+Simply copy the example environment file and edit it:
 
 ```sh
 cp .env.example .env
 ```
 
-Asegúrate de configurar como mínimo las variables `DB_*`, `DB_ORG_*` y `REVERB_*`.
+Then edit the `.env` file to configure at least the `DB_*`, `DB_ORG_*`, and `REVERB_*` variables according to your local environment.
 
-### Paso 3: Instalar Dependencias
+**For Production/Staging/QA Deployments:**
 
-**Para Entorno Herd:**
+Use the interactive installation script:
 
-Ejecuta los siguientes comandos en tu terminal:
+```sh
+./install.sh
+```
+
+This script will guide you through configuring all necessary variables for production environments.
+
+### Step 3: Install Dependencies
+
+**For Herd Environment:**
+
+Run the following commands in your terminal:
 
 ```sh
 composer install
 npm install
 ```
 
-**Para Entorno Sail:**
+**For Sail Environment:**
 
-1.  Primero, inicia los contenedores de Sail. La primera vez puede tardar varios minutos mientras se descargan las imágenes de Docker.
-    ```sh
-    sail up -d
-    ```
-2.  Una vez que los contenedores estén corriendo, instala las dependencias _dentro_ de ellos:
-    ```sh
-    sail composer install
-    sail npm install
-    ```
+1. First, start the Sail containers. The first time may take several minutes while Docker images are downloaded.
+   ```sh
+   sail up -d
+   ```
+2. Once the containers are running, install the dependencies _inside_ them:
+   ```sh
+   sail composer install
+   sail npm install
+   ```
 
-### Paso 4: Ejecutar el Instalador de la Aplicación
+### Step 4: Run the Application Installer
 
-Este proyecto incluye un comando para automatizar la preparación de la aplicación.
+This project includes a command to automate application preparation.
 
-> **⚠️ ADVERTENCIA MUY IMPORTANTE ⚠️**
-> Este comando **eliminará todos los datos** de tu base de datos principal y los reemplazará con los datos de prueba iniciales (`migrate:fresh --seed`). Úsalo solo en la configuración inicial.
+> **⚠️ VERY IMPORTANT WARNING ⚠️**  
+> This command **will delete all data** from your main database and replace it with initial test data (`migrate:fresh --seed`). Use it only in the initial setup.
 
-| Entorno Herd              | Entorno Sail               |
+| Herd Environment          | Sail Environment           |
 | ------------------------- | -------------------------- |
 | `php artisan app:install` | `sail artisan app:install` |
 
-Este comando se encargará de:
+This command will take care of:
 
-- Generar la clave de la aplicación.
-- Limpiar y generar cachés de configuración.
-- Crear el enlace simbólico al `storage`.
-- Ejecutar las migraciones y los _seeders_ de la base de datos.
+- Generating the application key.
+- Clearing and generating configuration caches.
+- Creating the symbolic link to `storage`.
+- Running migrations and database _seeders_.
 
-### Paso 5: Iniciar Servicios en Segundo Plano
+### Step 5: Start Background Services
 
-Para que las notificaciones en tiempo real y las tareas en cola funcionen, debes iniciar dos procesos. Se recomienda abrir dos terminales separadas en la raíz del proyecto para ejecutar cada uno.
+For real-time notifications and queued tasks to work, you must start two processes. It is recommended to open two separate terminals in the project root to run each one.
 
-| Servicio           | Comando para Herd          | Comando para Sail           |
+| Service            | Command for Herd           | Command for Sail            |
 | :----------------- | :------------------------- | :-------------------------- |
 | **Laravel Reverb** | `php artisan reverb:start` | `sail artisan reverb:start` |
-| **Cola de Tareas** | `php artisan queue:listen` | `sail artisan queue:listen` |
+| **Task Queue**     | `php artisan queue:listen` | `sail artisan queue:listen` |
 
-### Paso 6: Crear el Superusuario Inicial
+### Step 6: Create the Initial Superuser
 
-Con el entorno ya configurado y los servicios corriendo, el paso final es crear el primer usuario con rol `Superusuario`.
+With the environment already configured and services running, the final step is to create the first user with the `Superuser` role.
 
-1.  Abre tu navegador web.
-2.  Visita la URL de tu proyecto seguida de `/su-install`.
-    - **URL con Herd:** `http://roble.test/su-install`
-    - **URL con Sail:** `http://localhost/su-install`
-3.  Sigue las instrucciones del asistente web para crear tu usuario.
+1. Open your web browser.
+2. Visit your project URL followed by `/su-install`.
+   - **URL with Herd:** `http://roble.test/su-install`
+   - **URL with Sail:** `http://localhost/su-install`
+3. Follow the web wizard instructions to create your user.
 
-### ¡Listo!
+### Ready!
 
-Una vez creado el Superusuario, el sistema de autenticación se habilitará. Ahora puedes ir a la ruta `/login` para iniciar sesión con las credenciales que acabas de crear.
+Once the Superuser is created, the authentication system will be enabled. Now you can go to the `/login` route to log in with the credentials you just created.
 
-## Colaboradores ✒️
+## CI/CD Pipeline 🚀
 
-- Maikel Carballo [@profemaik](https://gitlab.com/profemaik)
+This project uses **GitHub Actions** for continuous integration and deployment. The pipeline automatically runs tests, linters, and manages semantic versioning.
 
-## Contribuya, sus ideas pueden aportar mejoras significativas 🤓
+### Workflows
 
-Si Usted considera que esta documentación está incompleta o que pueda mejorarse:
+#### 1. **Tests** (`tests.yml`)
 
-1.  verifique que pueda tener acceso al repositorio,
-2.  clónelo,
-3.  cree una nueva rama,
-4.  haga las correcciones que crea pertinente a este archivo,
-5.  publique su nueva rama con `git push`,
-    O si lo prefiere puede crear un ticket en el repositorio planteando sus correcciones o mejoras.
+- **Triggers:** Push or Pull Request to `develop` or `main`
+- **Actions:**
+  - Runs PHPUnit/Pest tests
+  - Builds frontend assets
+  - Caches dependencies for faster execution
+
+#### 2. **Linter** (`lint.yml`)
+
+- **Triggers:** Push or Pull Request to `develop` or `main`
+- **Actions:**
+  - Runs PHP Pint (code style fixer)
+  - Runs ESLint (JavaScript linter)
+  - Runs Prettier (code formatter)
+
+#### 3. **Auto-Versioning** (`version.yml`)
+
+- **Triggers:** Push to `main` branch only
+- **Actions:**
+  - Analyzes commits since last tag
+  - Calculates next semantic version
+  - Creates Git tag automatically
+  - Updates `CHANGELOG.md` and `.env.example`
+  - Creates GitHub Release
+
+### Semantic Versioning
+
+This project follows [Semantic Versioning](https://semver.org/) and [Conventional Commits](https://www.conventionalcommits.org/).
+
+**Commit types that increment version:**
+
+- `fix:` → PATCH (1.0.0 → 1.0.1)
+- `feat:` → MINOR (1.0.0 → 1.1.0)
+- `feat!:` or `BREAKING CHANGE:` → MAJOR (1.0.0 → 2.0.0)
+
+**Commit types that do NOT increment version:**
+
+- `docs:`, `style:`, `refactor:`, `test:`, `chore:`, `perf:`
+
+**Example commits:**
+
+```bash
+git commit -m "fix: correct login validation"
+git commit -m "feat: implement PDF export module"
+git commit -m "feat!: change database schema"
+```
+
+**Test versioning locally:**
+
+```bash
+npm run version:check  # Dry-run to see next version
+```
+
+For more details, see [docs/CONVENTIONAL_COMMITS.md](docs/CONVENTIONAL_COMMITS.md).
+
+## Contributors ✒️
+
+- Maikel Carballo - [GitHub](https://github.com/kimael-code) | [GitLab](https://gitlab.com/profemaik) | [Portfolio](https://maikel-dev.vercel.app)
+
+## Contribute - Your Ideas Can Bring Significant Improvements 🤓
+
+If you consider that this documentation is incomplete or could be improved:
+
+1. Verify that you can have access to the repository
+2. Clone it
+3. Create a new branch
+4. Make the corrections you deem pertinent to this file
+5. Publish your new branch with `git push`
+
+Or if you prefer, you can create an issue in the repository stating your corrections or improvements.

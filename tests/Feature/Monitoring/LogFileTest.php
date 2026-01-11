@@ -8,50 +8,50 @@ use Illuminate\Support\Facades\Storage;
 use Spatie\Activitylog\Facades\Activity;
 
 /**
- * Tests de integración para archivos de log del sistema.
+ * Integration tests for system log files.
  *
- * Estos tests verifican:
- * - Visualización de archivos de log
- * - Exportación de logs
- * - Eliminación de logs
- * - Control de acceso
+ * These tests verify:
+ * - Viewing log files
+ * - Exporting logs
+ * - Deleting logs
+ * - Access control
  */
 
 beforeEach(function ()
 {
-    // Desactivar notificaciones y logging de actividad
+    // Disable notifications and activity logging
     Notification::fake();
     Activity::disableLogging();
-    // Note: No usar Storage::fake('logs') porque Logfile usa storage_path() y Storage::disk() mezclados
+    // Note: Don't use Storage::fake('logs') because Logfile uses storage_path() and Storage::disk() mixed
 
-    // Desactivar observers para evitar errores en tests
+    // Disable observers to avoid errors in tests
     User::unsetEventDispatcher();
 
-    // Crear permisos base
-    Permission::create(['name' => 'read any system log', 'description' => 'leer cualquier log del sistema', 'guard_name' => 'web']);
-    Permission::create(['name' => 'export system logs', 'description' => 'exportar logs del sistema', 'guard_name' => 'web']);
-    Permission::create(['name' => 'delete system logs', 'description' => 'eliminar logs del sistema', 'guard_name' => 'web']);
+    // Create base permissions
+    Permission::create(['name' => 'read any system log', 'description' => 'read any system log', 'guard_name' => 'web']);
+    Permission::create(['name' => 'export system logs', 'description' => 'export system logs', 'guard_name' => 'web']);
+    Permission::create(['name' => 'delete system logs', 'description' => 'delete system logs', 'guard_name' => 'web']);
 
-    // Resetear caché de permisos de Spatie DESPUÉS de crearlos
+    // Reset Spatie permission cache AFTER creating them
     app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-    // Crear rol de administrador
-    $this->adminRole = Role::create(['name' => 'Administrador de Logs', 'description' => 'admin de logs', 'guard_name' => 'web']);
+    // Create admin role
+    $this->adminRole = Role::create(['name' => 'Log Administrator', 'description' => 'log admin', 'guard_name' => 'web']);
     $this->adminRole->givePermissionTo(['read any system log', 'export system logs', 'delete system logs']);
 
-    // Crear usuario administrador
+    // Create admin user
     $this->adminUser = User::factory()->create(['is_active' => true]);
     $this->adminUser->assignRole($this->adminRole);
 });
 
-test('usuario autorizado puede ver la lista de archivos de log', function ()
+test('authorized user can view log files list', function ()
 {
     $response = $this->actingAs($this->adminUser)->get(route('log-files.index'));
 
     $response->assertStatus(200);
 });
 
-test('usuario sin permiso de lectura no puede ver logs', function ()
+test('user without read permission cannot view logs', function ()
 {
     $regularUser = User::factory()->create();
 
@@ -60,7 +60,7 @@ test('usuario sin permiso de lectura no puede ver logs', function ()
     $response->assertForbidden();
 });
 
-test('usuario no autenticado es redirigido al login', function ()
+test('unauthenticated user is redirected to login', function ()
 {
     $response = $this->get(route('log-files.index'));
 

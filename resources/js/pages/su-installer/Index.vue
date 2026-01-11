@@ -8,10 +8,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Form, Head } from '@inertiajs/vue3';
-import { LoaderCircleIcon } from 'lucide-vue-next';
+import { GitBranch, LoaderCircleIcon } from 'lucide-vue-next';
 import StarSkyBackground from '@/components/StarSkyBackground.vue';
+import useAppVersion from '@/composables/useAppVersion';
+
+const { shortVersion } = useAppVersion();
 </script>
 
 <template>
@@ -22,7 +26,7 @@ import StarSkyBackground from '@/components/StarSkyBackground.vue';
   >
     <Head title="Instalador" />
 
-    <Card class="mx-4 w-full max-w-xl">
+    <Card class="mx-4 w-full max-w-xl relative">
       <CardHeader class="text-center">
         <CardTitle class="text-2xl font-bold">
           Bienvenido al Instalador del Superusuario en
@@ -53,6 +57,14 @@ import StarSkyBackground from '@/components/StarSkyBackground.vue';
           </Form>
         </div>
       </CardContent>
+      
+      <!-- Versión en footer -->
+      <div class="absolute bottom-3 left-0 right-0 flex justify-center">
+        <Badge variant="secondary" class="gap-1">
+          <GitBranch class="h-3 w-3" />
+          <span>v{{ shortVersion }}</span>
+        </Badge>
+      </div>
     </Card>
   </div>
 </template>

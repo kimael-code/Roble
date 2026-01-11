@@ -18,8 +18,7 @@ class CreateNewUser implements CreatesNewUsers
 
     public function __construct(
         private EmployeeRepository $employeeRepository
-    ) {
-    }
+    ) {}
 
     /**
      * Validate and create a newly registered user.
@@ -30,7 +29,6 @@ class CreateNewUser implements CreatesNewUsers
     {
         Validator::make($input, [
             'id_card' => [
-                'bail',
                 'required',
                 'numeric',
                 'integer',

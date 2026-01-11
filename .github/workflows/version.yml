@@ -1,0 +1,77 @@
+name: auto-versioning
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+
+    # Only run after tests pass
+    needs: []
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for tags
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run auto-versioning script
+        id: version
+        run: |
+          echo "🔖 Running auto-versioning script..."
+          bash scripts/auto-version.sh --verbose
+
+          # Check if a new tag was created
+          if git describe --exact-match HEAD 2>/dev/null; then
+            NEW_TAG=$(git describe --exact-match HEAD)
+            echo "version_created=true" >> $GITHUB_OUTPUT
+            echo "new_tag=${NEW_TAG}" >> $GITHUB_OUTPUT
+            echo "✓ New version created: ${NEW_TAG}"
+          else
+            echo "version_created=false" >> $GITHUB_OUTPUT
+            echo "ℹ No new version created (only non-incremental commits)"
+          fi
+
+      - name: Push tag
+        if: steps.version.outputs.version_created == 'true'
+        run: |
+          git push origin ${{ steps.version.outputs.new_tag }}
+          echo "✓ Tag pushed: ${{ steps.version.outputs.new_tag }}"
+
+      - name: Commit and push version bump
+        if: steps.version.outputs.version_created == 'true'
+        run: |
+          # Check if there are changes to commit
+          if ! git diff --quiet; then
+            git add CHANGELOG.md .env.example
+            git commit -m "chore: bump version to ${{ steps.version.outputs.new_tag }}"
+            git push origin main
+            echo "✓ Version bump committed and pushed"
+          else
+            echo "ℹ No changes to commit"
+          fi
+
+      - name: Create GitHub Release
+        if: steps.version.outputs.version_created == 'true'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.version.outputs.new_tag }}
+          release_name: Release ${{ steps.version.outputs.new_tag }}
+          body: |
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+          draft: false
+          prerelease: false
