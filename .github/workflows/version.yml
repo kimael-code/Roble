@@ -60,19 +60,6 @@ jobs:
           git push origin ${{ steps.version.outputs.new_tag }}
           echo "✓ Tag pushed: ${{ steps.version.outputs.new_tag }}"
 
-      - name: Commit and push version bump
-        if: steps.version.outputs.version_created == 'true'
-        run: |
-          # Check if there are changes to commit
-          if ! git diff --quiet; then
-            git add CHANGELOG.md .env.example
-            git commit -m "chore: bump version to ${{ steps.version.outputs.new_tag }}"
-            git push origin main
-            echo "✓ Version bump committed and pushed"
-          else
-            echo "ℹ No changes to commit"
-          fi
-
       - name: Create GitHub Release
         if: steps.version.outputs.version_created == 'true'
         uses: actions/create-release@v1
@@ -82,6 +69,10 @@ jobs:
           tag_name: ${{ steps.version.outputs.new_tag }}
           release_name: Release ${{ steps.version.outputs.new_tag }}
           body: |
-            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
+            ## What's Changed
+
+            See commit history for details.
+
+            **Note:** CHANGELOG.md will be updated manually after this release.
           draft: false
           prerelease: false
