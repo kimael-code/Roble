@@ -14,6 +14,21 @@ jobs:
   ci:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: testing
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,6 +37,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: 8.4
+          extensions: pdo, pdo_pgsql, pgsql
           tools: composer:v2
           coverage: xdebug
 
@@ -56,8 +72,16 @@ jobs:
 
       - name: Run Tests
         env:
-          DB_CONNECTION: sqlite
-          DB_DATABASE: ':memory:'
-          DB_ORG_CONNECTION: sqlite
-          DB_ORG_DATABASE: ':memory:'
+          DB_CONNECTION: pgsql
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_DATABASE: testing
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+          DB_ORG_CONNECTION: pgsql
+          DB_ORG_HOST: localhost
+          DB_ORG_PORT: 5432
+          DB_ORG_DATABASE: testing
+          DB_ORG_USERNAME: postgres
+          DB_ORG_PASSWORD: postgres
         run: ./vendor/bin/pest
