@@ -8,35 +8,35 @@ use Illuminate\Support\Facades\Notification;
 use Spatie\Activitylog\Facades\Activity;
 
 /**
- * Integration tests for maintenance mode.
+ * Tests de integración para el modo mantenimiento.
  *
- * These tests verify:
- * - Viewing maintenance mode status
- * - Activating/deactivating maintenance mode
- * - Access control
+ * Estos tests verifican:
+ * - Visualización del estado del modo mantenimiento
+ * - Activación/desactivación del modo mantenimiento
+ * - Control de acceso
  */
 
 /**
- * Helper to create admin user with maintenance permissions.
+ * Helper para crear un usuario administrador con permisos de mantenimiento.
  */
 function createMaintenanceAdmin(): User
 {
-    // Disable observers to avoid errors in tests
+    // Desactivar observadores para evitar errores en tests
     User::unsetEventDispatcher();
 
-    // Create maintenance mode permission if it doesn't exist
+    // Crear permiso de modo mantenimiento si no existe
     $permission = Permission::firstOrCreate(
         ['name' => 'manage maintenance mode', 'guard_name' => 'web'],
-        ['description' => 'manage maintenance mode']
+        ['description' => 'gestionar modo mantenimiento']
     );
 
     // Reset Spatie permission cache AFTER creating them
     app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-    // Create admin role
+    // Crear rol de administrador
     $adminRole = Role::firstOrCreate(
-        ['name' => 'System Administrator', 'guard_name' => 'web'],
-        ['description' => 'system admin']
+        ['name' => 'Administrador del Sistema', 'guard_name' => 'web'],
+        ['description' => 'admin sistema']
     );
     $adminRole->givePermissionTo(['manage maintenance mode']);
 
@@ -53,7 +53,7 @@ beforeEach(function ()
     Notification::fake();
     Activity::disableLogging();
 
-    // Ensure maintenance mode is disabled
+    // Asegurar que el modo mantenimiento está desactivado
     if (app()->isDownForMaintenance())
     {
         Artisan::call('up');
@@ -62,7 +62,7 @@ beforeEach(function ()
 
 afterEach(function ()
 {
-    // Ensure maintenance mode is disabled after each test
+    // Asegurar que el modo mantenimiento está desactivado después de cada test
     if (app()->isDownForMaintenance())
     {
         Artisan::call('up');

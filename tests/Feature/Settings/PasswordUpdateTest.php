@@ -7,7 +7,7 @@ use Spatie\Activitylog\Facades\Activity;
 
 beforeEach(function ()
 {
-    // Desactivar observers y notificaciones para evitar errores de permisos
+    // Desactivar observadores y notificaciones para evitar errores de permisos
     Notification::fake();
     Activity::disableLogging();
     User::unsetEventDispatcher();

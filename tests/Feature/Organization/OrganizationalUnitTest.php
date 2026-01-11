@@ -56,7 +56,7 @@ beforeEach(function ()
     $this->organization = Organization::factory()->create(['disabled_at' => null]);
 });
 
-test('admin puede ver la lista de unidades administrativas', function ()
+test('admin can view the list of organizational units', function ()
 {
     OrganizationalUnit::factory()->for($this->organization)->create(['name' => 'UA 1']);
     OrganizationalUnit::factory()->for($this->organization)->create(['name' => 'UA 2']);
@@ -66,7 +66,7 @@ test('admin puede ver la lista de unidades administrativas', function ()
     $response->assertStatus(200);
 });
 
-test('admin puede crear una nueva unidad administrativa', function ()
+test('admin can create a new organizational unit', function ()
 {
     $response = $this->actingAs($this->adminUser)->post(route('organizational-units.store'), [
         'code' => 'DEV001',
@@ -84,7 +84,7 @@ test('admin puede crear una nueva unidad administrativa', function ()
     ]);
 });
 
-test('admin puede crear una unidad administrativa hija', function ()
+test('admin can create a child organizational unit', function ()
 {
     $parentOU = OrganizationalUnit::factory()->for($this->organization)->create([
         'name' => 'Gerencia General',
@@ -107,7 +107,7 @@ test('admin puede crear una unidad administrativa hija', function ()
     ]);
 });
 
-test('admin puede actualizar una unidad administrativa', function ()
+test('admin can update an organizational unit', function ()
 {
     $ou = OrganizationalUnit::factory()->for($this->organization)->create(['name' => 'Nombre Original']);
 
@@ -128,7 +128,7 @@ test('admin puede actualizar una unidad administrativa', function ()
     ]);
 });
 
-test('admin puede desactivar una unidad administrativa', function ()
+test('admin can deactivate an organizational unit', function ()
 {
     $ou = OrganizationalUnit::factory()->for($this->organization)->create(['disabled_at' => null]);
 
@@ -147,7 +147,7 @@ test('admin puede desactivar una unidad administrativa', function ()
     expect($ou->disabled_at)->not->toBeNull();
 });
 
-test('admin puede activar una unidad administrativa desactivada', function ()
+test('admin can activate an organizational unit that was deactivated', function ()
 {
     $ou = OrganizationalUnit::factory()->for($this->organization)->create(['disabled_at' => now()]);
 
@@ -166,7 +166,7 @@ test('admin puede activar una unidad administrativa desactivada', function ()
     expect($ou->disabled_at)->toBeNull();
 });
 
-test('admin puede eliminar una unidad administrativa sin usuarios', function ()
+test('admin can delete an organizational unit without users', function ()
 {
     $ou = OrganizationalUnit::factory()->for($this->organization)->create();
 
@@ -176,7 +176,7 @@ test('admin puede eliminar una unidad administrativa sin usuarios', function ()
     $this->assertDatabaseMissing('organizational_units', ['id' => $ou->id]);
 });
 
-test('no se puede eliminar una unidad administrativa con usuarios asociados', function ()
+test('cannot delete an organizational unit that has associated users', function ()
 {
     $ou = OrganizationalUnit::factory()->for($this->organization)->create();
     $user = User::factory()->create();
@@ -188,7 +188,7 @@ test('no se puede eliminar una unidad administrativa con usuarios asociados', fu
     $this->assertDatabaseHas('organizational_units', ['id' => $ou->id]);
 });
 
-test('usuario sin permisos no puede ver unidades administrativas', function ()
+test('user without permissions cannot view organizational units', function ()
 {
     $regularUser = User::factory()->create();
 
@@ -197,7 +197,7 @@ test('usuario sin permisos no puede ver unidades administrativas', function ()
     $response->assertForbidden();
 });
 
-test('usuario sin permisos no puede crear unidades administrativas', function ()
+test('user without permissions cannot create an organizational unit', function ()
 {
     $regularUser = User::factory()->create();
 

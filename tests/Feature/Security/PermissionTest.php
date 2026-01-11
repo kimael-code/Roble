@@ -7,12 +7,12 @@ use Illuminate\Support\Facades\Notification;
 use Spatie\Activitylog\Facades\Activity;
 
 /**
- * Tests de integración para gestión de permisos.
+ * Integration tests para gestión de permisos.
  *
  * Estos tests verifican la funcionalidad de gestión de permisos:
  * - Visualización de permisos
  * - Actualización de permisos
- * - Eliminación con restricciones (no eliminar si está asociado a roles/usuarios)
+ * - Eliminación con restricciones (no se elimina si está asociado a roles/usuarios)
  * - Control de acceso
  */
 
@@ -22,7 +22,7 @@ beforeEach(function ()
     Notification::fake();
     Activity::disableLogging();
 
-    // Desactivar observers para evitar errores en tests
+    // Desactivar observadores para evitar errores en tests
     User::unsetEventDispatcher();
     Permission::unsetEventDispatcher();
     Role::unsetEventDispatcher();
@@ -34,7 +34,7 @@ beforeEach(function ()
     Permission::create(['name' => 'update permissions', 'description' => 'actualizar permisos', 'guard_name' => 'web']);
     Permission::create(['name' => 'delete permissions', 'description' => 'eliminar permisos', 'guard_name' => 'web']);
 
-    // Resetear caché de permisos de Spatie DESPUÉS de crearlos
+    // Reset Spatie permission cache AFTER creating them
     app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
     // Crear rol de administrador con todos los permisos de gestión
@@ -46,7 +46,7 @@ beforeEach(function ()
     $this->adminUser->assignRole($this->adminRole);
 });
 
-test('un administrador puede ver la lista de permisos', function ()
+test('an administrator can view the list of permissions', function ()
 {
     Permission::create(['name' => 'test permission 1', 'description' => 'permiso de prueba 1', 'guard_name' => 'web']);
     Permission::create(['name' => 'test permission 2', 'description' => 'permiso de prueba 2', 'guard_name' => 'web']);
@@ -56,7 +56,7 @@ test('un administrador puede ver la lista de permisos', function ()
     $response->assertStatus(200);
 });
 
-test('un administrador puede ver un permiso específico', function ()
+test('an administrator can view a specific permission', function ()
 {
     $permission = Permission::create(['name' => 'specific permission', 'description' => 'permiso específico', 'guard_name' => 'web']);
 
@@ -68,7 +68,7 @@ test('un administrador puede ver un permiso específico', function ()
     $response->assertStatus(200);
 });
 
-test('un administrador puede actualizar la descripción de un permiso', function ()
+test('an administrator can update the description of a permission', function ()
 {
     $permission = Permission::create(['name' => 'updatable permission', 'description' => 'descripción original', 'guard_name' => 'web']);
 
@@ -85,7 +85,7 @@ test('un administrador puede actualizar la descripción de un permiso', function
     ]);
 });
 
-test('un administrador puede eliminar un permiso sin asociaciones', function ()
+test('an administrator can delete a permission without associations', function ()
 {
     $permission = Permission::create(['name' => 'deletable permission', 'description' => 'será eliminado', 'guard_name' => 'web']);
 
@@ -95,7 +95,7 @@ test('un administrador puede eliminar un permiso sin asociaciones', function ()
     $this->assertDatabaseMissing('permissions', ['id' => $permission->id]);
 });
 
-test('no se puede eliminar un permiso asignado a un rol', function ()
+test('a permission assigned to a role cannot be deleted', function ()
 {
     $permission = Permission::create(['name' => 'role permission', 'description' => 'permiso de rol', 'guard_name' => 'web']);
     $role = Role::create(['name' => 'Rol con Permiso', 'description' => 'tiene permiso', 'guard_name' => 'web']);
@@ -107,7 +107,7 @@ test('no se puede eliminar un permiso asignado a un rol', function ()
     $this->assertDatabaseHas('permissions', ['id' => $permission->id]);
 });
 
-test('no se puede eliminar un permiso asignado directamente a un usuario', function ()
+test('a permission directly assigned to a user cannot be deleted', function ()
 {
     $permission = Permission::create(['name' => 'user permission', 'description' => 'permiso de usuario', 'guard_name' => 'web']);
     $user = User::factory()->create();
@@ -119,7 +119,7 @@ test('no se puede eliminar un permiso asignado directamente a un usuario', funct
     $this->assertDatabaseHas('permissions', ['id' => $permission->id]);
 });
 
-test('un usuario sin permisos no puede ver la lista de permisos', function ()
+test('a user without permissions cannot view the list of permissions', function ()
 {
     $regularUser = User::factory()->create();
 
@@ -128,7 +128,7 @@ test('un usuario sin permisos no puede ver la lista de permisos', function ()
     $response->assertForbidden();
 });
 
-test('un usuario sin permisos no puede actualizar permisos', function ()
+test('a user without permissions cannot update permissions', function ()
 {
     $regularUser = User::factory()->create();
     $permission = Permission::create(['name' => 'test permission', 'description' => 'prueba', 'guard_name' => 'web']);
@@ -142,7 +142,7 @@ test('un usuario sin permisos no puede actualizar permisos', function ()
     $response->assertForbidden();
 });
 
-test('un usuario sin permisos no puede eliminar permisos', function ()
+test('a user without permissions cannot delete permissions', function ()
 {
     $regularUser = User::factory()->create();
     $permission = Permission::create(['name' => 'test permission', 'description' => 'prueba', 'guard_name' => 'web']);
@@ -153,7 +153,7 @@ test('un usuario sin permisos no puede eliminar permisos', function ()
     $this->assertDatabaseHas('permissions', ['id' => $permission->id]);
 });
 
-test('un administrador puede crear un nuevo permiso', function ()
+test('an administrator can create a new permission', function ()
 {
     $response = $this->actingAs($this->adminUser)->post(route('permissions.store'), [
         'name' => 'brand new permission',

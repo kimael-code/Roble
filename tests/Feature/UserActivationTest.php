@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\URL;
  * - Proceso de activación completo
  */
 
-test('usuario puede acceder a página de activación con URL firmada válida', function ()
+test('user can access the activation page with a valid signed URL', function ()
 {
     Event::fake();
 
@@ -26,7 +26,7 @@ test('usuario puede acceder a página de activación con URL firmada válida', f
     $response->assertStatus(200);
 });
 
-test('usuario no puede acceder a página de activación con firma inválida', function ()
+test('user cannot access the activation page with an invalid signature', function ()
 {
     $user = User::factory()->create(['is_active' => false]);
 
@@ -35,7 +35,7 @@ test('usuario no puede acceder a página de activación con firma inválida', fu
     $response->assertStatus(403);
 });
 
-test('usuario puede completar el proceso de activación', function ()
+test('user can complete the activation process', function ()
 {
     Event::fake();
 
@@ -53,7 +53,7 @@ test('usuario puede completar el proceso de activación', function ()
     $response->assertRedirect();
 });
 
-test('activación falla si las contraseñas no coinciden', function ()
+test('activation fails if passwords do not match', function ()
 {
     Event::fake();
 
@@ -71,7 +71,7 @@ test('activación falla si las contraseñas no coinciden', function ()
     expect($user->is_active)->toBeFalse();
 });
 
-test('activación falla con contraseña débil', function ()
+test('activation fails with a weak password', function ()
 {
     Event::fake();
 

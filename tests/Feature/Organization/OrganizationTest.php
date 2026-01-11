@@ -56,7 +56,7 @@ beforeEach(function ()
     $this->adminUser->assignRole($this->adminRole);
 });
 
-test('admin puede ver la lista de organizaciones', function ()
+test('admin can view the list of organizations', function ()
 {
     Organization::factory()->create(['name' => 'Organización 1']);
     Organization::factory()->create(['name' => 'Organización 2']);
@@ -66,7 +66,7 @@ test('admin puede ver la lista de organizaciones', function ()
     $response->assertStatus(200);
 });
 
-test('admin puede crear una nueva organización', function ()
+test('admin can create a new organization', function ()
 {
     $logo = UploadedFile::fake()->image('logo.png', 200, 200);
 
@@ -85,7 +85,7 @@ test('admin puede crear una nueva organización', function ()
     ]);
 });
 
-test('al crear nueva organización las anteriores se desactivan automáticamente', function ()
+test('creating a new organization automatically deactivates previous ones', function ()
 {
     $oldOrg = Organization::factory()->create(['disabled_at' => null]);
     $logo = UploadedFile::fake()->image('logo.png', 200, 200);
@@ -102,7 +102,7 @@ test('al crear nueva organización las anteriores se desactivan automáticamente
     expect($oldOrg->disabled_at)->not->toBeNull();
 });
 
-test('admin puede actualizar una organización', function ()
+test('admin can update an organization', function ()
 {
     $org = Organization::factory()->create(['name' => 'Nombre Original']);
 
@@ -121,9 +121,9 @@ test('admin puede actualizar una organización', function ()
     ]);
 });
 
-test('admin puede desactivar una organización manualmente', function ()
+test('admin can deactivate an organization manually', function ()
 {
-    // Crear dos organizaciones para evitar bloqueo lógico
+    // Crear dos organizations para evitar bloqueo lógico
     $org1 = Organization::factory()->create(['disabled_at' => null]);
     $org2 = Organization::factory()->create(['disabled_at' => null]);
 
@@ -140,7 +140,7 @@ test('admin puede desactivar una organización manualmente', function ()
     expect($org1->disabled_at)->not->toBeNull();
 });
 
-test('admin puede activar una organización desactivada', function ()
+test('admin can activate an organization that was deactivated', function ()
 {
     $org = Organization::factory()->create(['disabled_at' => now()]);
 
@@ -157,7 +157,7 @@ test('admin puede activar una organización desactivada', function ()
     expect($org->disabled_at)->toBeNull();
 });
 
-test('el logo se sube correctamente al crear organización', function ()
+test('the logo is uploaded correctly when creating an organization', function ()
 {
     $logo = UploadedFile::fake()->image('logo.png', 200, 200);
 
@@ -173,7 +173,7 @@ test('el logo se sube correctamente al crear organización', function ()
     Storage::disk('public')->assertExists($org->logo_path);
 });
 
-test('usuario sin permisos no puede gestionar organizaciones', function ()
+test('user without permissions cannot manage organizations', function ()
 {
     $regularUser = User::factory()->create();
 
@@ -181,7 +181,7 @@ test('usuario sin permisos no puede gestionar organizaciones', function ()
     $response->assertForbidden();
 });
 
-test('usuario sin permisos no puede crear organizaciones', function ()
+test('user without permissions cannot create organizations', function ()
 {
     $regularUser = User::factory()->create();
     $logo = UploadedFile::fake()->image('logo.png', 200, 200);
@@ -195,7 +195,7 @@ test('usuario sin permisos no puede crear organizaciones', function ()
     $response->assertForbidden();
 });
 
-test('no se puede eliminar el único ente activo', function ()
+test('cannot delete the only active entity', function ()
 {
     $org = Organization::factory()->create(['disabled_at' => null]);
 
@@ -205,7 +205,7 @@ test('no se puede eliminar el único ente activo', function ()
     $this->assertDatabaseHas('organizations', ['id' => $org->id]);
 });
 
-test('no se puede eliminar un ente con unidades administrativas', function ()
+test('cannot delete an entity with organizational units', function ()
 {
     $org = Organization::factory()->create(['disabled_at' => null]);
     $org2 = Organization::factory()->create(['disabled_at' => null]); // Otro activo para evitar bloqueo
@@ -217,7 +217,7 @@ test('no se puede eliminar un ente con unidades administrativas', function ()
     $this->assertDatabaseHas('organizations', ['id' => $org->id]);
 });
 
-test('se puede eliminar un ente sin unidades administrativas si hay otro activo', function ()
+test('can delete an entity with no administrative units if another remains active', function ()
 {
     $org1 = Organization::factory()->create(['disabled_at' => null]);
     $org2 = Organization::factory()->create(['disabled_at' => null]); // Otro activo

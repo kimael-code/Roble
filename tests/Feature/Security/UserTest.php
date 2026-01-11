@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Notification;
 use Spatie\Activitylog\Facades\Activity;
 
 /**
- * Tests de integración para gestión de usuarios.
+ * Integration tests para gestión de usuarios.
  *
  * Estos tests verifican la funcionalidad de gestión de usuarios:
  * - Creación de usuarios internos (por admin)
@@ -21,11 +21,11 @@ use Spatie\Activitylog\Facades\Activity;
 
 beforeEach(function ()
 {
-    // Desactivar notificaciones y logging de actividad
+    // Disable notifications and activity logging
     Notification::fake();
     Activity::disableLogging();
 
-    // Desactivar observers de modelos para evitar errores en tests
+    // Desactivar observadores de modelos para evitar errores en tests
     User::unsetEventDispatcher();
     Organization::unsetEventDispatcher();
     OrganizationalUnit::unsetEventDispatcher();
@@ -40,24 +40,24 @@ beforeEach(function ()
     Permission::create(['name' => 'restore users', 'description' => 'restaurar usuarios', 'guard_name' => 'web']);
     Permission::create(['name' => 'enable users', 'description' => 'activar usuarios', 'guard_name' => 'web']);
     Permission::create(['name' => 'disable users', 'description' => 'desactivar usuarios', 'guard_name' => 'web']);
-    Permission::create(['name' => 'reset user passwords', 'description' => 'restablecer contraseñas', 'guard_name' => 'web']);
+    Permission::create(['name' => 'reset user passwords', 'description' => 'resetear contraseñas', 'guard_name' => 'web']);
 
-    // Resetear caché de permisos de Spatie DESPUÉS de crearlos
+    // Reset Spatie permission cache AFTER creating them
     app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-    // Crear rol de administrador con todos los permisos
-    $this->adminRole = Role::create(['name' => 'Administrador', 'description' => 'administrador de prueba', 'guard_name' => 'web']);
+    // Create admin role con todos los permissions
+    $this->adminRole = Role::create(['name' => 'Administrador', 'description' => 'administrator test', 'guard_name' => 'web']);
     $this->adminRole->givePermissionTo([
         'read any user', 'read user', 'create new users', 'update users',
         'delete users', 'force delete users', 'restore users',
         'enable users', 'disable users', 'reset user passwords'
     ]);
 
-    // Crear usuario administrador
+    // Create admin user
     $this->adminUser = User::factory()->create(['is_active' => true]);
     $this->adminUser->assignRole($this->adminRole);
 
-    // Crear organización y unidad administrativa para tests
+    // Crear organization y organizational unit para tests
     $this->organization = Organization::factory()->create(['disabled_at' => null]);
     $this->ou = OrganizationalUnit::factory()
         ->for($this->organization)
@@ -68,7 +68,7 @@ beforeEach(function ()
 // CREACIÓN DE USUARIOS INTERNOS (por administrador)
 // =====================================================
 
-test('admin puede crear usuario interno con correo corporativo', function ()
+test('admin can create internal user with corporate email', function ()
 {
     $response = $this->actingAs($this->adminUser)->post(route('users.store'), [
         'name' => 'usuario.interno',
@@ -91,7 +91,7 @@ test('admin puede crear usuario interno con correo corporativo', function ()
     $response->assertRedirect(route('users.index'));
 });
 
-test('admin puede crear usuario interno sin datos personales', function ()
+test('admin can create internal user without personal data', function ()
 {
     $response = $this->actingAs($this->adminUser)->post(route('users.store'), [
         'name' => 'usuario.sinpersona',
@@ -114,7 +114,7 @@ test('admin puede crear usuario interno sin datos personales', function ()
     $response->assertRedirect(route('users.index'));
 });
 
-test('admin puede crear usuario interno con correo personal a su juicio', function ()
+test('admin can create internal user with personal email at their discretion', function ()
 {
     $response = $this->actingAs($this->adminUser)->post(route('users.store'), [
         'name' => 'usuario.personal',
@@ -141,7 +141,7 @@ test('admin puede crear usuario interno con correo personal a su juicio', functi
 // CREACIÓN DE USUARIOS EXTERNOS (por administrador)
 // =====================================================
 
-test('admin puede crear usuario externo con datos personales obligatorios', function ()
+test('admin can create external user with personal data required', function ()
 {
     $response = $this->actingAs($this->adminUser)->post(route('users.store'), [
         'name' => 'usuario.externo',
@@ -169,7 +169,7 @@ test('admin puede crear usuario externo con datos personales obligatorios', func
     $response->assertRedirect(route('users.index'));
 });
 
-test('usuario externo requiere datos personales obligatorios', function ()
+test('external user requires personal data', function ()
 {
     $response = $this->actingAs($this->adminUser)->post(route('users.store'), [
         'name' => 'usuario.externo.invalido',
@@ -188,7 +188,7 @@ test('usuario externo requiere datos personales obligatorios', function ()
     $response->assertInvalid(['id_card', 'names', 'surnames']);
 });
 
-test('usuario externo puede tener teléfonos y correos opcionales', function ()
+test('external user can have optional phones and emails', function ()
 {
     $response = $this->actingAs($this->adminUser)->post(route('users.store'), [
         'name' => 'usuario.externo.completo',
@@ -217,7 +217,7 @@ test('usuario externo puede tener teléfonos y correos opcionales', function ()
 // ACTUALIZACIÓN DE USUARIOS
 // =====================================================
 
-test('admin puede actualizar un usuario existente', function ()
+test('admin can update an existing user', function ()
 {
     $user = User::factory()->create(['name' => 'usuario.original', 'email' => 'original@test.com']);
 
@@ -247,7 +247,7 @@ test('admin puede actualizar un usuario existente', function ()
 // HABILITACIÓN/DESHABILITACIÓN
 // =====================================================
 
-test('admin puede deshabilitar un usuario', function ()
+test('admin can disable a user', function ()
 {
     $user = User::factory()->create(['disabled_at' => null, 'is_active' => true]);
 
@@ -258,7 +258,7 @@ test('admin puede deshabilitar un usuario', function ()
     $response->assertRedirect();
 });
 
-test('admin puede habilitar un usuario deshabilitado', function ()
+test('admin can enable a disabled user', function ()
 {
     $user = User::factory()->create(['disabled_at' => now(), 'is_active' => true]);
 
@@ -273,7 +273,7 @@ test('admin puede habilitar un usuario deshabilitado', function ()
 // ELIMINACIÓN
 // =====================================================
 
-test('admin puede eliminar un usuario (soft delete)', function ()
+test('admin can delete a user (soft delete)', function ()
 {
     $user = User::factory()->create();
 
@@ -283,7 +283,7 @@ test('admin puede eliminar un usuario (soft delete)', function ()
     $response->assertRedirect(route('users.index'));
 });
 
-test('admin puede eliminar permanentemente un usuario', function ()
+test('admin can permanently delete a user', function ()
 {
     $user = User::factory()->create(['deleted_at' => now()]);
 
@@ -293,7 +293,7 @@ test('admin puede eliminar permanentemente un usuario', function ()
     $response->assertRedirect(route('users.index'));
 });
 
-test('admin puede restaurar un usuario eliminado', function ()
+test('admin can restore a deleted user', function ()
 {
     $user = User::factory()->create(['deleted_at' => now()]);
 
@@ -308,7 +308,7 @@ test('admin puede restaurar un usuario eliminado', function ()
 // ACCIONES ESPECIALES
 // =====================================================
 
-test('admin puede restablecer contraseña de usuario activo', function ()
+test('admin can reset password of an active user', function ()
 {
     $user = User::factory()->create(['is_active' => true, 'disabled_at' => null, 'deleted_at' => null]);
 
@@ -317,7 +317,7 @@ test('admin puede restablecer contraseña de usuario activo', function ()
     $response->assertRedirect();
 });
 
-test('admin puede reenviar correo de activación a usuario inactivo', function ()
+test('admin can resend activation email to an inactive user', function ()
 {
     $user = User::factory()->create(['is_active' => false, 'disabled_at' => null, 'deleted_at' => null]);
 
@@ -326,7 +326,7 @@ test('admin puede reenviar correo de activación a usuario inactivo', function (
     $response->assertRedirect();
 });
 
-test('admin puede activar manualmente un usuario inactivo', function ()
+test('admin can manually activate an inactive user', function ()
 {
     $user = User::factory()->create(['is_active' => false, 'disabled_at' => null, 'deleted_at' => null]);
 
@@ -339,7 +339,7 @@ test('admin puede activar manualmente un usuario inactivo', function ()
 // CONTROL DE ACCESO
 // =====================================================
 
-test('usuario sin permisos no puede crear usuarios', function ()
+test('user without permissions cannot create users', function ()
 {
     $regularUser = User::factory()->create();
 
@@ -352,7 +352,7 @@ test('usuario sin permisos no puede crear usuarios', function ()
     $response->assertForbidden();
 });
 
-test('usuario sin permisos no puede ver lista de usuarios', function ()
+test('user without permissions cannot view list of users', function ()
 {
     $regularUser = User::factory()->create();
 
@@ -361,14 +361,14 @@ test('usuario sin permisos no puede ver lista de usuarios', function ()
     $response->assertForbidden();
 });
 
-test('usuario no puede eliminarse a sí mismo', function ()
+test('user cannot delete themselves', function ()
 {
     $response = $this->actingAs($this->adminUser)->delete(route('users.destroy', $this->adminUser));
 
     $response->assertForbidden();
 });
 
-test('usuario no puede desactivarse a sí mismo', function ()
+test('user cannot deactivate themselves', function ()
 {
     $response = $this->actingAs($this->adminUser)->put(route('users.disable', $this->adminUser));
 
