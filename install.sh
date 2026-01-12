@@ -384,13 +384,10 @@ configure_app_vars() {
     # APP_URL
     echo ""
     echo -e "${C_BOLD}URL de la Aplicación${C_RESET}"
-    print_info "Dominio base: ${C_CYAN}fogade.gob.ve${C_RESET}"
+    print_info "Introduce la URL completa de tu aplicación ${C_DIM}(ej: https://myapp.example.com)${C_RESET}"
     echo ""
     
-    local scheme=$(prompt_with_validation "Esquema (http/https)" "https" "validate_scheme" "Debe ser 'http' o 'https'")
-    local subdomain=$(prompt_with_validation "Subdominio (ej: sistema-prueba)" "" "validate_subdomain" "El subdominio solo puede contener letras, números y guiones")
-    
-    local app_url="${scheme}://${subdomain}.fogade.gob.ve"
+    local app_url=$(prompt_with_validation "URL de la aplicación" "https://localhost" "" "")
     update_or_append_env "APP_URL" "$app_url" "$file"
     print_success "URL configurada: ${C_CYAN}${app_url}${C_RESET}"
     
@@ -402,6 +399,14 @@ configure_app_vars() {
     # APP_DEBUG (automático)
     show_progress "Configurando APP_DEBUG=false"
     update_or_append_env "APP_DEBUG" "false" "$file"
+    
+    # APP_TIMEZONE
+    echo ""
+    echo -e "${C_BOLD}Zona Horaria de la Aplicación${C_RESET}"
+    print_info "Zona horaria para timestamps y logs ${C_DIM}(debe coincidir con la infraestructura)${C_RESET}"
+    local app_timezone=$(prompt_with_validation "Zona horaria" "UTC" "" "")
+    update_or_append_env "APP_TIMEZONE" "$app_timezone" "$file"
+    print_success "Zona horaria: ${C_CYAN}${app_timezone}${C_RESET}"
     
     # APP_KEY (generado automáticamente)
     echo ""
@@ -448,6 +453,19 @@ configure_main_db() {
     echo -e " ${C_GREEN}${SYM_CHECK}${C_RESET}"
     
     print_success "Base de datos principal configurada"
+    
+    # Guardar FORWARD_DB_PORT para uso en configure_docker_env
+    # Solo preguntar si el despliegue es con Docker
+    echo ""
+    echo -e "${C_BOLD}Puerto de Redirección (Docker)${C_RESET}"
+    print_info "Puerto para acceso externo a PostgreSQL ${C_DIM}(solo necesario si difiere del default)${C_RESET}"
+    FORWARD_DB_PORT=$(prompt_with_validation "Puerto de redirección" "5432" "validate_port" "Puerto inválido (1-65535)")
+    
+    if [ "$FORWARD_DB_PORT" != "5432" ]; then
+        print_success "Puerto de redirección: ${C_CYAN}${FORWARD_DB_PORT}${C_RESET}"
+    else
+        print_info "Usando puerto default (5432)"
+    fi
 }
 
 configure_org_db() {
@@ -605,28 +623,38 @@ configure_mail() {
     print_header "${SYM_MAIL} Configuración de Servidor de Correo"
     
     echo ""
-    print_info "Usando configuración estándar de FOGADE"
+    print_info "Configurando servidor SMTP desde valores de .env.example"
     echo ""
     
-    show_progress "MAIL_MAILER=smtp"
-    update_or_append_env "MAIL_MAILER" "smtp" "$file"
+    # Obtener valores de .env.example
+    local mail_mailer=$(get_default_value "MAIL_MAILER" "$ENV_EXAMPLE_FILE")
+    local mail_host=$(get_default_value "MAIL_HOST" "$ENV_EXAMPLE_FILE")
+    local mail_port=$(get_default_value "MAIL_PORT" "$ENV_EXAMPLE_FILE")
+    local mail_username=$(get_default_value "MAIL_USERNAME" "$ENV_EXAMPLE_FILE")
+    local mail_password=$(get_default_value "MAIL_PASSWORD" "$ENV_EXAMPLE_FILE")
+    local mail_from=$(get_default_value "MAIL_FROM_ADDRESS" "$ENV_EXAMPLE_FILE")
     
-    show_progress "MAIL_HOST=mail.fogade.gob.ve"
-    update_or_append_env "MAIL_HOST" "mail.fogade.gob.ve" "$file"
+    # Aplicar valores
+    show_progress "MAIL_MAILER=${mail_mailer}"
+    update_or_append_env "MAIL_MAILER" "$mail_mailer" "$file"
     
-    show_progress "MAIL_PORT=587"
-    update_or_append_env "MAIL_PORT" "587" "$file"
+    show_progress "MAIL_HOST=${mail_host}"
+    update_or_append_env "MAIL_HOST" "$mail_host" "$file"
     
-    show_progress "MAIL_USERNAME=notificaciones@fogade.gob.ve"
-    update_or_append_env "MAIL_USERNAME" "notificaciones@fogade.gob.ve" "$file"
+    show_progress "MAIL_PORT=${mail_port}"
+    update_or_append_env "MAIL_PORT" "$mail_port" "$file"
     
-    show_progress "MAIL_PASSWORD=Fogade25"
-    update_or_append_env "MAIL_PASSWORD" "Fogade25" "$file"
+    show_progress "MAIL_USERNAME=${mail_username}"
+    update_or_append_env "MAIL_USERNAME" "$mail_username" "$file"
     
-    show_progress "MAIL_FROM_ADDRESS=notificaciones@fogade.gob.ve"
-    update_or_append_env "MAIL_FROM_ADDRESS" "\"notificaciones@fogade.gob.ve\"" "$file"
+    show_progress "MAIL_PASSWORD=${mail_password}"
+    update_or_append_env "MAIL_PASSWORD" "$mail_password" "$file"
+    
+    show_progress "MAIL_FROM_ADDRESS=${mail_from}"
+    update_or_append_env "MAIL_FROM_ADDRESS" "\"${mail_from}\"" "$file"
     
     print_success "Servidor de correo configurado"
+    print_info "${C_DIM}Puedes editar estas configuraciones manualmente en .env si es necesario${C_RESET}"
 }
 
 configure_docker_env() {
@@ -662,25 +690,23 @@ configure_docker_env() {
     # Reutilizar valores configurados
     local db_database=${configured_vars["DB_DATABASE"]}
     local db_password=${configured_vars["DB_PASSWORD"]}
+    local app_timezone=${configured_vars["APP_TIMEZONE"]}
     
     # Actualizar archivo Docker .env
     update_or_append_env "DB_DATABASE" "$db_database" "$DOCKER_ENV_FILE"
     update_or_append_env "DB_USERNAME" "postgres" "$DOCKER_ENV_FILE"
     update_or_append_env "DB_PASSWORD" "$db_password" "$DOCKER_ENV_FILE"
     
-    # Configurar FORWARD_DB_PORT solo si es diferente del default
-    echo ""
-    echo -e "${C_BOLD}Puerto de Base de Datos${C_RESET}"
-    print_info "Puerto para acceso externo a PostgreSQL ${C_DIM}(solo necesario si difiere del default)${C_RESET}"
-    local forward_db_port=$(prompt_with_validation "Puerto de redirección" "5432" "validate_port" "Puerto inválido (1-65535)")
+    # Sincronizar APP_TIMEZONE con TZ de infraestructura
+    if [ -n "$app_timezone" ] && [ "$app_timezone" != "UTC" ]; then
+        sed -i "s~^#TZ=.*~TZ=$app_timezone~" "$DOCKER_ENV_FILE"
+        print_success "TZ sincronizado con APP_TIMEZONE: ${C_CYAN}${app_timezone}${C_RESET}"
+    fi
     
-    # Solo configurar si es diferente de 5432
-    if [ "$forward_db_port" != "5432" ]; then
-        # Descomentar y actualizar la línea en el archivo
-        sed -i "s~^#FORWARD_DB_PORT=.*~FORWARD_DB_PORT=$forward_db_port~" "$DOCKER_ENV_FILE"
-        print_success "FORWARD_DB_PORT configurado: ${C_CYAN}${forward_db_port}${C_RESET}"
-    else
-        print_info "Usando puerto default (5432), variable no necesaria"
+    # Configurar FORWARD_DB_PORT usando el valor ya configurado en configure_main_db
+    if [ -n "$FORWARD_DB_PORT" ] && [ "$FORWARD_DB_PORT" != "5432" ]; then
+        sed -i "s~^#FORWARD_DB_PORT=.*~FORWARD_DB_PORT=$FORWARD_DB_PORT~" "$DOCKER_ENV_FILE"
+        print_success "FORWARD_DB_PORT configurado: ${C_CYAN}${FORWARD_DB_PORT}${C_RESET}"
     fi
     
     print_success "Archivo .env de Docker configurado en: ${C_CYAN}${DOCKER_ENV_FILE}${C_RESET}"
