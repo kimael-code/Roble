@@ -668,6 +668,21 @@ configure_docker_env() {
     update_or_append_env "DB_USERNAME" "postgres" "$DOCKER_ENV_FILE"
     update_or_append_env "DB_PASSWORD" "$db_password" "$DOCKER_ENV_FILE"
     
+    # Configurar FORWARD_DB_PORT solo si es diferente del default
+    echo ""
+    echo -e "${C_BOLD}Puerto de Base de Datos${C_RESET}"
+    print_info "Puerto para acceso externo a PostgreSQL ${C_DIM}(solo necesario si difiere del default)${C_RESET}"
+    local forward_db_port=$(prompt_with_validation "Puerto de redirección" "5432" "validate_port" "Puerto inválido (1-65535)")
+    
+    # Solo configurar si es diferente de 5432
+    if [ "$forward_db_port" != "5432" ]; then
+        # Descomentar y actualizar la línea en el archivo
+        sed -i "s~^#FORWARD_DB_PORT=.*~FORWARD_DB_PORT=$forward_db_port~" "$DOCKER_ENV_FILE"
+        print_success "FORWARD_DB_PORT configurado: ${C_CYAN}${forward_db_port}${C_RESET}"
+    else
+        print_info "Usando puerto default (5432), variable no necesaria"
+    fi
+    
     print_success "Archivo .env de Docker configurado en: ${C_CYAN}${DOCKER_ENV_FILE}${C_RESET}"
 }
 
